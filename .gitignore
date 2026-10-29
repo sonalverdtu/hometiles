@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep the template
+!.env.example
+
+# never commit cached Qloo data (Qloo terms)
+/qloo-cache/
