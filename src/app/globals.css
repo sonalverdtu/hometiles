@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fffaf3;
+  --surface: #ffffff;
+  --ink: #1f2328;
+  --muted: #5b6470;
+  --line: #eadfce;
+  --brand: #e2572b;
+  --brand-ink: #ffffff;
+  --accent: #1f7a6d;
+  --focus: #1d4ed8;
+
+  --c-core: #fff1b3;
+  --c-safety: #ffd2d2;
+  --c-people: #d6eaff;
+  --c-food: #ffe0c2;
+  --c-places: #d1f0d6;
+  --c-favourites: #e9dcff;
+  --c-fun: #ffd6ec;
+  --c-together: #cceeee;
+  --c-new: #ececec;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-latin), var(--font-deva), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-latin), var(--font-deva), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.5rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+.btn:hover {
+  background: #fff4e8;
+}
+.btn-primary {
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-color: var(--brand);
+}
+.btn-primary:hover {
+  background: #c8471f;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 6.5rem;
+  border-radius: 1rem;
+  border: 2px solid rgb(0 0 0 / 0.08);
+  padding: 0.5rem 0.4rem 0.6rem;
+  text-align: center;
+  transition: transform 0.08s ease;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.06);
+}
+.tile:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+  .tile:active {
+    transform: none;
+  }
+}
+
+.print-only {
+  display: none;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    background: white;
+  }
+  .tile {
+    break-inside: avoid;
+    min-height: 5rem;
+  }
 }

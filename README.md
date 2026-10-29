@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HomeTiles: communication boards that sound like home
 
-## Getting Started
+> *"There's more to life than cookies."* (a mother, quoted by AAC researchers Light & McNaughton, 2014)
 
-First, run the development server:
+Non-speaking people (autistic children and adults, people with cerebral palsy, stroke survivors and others) talk by tapping picture tiles on an AAC board. Most boards are generic and Western-designed. A child in Delhi can say "cookie" but not *Parle-G*, their favourite cartoon, or the chaat stall near home.
+
+**HomeTiles is an agent that builds a board around one real person.** It uses Qloo's taste graph to find their real foods, places and favourite things, in their family's language. The board speaks, learns from what gets tapped on the device, and suggests weekly updates that a parent approves.
+
+## What it does
+- **Agentic research with Qloo.** A Claude agent (tool runner) decides which Qloo tools to call. A deterministic scripted planner is the fallback.
+  - `/search`: resolves favourites to Qloo entities.
+  - `/v2/insights`: related shows, games, music and films (with `signal.demographics.age` and `feature.explainability`).
+  - **Heatmap → places:** finds where this taste clusters near home (`urn:heatmap`), then searches places inside those hot-spots (`filter.location.geohash`).
+  - **Local snacks and brands:** `signal.location.query`.
+  - **Who Loves This?:** `urn:demographics` routes tiles to "with cousins" or "with grandparents".
+  - **Talk Together:** `/v2/analysis/compare` finds what the child and a grandparent would both enjoy.
+  - **What's New:** `/v2/trending` adds rising picks, with a sparkline.
+- **A tap-to-speak board.** Hindi, Spanish and English via the Web Speech API. Includes a sentence bar, core and safety words, a "Fun & banter" folder (humour helps AAC users be seen as people), and a family folder.
+- **Why this tile?** Every tile shows its Qloo evidence: affinity, distance from home, audience and trend.
+- **Without Qloo:** a side-by-side comparison with a generic AI board.
+- **Qloo trace:** every call, with its parameters, status, latency and results.
+- **Learns on the device.** Taps never leave the browser. "Simulate a week" plus the weekly refresh sends only anonymous entity IDs and counts. Safety, core and family tiles are never changed. Changes apply only after a parent approves.
+- **Export** to Open Board Format (`.obf`) for open AAC apps like Cboard (see [cboard#1267](https://github.com/cboard-org/cboard/issues/1267)), or print.
+
+## Run it
+```bash
+cd hometiles
+npm install
+cp .env.example .env.local   # keys optional
+npm run dev                  # http://localhost:3000
+```
+With **no keys**, everything runs in **mock mode**: a synthetic catalogue answers the same endpoints in Qloo's documented response shapes. With `QLOO_API_KEY` the app calls `https://hackathon.api.qloo.com`. With `ANTHROPIC_API_KEY` the Claude agent and bilingual labels switch on (model `claude-opus-5-5`, refusal fallbacks enabled).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test             # unit tests (ranking, safety rules, OBF, Qloo parsers)
+npm run qloo:check   # when the Qloo key arrives: probes every endpoint + India coverage
+npm run smoke        # generates a demo board in the terminal
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
+See [`docs/SRS.md`](docs/SRS.md) for the requirements, architecture and data model, and [`docs/PLAN.md`](docs/PLAN.md) for the build plan.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+UI (Next.js) ──NDJSON──► /api/board ─► Agent (Claude tool runner | scripted)
+                                        ├─ Qloo facade (live | mock, cache, trace, fallbacks)
+                                        ├─ Board engine (ranking, quotas, safety rules, OBF)
+                                        └─ Labels (Claude structured output | templates) + ARASAAC
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Privacy and safety
+- Qloo only receives entity IDs, a city or point, and an age band. Names and sentences never leave the device.
+- Demo personas are fictional. HomeTiles supports speech-language therapists; it doesn't replace them. It makes no clinical claims.
+- Qloo responses are cached server-side only and never committed (Qloo terms).
 
-## Learn More
+## Credits
+Taste data: Qloo. Pictograms: Sergio Palao / [ARASAAC](https://arasaac.org), CC BY-NC-SA 4.0 (fetched at runtime, not redistributed). Research behind the design: Johnson et al. 2006; Moorcroft et al. 2020; Gardiner et al. 2025; Light & McNaughton 2014; Weinberg et al., CHI 2025.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT licensed.
