@@ -6,6 +6,20 @@ import { useEffect, useRef, useState } from "react";
 import { saveBoard, takePendingProfile } from "@/lib/client/store";
 import type { StreamEvent } from "@/lib/board/types";
 
+const TOOL_ICON: Record<string, string> = {
+  resolve: "🔍",
+  agent: "🧭",
+  expand_personal_taste: "🌟",
+  find_local_brands: "🍪",
+  find_local_places: "📍",
+  shared_with_family: "🤝",
+  audience_profile: "👥",
+  whats_rising: "📈",
+  labels: "✍️",
+  compose: "🧩",
+  done: "🎉",
+};
+
 interface Step {
   text: string;
   tool?: string;
@@ -18,6 +32,7 @@ export default function GeneratePage() {
   const [endpoints, setEndpoints] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
+  const [name, setName] = useState("");
   const started = useRef(false);
 
   useEffect(() => {
@@ -28,6 +43,7 @@ export default function GeneratePage() {
       setMissing(true);
       return;
     }
+    setName(profile.displayName);
     (async () => {
       try {
         const res = await fetch("/api/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile }) });
@@ -74,7 +90,13 @@ export default function GeneratePage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-extrabold">Building the board…</h1>
+      <div className="mb-4 flex items-center gap-3">
+        <span aria-hidden className="grid h-14 w-14 animate-pulse place-items-center rounded-2xl bg-[var(--brand)] text-3xl text-white">▦</span>
+        <div>
+          <h1 className="text-2xl font-extrabold">Building {name ? `${name}'s` : "the"} board…</h1>
+          <p className="text-sm text-[var(--muted)]">The agent is researching with Qloo. This takes a few seconds.</p>
+        </div>
+      </div>
       <p className="mt-1 text-sm text-[var(--muted)]" aria-live="polite">
         {calls} Qloo calls so far{endpoints.length ? ` · ${endpoints.join(" · ")}` : ""}
       </p>
@@ -83,7 +105,7 @@ export default function GeneratePage() {
           const last = i === steps.length - 1 && !error;
           return (
             <li key={i} className="flex items-start gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
-              <span aria-hidden className={last ? "animate-pulse" : ""}>{last ? "⏳" : "✅"}</span>
+              <span aria-hidden className={`text-xl ${last ? "animate-pulse" : ""}`}>{TOOL_ICON[s.tool ?? ""] ?? (last ? "⏳" : "✅")}</span>
               <span>{s.text}</span>
               {s.tool && <span className="ml-auto rounded-md bg-[#f4efe7] px-2 py-0.5 font-mono text-xs text-[var(--muted)]">{s.tool}</span>}
             </li>

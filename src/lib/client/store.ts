@@ -61,3 +61,49 @@ export function tapCounts(taps: TapEvent[], sinceMs = 7 * 86400000): Record<stri
   for (const t of taps) if (t.ts >= since) out[t.tileId] = (out[t.tileId] ?? 0) + 1;
   return out;
 }
+
+// ---- Child mode, settings and recent sentences ----
+
+export interface KidSettings {
+  boards: "smart" | "classic" | "both";
+  labels: "primary" | "secondary" | "both";
+  size: "m" | "l" | "xl";
+  speakOnTap: boolean;
+}
+
+export const DEFAULT_SETTINGS: KidSettings = { boards: "both", labels: "both", size: "l", speakOnTap: true };
+
+export function getSettings(boardId: string): KidSettings {
+  return safe(() => ({ ...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem(`ht:settings:${boardId}`) ?? "{}") as Partial<KidSettings>) }), DEFAULT_SETTINGS);
+}
+
+export function saveSettings(boardId: string, s: KidSettings) {
+  safe(() => localStorage.setItem(`ht:settings:${boardId}`, JSON.stringify(s)), undefined);
+}
+
+/** The child lock survives a page refresh: the board reopens locked. */
+export function isKidLocked(): boolean {
+  return safe(() => localStorage.getItem("ht:kidlock") === "1", false);
+}
+
+export function setKidLocked(on: boolean) {
+  safe(() => (on ? localStorage.setItem("ht:kidlock", "1") : localStorage.removeItem("ht:kidlock")), undefined);
+}
+
+export interface SaidEntry {
+  text: string;
+  tileIds: string[];
+  ts: number;
+}
+
+export function getSaid(boardId: string): SaidEntry[] {
+  return safe(() => JSON.parse(localStorage.getItem(`ht:said:${boardId}`) ?? "[]") as SaidEntry[], []);
+}
+
+export function addSaid(boardId: string, entry: SaidEntry) {
+  safe(() => {
+    const list = getSaid(boardId).filter((s) => s.text !== entry.text);
+    list.unshift(entry);
+    localStorage.setItem(`ht:said:${boardId}`, JSON.stringify(list.slice(0, 20)));
+  }, undefined);
+}
