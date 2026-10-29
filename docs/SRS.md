@@ -174,6 +174,18 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | FR-704 | `LLM_MODE=auto|mock|live`. With no Anthropic key, the scripted planner and template labels are used | P0 | Full flow works with no keys |
 | FR-705 | A **Qloo check script** (`npm run qloo:check`) runs the 5 hour-0 checks and prints a capability report | P0 | It prints pass or fail per endpoint plus India coverage |
 
+### 3.8 Child mode and the two boards (FR-8xx, added v1.1)
+| ID | Requirement | Pri | Acceptance criteria |
+|---|---|---|---|
+| FR-801 | **Child lock**: "Give to <name>" opens a full-screen board with every menu hidden. The browser back button is blocked, and a refresh reopens it locked | P0 | A child can't reach parent tools or other pages |
+| FR-802 | **Parent exit**: press and hold the lock for 2 seconds. A quick tap does nothing | P0 | Tested: a tap stays locked; a 2 s hold unlocks |
+| FR-803 | **"For me" smart board**: one screen of predicted tiles, learned on the device from the tap log. Signals: what follows the last word (word pairs), time of day, frequency this week, cold-start hints ("go" → places), and taste score. Category mix enforced | P0 | After "I want", the child's usual snacks and shows come first (unit test) |
+| FR-804 | **"Said before"**: whole past sentences, repeatable in one tap | P0 | Visible on the smart board after speaking |
+| FR-805 | **"All words" classic board**: fixed folders, big Back button, nothing moves | P0 | Folder → tiles → Back works on a phone |
+| FR-806 | Core words keep the same place on both boards (motor planning). The smart board shows the 7 most-used core words plus "help" on phones | P0 | Core row is identical across visits |
+| FR-807 | **Natural sentences**: "I + want + Parle-G" speaks "मुझे पारले-जी चाहिए" (grammatical, not word-by-word) | P0 | Verified in the landing demo |
+| FR-808 | The parent view shows a live preview of exactly what the child sees, plus settings (which board, tile size M/L/XL, labels, speak-on-tap) | P0 | Settings apply to both the preview and child mode |
+
 ---
 
 ## 4. Non-functional requirements

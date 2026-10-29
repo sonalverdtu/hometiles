@@ -5,8 +5,8 @@ import { PERSONAS } from "@/lib/personas";
 import { setPendingProfile } from "@/lib/client/store";
 
 const CARDS = [
-  { key: "aarav", flag: "🇮🇳", title: "Try Aarav", sub: "9 · Rajouri Garden, Delhi · Hindi + English", loves: "Chhota Bheem, Minecraft, Arijit Singh, Parle-G" },
-  { key: "sofia", flag: "🇲🇽", title: "Try Sofía", sub: "12 · Boyle Heights, LA · Spanish + English", loves: "Encanto, Karol G, Roblox, Takis" },
+  { key: "aarav", flag: "👦🏽", title: "Try Aarav", sub: "9 · Rajouri Garden, Delhi · Hindi + English", loves: "Chhota Bheem, Minecraft, Arijit Singh, Parle-G" },
+  { key: "sofia", flag: "👧🏽", title: "Try Sofía", sub: "12 · Boyle Heights, LA · Spanish + English", loves: "Encanto, Karol G, Roblox, Takis" },
 ] as const;
 
 export function PersonaButtons() {

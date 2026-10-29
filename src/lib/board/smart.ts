@@ -1,0 +1,122 @@
+// Smart board predictions, computed on the device from the tap log (nothing leaves the browser).
+// Signals: what usually comes next after the last word (learned word pairs), what this child uses at
+// this time of day, what they use most this week, and simple word→category hints for a cold start.
+
+import type { Board, Category, TapEvent, Tile } from "./types";
+
+export interface Prediction {
+  tile: Tile;
+  score: number;
+  why: string;
+}
+
+const SESSION_GAP_MS = 45_000;
+
+/** Splits the tap log into "utterances": taps less than 45 s apart belong together. */
+export function sessions(taps: TapEvent[]): string[][] {
+  const out: string[][] = [];
+  let cur: string[] = [];
+  let last = 0;
+  for (const t of [...taps].sort((a, b) => a.ts - b.ts)) {
+    if (cur.length && t.ts - last > SESSION_GAP_MS) {
+      out.push(cur);
+      cur = [];
+    }
+    cur.push(t.tileId);
+    last = t.ts;
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+/** Counts of "after tile A, the child tapped tile B". */
+export function transitions(taps: TapEvent[]): Map<string, Map<string, number>> {
+  const m = new Map<string, Map<string, number>>();
+  for (const s of sessions(taps)) {
+    for (let i = 1; i < s.length; i++) {
+      const row = m.get(s[i - 1]) ?? new Map<string, number>();
+      row.set(s[i], (row.get(s[i]) ?? 0) + 1);
+      m.set(s[i - 1], row);
+    }
+  }
+  return m;
+}
+
+// Cold-start hints: after a core word, which folders usually follow.
+const AFTER_CORE: Record<string, Category[]> = {
+  "core-want": ["food", "favourites", "places"],
+  "core-eat": ["food"],
+  "core-go": ["places"],
+  "core-play": ["favourites"],
+  "core-like": ["favourites", "food", "together"],
+  "core-more": ["food", "favourites"],
+  "core-i": ["food", "places", "favourites"],
+};
+
+function timeOfDayCategories(hour: number): { cats: Category[]; label: string } {
+  if (hour >= 6 && hour < 10) return { cats: ["food", "people"], label: "morning" };
+  if (hour >= 10 && hour < 16) return { cats: ["favourites", "places", "fun"], label: "daytime" };
+  if (hour >= 16 && hour < 21) return { cats: ["favourites", "together", "places", "food"], label: "evening" };
+  return { cats: ["people", "favourites"], label: "night" };
+}
+
+const sameHourBand = (a: number, b: number) => Math.abs(a - b) <= 1 || Math.abs(a - b) >= 23;
+
+export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12): Prediction[] {
+  // "help" already sits next to the core words, so it never needs predicting.
+  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help");
+  const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
+  const nextTotal = next ? [...next.values()].reduce((s, n) => s + n, 0) : 0;
+  const weekAgo = now.getTime() - 7 * 86400000;
+  const hour = now.getHours();
+  const freq = new Map<string, number>();
+  const atHour = new Map<string, number>();
+  for (const t of taps) {
+    if (t.ts < weekAgo) continue;
+    freq.set(t.tileId, (freq.get(t.tileId) ?? 0) + 1);
+    if (sameHourBand(new Date(t.ts).getHours(), hour)) atHour.set(t.tileId, (atHour.get(t.tileId) ?? 0) + 1);
+  }
+  const maxFreq = Math.max(1, ...freq.values());
+  const maxHour = Math.max(1, ...atHour.values());
+  const hint = lastTileId ? AFTER_CORE[lastTileId] : undefined;
+  const tod = timeOfDayCategories(hour);
+  const lastName = lastTileId ? board.tiles[lastTileId]?.label.en : undefined;
+
+  const scored = pool.map((tile) => {
+    const parts: { v: number; why: string }[] = [];
+    const n = next?.get(tile.id) ?? 0;
+    if (n > 0) parts.push({ v: 3 * (n / nextTotal) + 1, why: `often comes after "${lastName}"` });
+    if (hint?.includes(tile.category)) parts.push({ v: 1.2 - hint.indexOf(tile.category) * 0.2, why: `fits after "${lastName}"` });
+    const h = atHour.get(tile.id) ?? 0;
+    if (h > 0) parts.push({ v: 1.5 * (h / maxHour), why: `used a lot around this time` });
+    else if (tod.cats.includes(tile.category)) parts.push({ v: 0.35, why: `good for the ${tod.label}` });
+    const f = freq.get(tile.id) ?? 0;
+    if (f > 0) parts.push({ v: 1.0 * (f / maxFreq), why: `a favourite this week` });
+    // Prior: the child's own taste matters most on a cold start; safety words only surface from real use.
+    const prior = tile.kind === "rotating" ? (tile.score ?? 0.5) * 0.8 : tile.kind === "people" ? 0.25 : 0.05;
+    parts.push({ v: prior, why: tile.kind === "rotating" ? "matches their taste" : "always handy" });
+    if (tile.id === lastTileId) parts.push({ v: -5, why: "" });
+    const score = parts.reduce((s, p) => s + p.v, 0);
+    const why = [...parts].sort((a, b) => b.v - a.v)[0]?.why ?? "";
+    return { tile, score: Math.round(score * 1000) / 1000, why };
+  });
+  // Greedy pick with a small penalty per repeat category, so one screen mixes food, shows, places and people.
+  const remaining = scored.sort((a, b) => b.score - a.score || a.tile.id.localeCompare(b.tile.id));
+  const picked: Prediction[] = [];
+  const perCat = new Map<string, number>();
+  while (picked.length < take && remaining.length) {
+    let best = 0;
+    let bestVal = -Infinity;
+    remaining.forEach((p, i) => {
+      const v = p.score - 0.35 * (perCat.get(p.tile.category) ?? 0);
+      if (v > bestVal) {
+        bestVal = v;
+        best = i;
+      }
+    });
+    const [p] = remaining.splice(best, 1);
+    picked.push(p);
+    perCat.set(p.tile.category, (perCat.get(p.tile.category) ?? 0) + 1);
+  }
+  return picked;
+}
