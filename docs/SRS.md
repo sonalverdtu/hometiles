@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Version | 1.0 (hackathon build) |
-| Date | 2026-10-29 |
+| Version | 1.2 (hackathon build) |
+| Date | 2026-10-30 |
 | Event | Qloo Agentic Hackathon (submissions close Oct 30, 2026, 11:45 pm ET) |
 | Status | Approved for build |
 
@@ -31,7 +31,7 @@ Verified evidence (see `../../qloo-ideation-report.md` §12):
 **In scope (hackathon build):**
 - Intake.
 - Agentic board generation grounded in Qloo.
-- A tap-to-speak board player (bilingual).
+- A tap-to-speak board player in English (the default), Hindi or Spanish, with an optional second language.
 - Explanations for every tile.
 - A "Without Qloo" comparison.
 - On-device tap logging with a weekly refresh that needs parent approval.
@@ -84,7 +84,7 @@ Verified evidence (see `../../qloo-ideation-report.md` §12):
 - **Server:** Next.js 16 on Vercel (Node runtime) with serverless API routes.
 - **External services:**
   - Qloo hackathon API (`https://hackathon.api.qloo.com`)
-  - Anthropic Claude API
+  - An LLM API: Google Gemini or Anthropic Claude (Claude is used when both keys are set)
   - ARASAAC pictogram API
   - The browser's Web Speech API (on the device)
 
@@ -97,9 +97,9 @@ Verified evidence (see `../../qloo-ideation-report.md` §12):
 - C6: Code is MIT. ARASAAC pictograms are CC BY-NC-SA, fetched at runtime, never committed, and attributed in the UI.
 
 ### 2.4 Assumptions and dependencies
-- A1: Qloo `/search` resolves common entities. India coverage is **unverified**; the hour-0 checks confirm it.
+- A1: Qloo `/search` resolves common entities. India coverage was checked with `qloo:check` and live demo boards: good for shows, music and places, thin for local snack brands (see FR-210).
 - A2: `urn:demographics`, `urn:heatmap`, `/v2/analysis/compare` and `/v2/trending` may or may not be enabled for hackathon keys. Each has a fallback (§3.7).
-- A3: The Web Speech API has Hindi (`hi-IN`) voices on most Android and Chrome devices. If none exist, the board falls back to English or to text only.
+- A3: The Web Speech API has Hindi (`hi-IN`) voices on most Android and Chrome devices. If a device has no voice for the board's language, it says the tile's English text with an English voice.
 
 ---
 
@@ -110,23 +110,26 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 ### 3.1 Intake (FR-1xx)
 | ID | Requirement | Pri | Acceptance criteria |
 |---|---|---|---|
-| FR-101 | Create a profile: display name, age band (Qloo bands: `24_and_younger`, `25_to_29` … `55_and_older`, plus a child flag), city or neighbourhood, optional home point (lat/lon), primary and secondary language (en, hi, es) | P0 | The form validates and the profile is saved on the device |
+| FR-101 | Create a profile: display name, age (mapped to a Qloo age band, `24_and_younger` … `55_and_older`, and an age group: under 8, 8–12, teen 13–17, adult), city or neighbourhood, optional home point (lat/lon), primary language (English by default; en, hi, es) and an optional second language | P0 | The form validates and the profile is saved on the device |
 | FR-102 | Enter 3–8 "loves" (shows, games, artists, foods/places, brands). Each is resolved to a Qloo entity via `/search` with autocomplete | P0 | Each love shows a match (name, type, image) or "not found, keep as free text" |
 | FR-103 | Add family members (name, relation) and, optionally, a family member's loves (for FR-503) | P1 | People tiles are created and locked |
-| FR-104 | One-click **demo personas** (e.g. "Aarav, 9, Delhi" and "Sofía, 12, Los Angeles") so judges can try it instantly | P0 | One click fills the intake and generates a board |
+| FR-104 | One-click **demo personas**: Leo (8, Camden, London, English) first, then Aarav (Delhi, Hindi + English) and Sofía (Boyle Heights, Los Angeles, Spanish + English), so judges can try it instantly | P0 | One click fills the intake and generates a board |
+| FR-105 | **Temperament** (optional): "What is <name> like?", up to 2 of energetic, calm, shy, curious, sporty, creative, funny. Each maps to Qloo descriptor tags checked against live Qloo. Used for TV shows and films only (`match_temperament`) | P1 | Temperament picks carry a "temperament" reason naming the matched Qloo tags; with no temperament the step is skipped (unit test) |
 
 ### 3.2 Agentic board generation (FR-2xx)
 | ID | Requirement | Pri | Acceptance criteria |
 |---|---|---|---|
-| FR-201 | A Claude agent orchestrates Qloo tools to build the board. In LLM mode it decides which tools to call; a deterministic scripted planner is the fallback | P0 | The board is produced in both modes. The trace shows the tool calls |
-| FR-202 | **Personal expansion:** `/v2/insights` per type (tv_show, video_game, artist, movie, brand) with `signal.interests.entities=<loves>` and `signal.demographics.age=<band>` | P0 | At least 8 personal candidates with affinity scores |
-| FR-203 | **Local places:** `filter.type=urn:entity:place` near home (`filter.location` + radius, or the city query) with taste signals | P0 | At least 4 place tiles with distance and reason |
-| FR-204 | **Local brands and snacks:** `urn:entity:brand` with the location signal | P0 | At least 3 local brand tiles |
+| FR-201 | An LLM agent (Gemini function calling or the Claude tool runner) orchestrates Qloo tools to build the board. In LLM mode it decides which tools to call; a deterministic scripted planner fills any gaps and is the fallback. The agent's brief holds no names | P0 | The board is produced in both modes. The trace shows the tool calls |
+| FR-202 | **Personal expansion:** `/v2/insights` per type (tv_show, videogame, artist, movie) with `signal.interests.entities=<loves>` and `signal.demographics.age=<band>`. If a parent has favourite singers, at most 2 extra music picks blended from both, scored below the child's own | P0 | At least 8 personal candidates with affinity scores |
+| FR-203 | **Local places:** `filter.type=urn:entity:place` near home (`filter.location` + radius, or the city query) with taste signals. For under-13s, a separate query for parks, playgrounds and zoos near home, scored mostly on closeness. Hotels and lodging are dropped; a chain keeps its nearest branch | P0 | At least 4 place tiles with distance and reason |
+| FR-204 | **Local brands and snacks:** `urn:entity:brand` filtered to food and beverage, with the location signal | P0 | At least 3 local brand tiles |
 | FR-205 | **Ranking and layout:** score = personal affinity, local affinity, age fit and diversity. Fill rotating slots by category quotas. Core, safety and people tiles are fixed | P0 | Deterministic for the same inputs. No duplicates. Quotas respected |
-| FR-206 | **Bilingual labels and phrases:** an LLM writes short tile labels and spoken phrases in both languages (Devanagari for Hindi), "tell" phrases ("Chhota Bheem is my favourite!") and banter lines ("Bheem would beat you!") | P0 | Each tile has both labels. Mock mode uses templates and a dictionary |
+| FR-206 | **Labels and phrases:** an LLM writes short tile labels and spoken phrases in the primary language, and in the second language if there is one (Devanagari for Hindi), plus "tell" phrases ("Chhota Bheem is my favourite!"). Banter lines ("Bet Bluey would beat you!") come from templates | P0 | Each tile has a label in every board language. An empty LLM label falls back to the template. Mock mode uses templates and a dictionary |
 | FR-207 | **Pictures:** an ARASAAC pictogram for generic concepts, the Qloo entity image for named entities, and an emoji or initial as the fallback | P0 | Every tile renders an image or a fallback |
 | FR-208 | **Explainability:** every Qloo-sourced tile stores its reasons (personal, local, age, shared, trending) with values and source call IDs. Live calls use `feature.explainability=true` | P0 | The "Why this tile?" popover shows its reasons and Qloo numbers |
-| FR-209 | **Progress streaming:** generation streams agent steps to the UI (NDJSON) | P1 | The user sees "Finding places near Rajouri Garden…" as it happens |
+| FR-209 | **Progress streaming:** generation streams agent steps to the UI (NDJSON) | P1 | The user sees "Mapping where their kind of taste lives near home…" as it happens. If the stream closes without a board, the page shows an error |
+| FR-210 | **The LLM proposes, Qloo verifies:** the LLM lists 8 local snack brands for the city; each is looked up with `/search` and kept only if Qloo finds it, it has a Qloo food tag and it passes FR-211 | P1 | Unfound names are dropped and listed in the board notes. Off with no LLM key |
+| FR-211 | **Age-appropriate content:** for every minor (under 8, 8–12, teen), screen each Qloo result on its name, its category/genre/product_category tags (never "offerings" tags), and its content rating per age group. Games are rated in our code, because Qloo ignores `filter.content_rating` for videogames. Energy drinks, alcohol, tobacco, coffee chains and supplements are excluded for minors; explicit rap styles for under-13s, and under-13s' shows and films need a kids or family genre tag (TV-PG alone let adult dramas through); hotels and lodging for everyone | P0 | Unit tests for the age rules; a mock pipeline test finds no energy drinks or adult places on any demo child's board |
 
 ### 3.3 Board player (FR-3xx)
 | ID | Requirement | Pri | Acceptance criteria |
@@ -141,8 +144,8 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 ### 3.4 Learning and refresh (FR-4xx)
 | ID | Requirement | Pri | Acceptance criteria |
 |---|---|---|---|
-| FR-401 | **Tap logging on the device:** tile ID, timestamp. Never leaves the device except as aggregated counts per entity ID | P0 | Logs are in local storage; the network tab shows no sentences sent |
-| FR-402 | **Weekly refresh:** send the top-tapped entity IDs (weighted) and the unused rotating tiles; the agent returns suggestions (add, replace, move) with reasons | P0 | Suggestions list shows "add X, replace Y, because…" |
+| FR-401 | **Tap logging on the device:** tile ID, timestamp. Never leaves the device except as aggregated counts per tile. Taps in the parent's preview are not logged | P0 | Logs are in local storage; the network tab shows no sentences sent |
+| FR-402 | **Weekly refresh:** send an anonymous profile (no names, no family), the rotating tiles and their tap counts. The 4 most-tapped entities seed new candidates, each keeping its real type, and the server returns suggestions (add, replace, move) with reasons. No taps means no suggestions | P0 | Suggestions list shows "add X, replace Y, because…" |
 | FR-403 | **Parent approval:** suggestions apply only after "Approve" (all or per item) | P0 | Nothing changes without approval |
 | FR-404 | **Safety rules:** never auto-remove core, safety, people or locked tiles. Never move fixed tiles. An unused tile gets moved once before it is removed | P0 | Unit tests enforce these rules |
 | FR-405 | **"Simulate a week"** demo button: generates a realistic tap log, then runs the refresh | P0 | Judges see the refresh in about 10 seconds |
@@ -153,7 +156,7 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | FR-501 | **Who Loves This?**: for each candidate entity, its demographic skew routes it to a conversation folder ("With cousins" if under-25s skew high; "With Nani/Dadu" if 55+ skews high), and age-mismatched picks are flagged | P1 | `filter.type=urn:demographics&signal.interests.entities=<id>` |
 | FR-502 | **My Places via heatmap:** a heatmap of the person's taste around home; pick the hot cells near home; search places inside those cells; show a mini map | P1 | `urn:heatmap` → `urn:entity:place` with `filter.location.geohash` |
 | FR-503 | **Talk Together:** compare the person's loves with a family member's loves; shared entities and genres become "Let's ___ together" tiles | P1 | `/v2/analysis/compare` with `a.` and `b.signal.interests.entities` |
-| FR-504 | **What's New:** a rotating tile slot for candidates that are rising (trending velocity), with a sparkline | P2 | `/v2/trending` + `bias.trends` |
+| FR-504 | **What's New:** a rotating tile slot for candidates that are rising (trending velocity), with a sparkline. Live mode reads a fixed window (`QLOO_TREND_START`..`QLOO_TREND_END`), because the hackathon data ends around Sep 2025. Talk together tiles are never moved here | P2 | `/v2/trending` + `bias.trends` |
 | FR-505 | **Interest drift:** compare last period's top-tapped entities with this period's; show a drift note to the parent | P2 | `/v2/analysis/compare` |
 
 ### 3.6 Transparency, comparison and export (FR-6xx)
@@ -171,20 +174,21 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | FR-701 | `QLOO_MODE=auto|mock|live`. `auto` runs live when `QLOO_API_KEY` is set and mock otherwise | P0 | `/api/status` reports the mode |
 | FR-702 | The mock Qloo client returns synthetic data in the **documented response shapes** for search, insights, demographics, heatmap, compare and trending | P0 | The same adapters parse mock and live data |
 | FR-703 | **Per-endpoint fallback:** if a live endpoint returns 403/404/empty, use its fallback (compare → per-person scoring maximin; heatmap → place radius search; trending → `bias.trends`; demographics → the age-signal bias only) and record it in the trace | P0 | No crash. The trace shows "fallback used" |
-| FR-704 | `LLM_MODE=auto|mock|live`. With no Anthropic key, the scripted planner and template labels are used | P0 | Full flow works with no keys |
-| FR-705 | A **Qloo check script** (`npm run qloo:check`) runs the 5 hour-0 checks and prints a capability report | P0 | It prints pass or fail per endpoint plus India coverage |
+| FR-704 | `LLM_MODE=auto|mock|live`. With no Gemini or Anthropic key, the scripted planner and template labels are used | P0 | Full flow works with no keys |
+| FR-705 | A **Qloo check script** (`npm run qloo:check`) runs the 5 hour-0 checks and prints a capability report. `scripts/live-check.ts <persona> [--llm]` builds a demo board against live Qloo and prints every folder | P0 | It prints pass or fail per endpoint plus India coverage |
 
 ### 3.8 Child mode and the two boards (FR-8xx, added v1.1)
 | ID | Requirement | Pri | Acceptance criteria |
 |---|---|---|---|
-| FR-801 | **Child lock**: "Give to <name>" opens a full-screen board with every menu hidden. The browser back button is blocked, and a refresh reopens it locked | P0 | A child can't reach parent tools or other pages |
+| FR-801 | **Child lock**: "Give to <name>" opens a full-screen board. While locked, every route leads back to `/board`, the site header and footer are removed, tiles block long-press menus, the browser back button is blocked, and a refresh reopens it locked. A lock with no board is cleared | P0 | A child can't reach parent tools or other pages, by link, typed URL or keyboard |
 | FR-802 | **Parent exit**: press and hold the lock for 2 seconds. A quick tap does nothing | P0 | Tested: a tap stays locked; a 2 s hold unlocks |
 | FR-803 | **"For me" smart board**: one screen of predicted tiles, learned on the device from the tap log. Signals: what follows the last word (word pairs), time of day, frequency this week, cold-start hints ("go" → places), and taste score. Category mix enforced | P0 | After "I want", the child's usual snacks and shows come first (unit test) |
 | FR-804 | **"Said before"**: whole past sentences, repeatable in one tap | P0 | Visible on the smart board after speaking |
 | FR-805 | **"All words" classic board**: fixed folders, big Back button, nothing moves | P0 | Folder → tiles → Back works on a phone |
 | FR-806 | Core words keep the same place on both boards (motor planning). The smart board shows the 7 most-used core words plus "help" on phones | P0 | Core row is identical across visits |
-| FR-807 | **Natural sentences**: "I + want + Parle-G" speaks "मुझे पारले-जी चाहिए" (grammatical, not word-by-word) | P0 | Verified in the landing demo |
+| FR-807 | **Natural sentences**: "I + want + Cadbury" speaks "I want Cadbury", and in Hindi "I + want + Parle-G" speaks "मुझे पारले-जी चाहिए" (grammatical, not word-by-word). Emoji are never read aloud. Hindi and Spanish safety and reaction words are gender-neutral | P0 | Unit tests; verified in the landing demo |
 | FR-808 | The parent view shows a live preview of exactly what the child sees, plus settings (which board, tile size M/L/XL, labels, speak-on-tap) | P0 | Settings apply to both the preview and child mode |
+| FR-809 | **Every safety and core word one tap away on "For me"**: under the core row, an "I need" drawer (the safety words other than "help", which is in the core row) and a "More words" drawer (the core words not in the row) | P0 | Each drawer opens with one tap and shows its words |
 
 ---
 
@@ -195,15 +199,15 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | NFR-01 | Performance | Board generation (live) | p50 ≤ 25 s, p95 ≤ 45 s. Mock ≤ 3 s. Progress shown within 1 s |
 | NFR-02 | Performance | Tap-to-speech latency | ≤ 150 ms. Tile render ≤ 16 ms per frame |
 | NFR-03 | Performance | Qloo calls run in parallel where independent; server cache (LRU, 24 h) keyed by normalised parameters | Repeat generation ≥ 3× faster |
-| NFR-04 | Reliability | Every external call has a timeout (Qloo 8 s, LLM 60 s), 1 retry on 5xx or network errors, and a fallback | No unhandled promise rejections. The demo never shows a blank screen |
+| NFR-04 | Reliability | Every external call has a timeout (Qloo 8 s, heatmap 25 s, LLM agent 60 s) and a fallback. Qloo 429 and 5xx are retried with back-off; a Qloo timeout is retried once, except for heatmaps | No unhandled promise rejections. The demo never shows a blank screen |
 | NFR-05 | Availability | The board works offline after generation | Manual check in airplane mode |
-| NFR-06 | Privacy | No names, ages or free text go to Qloo; only entity IDs, tag IDs, a city or point, and an age band. Tap logs stay on the device; refresh sends only aggregated counts per entity ID | Code review plus a network-tab check |
+| NFR-06 | Privacy | No names go to Qloo or to the LLM. Qloo gets only favourite and brand names to search, entity IDs, tag IDs, a city or point, and an age band. The LLM gets the city, age band and group, languages, temperament, favourite names and family relations. Names reach our server inside the profile but are not stored. Tap logs stay on the device; refresh sends an anonymous profile and counts per tile | Code review plus a network-tab check |
 | NFR-07 | Privacy | No real children's data in the demo. Demo personas are fictional | The README says so |
 | NFR-08 | Security | API keys live only in server env vars and are never shipped to the client or logged. The trace redacts headers | grep the build output for the key → none |
-| NFR-09 | Security | All API route inputs are validated with zod; payloads are capped (≤ 32 KB); simple per-IP rate limit (30 requests/min) | Invalid input → 400 |
+| NFR-09 | Security | All API route inputs are validated with zod; payloads are capped (≤ 32 KB); per-route, per-IP rate limits: board and baseline 4/min, refresh 6/min, others 30/min | Invalid input → 400; over the limit → 429 |
 | NFR-10 | Accessibility | WCAG 2.1 AA on operator screens. Board tiles ≥ 64×64 px at the default size (adjustable to 3, 4, 5 or 6 columns), contrast ≥ 4.5:1, visible focus, keyboard operable, no time limits, `aria-label` on tiles | Lighthouse a11y ≥ 95 |
 | NFR-11 | Accessibility | Respect `prefers-reduced-motion`; no flashing | Manual check |
-| NFR-12 | i18n | UI and tiles in en, hi and es. Hindi in Devanagari (Noto Sans Devanagari). Speech languages `en-IN`/`en-US`, `hi-IN`, `es-ES`/`es-MX` | The language toggle works |
+| NFR-12 | i18n | English by default; tiles and child-mode text in en, hi and es. All languages are defined once in `src/lib/i18n.ts`; adding one means an entry there plus its words in `board/vocab.ts` and `board/sentence.ts`. Hindi in Devanagari (Noto Sans Devanagari). Speech voices tried in order: `en-GB`/`en-US`/`en-IN`/`en-AU`, `hi-IN`, `es-MX`/`es-US`/`es-ES` | The language toggle works |
 | NFR-13 | Usability | A new user generates a demo board in ≤ 2 clicks and a custom board in ≤ 2 minutes | Hallway test |
 | NFR-14 | Responsiveness | Works from 360 px phones to desktop; no horizontal scroll | Manual check at 360, 768 and 1280 px |
 | NFR-15 | Maintainability | TypeScript strict; modules separated (qloo / agent / board / ui); no `any` in core libraries | `tsc --noEmit` passes |
@@ -212,6 +216,7 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | NFR-18 | Observability | Structured server logs per call (endpoint, ms, status), plus the trace panel in the UI | Visible in Vercel logs |
 | NFR-19 | Cost | Claude Opus 5.5 at `effort: low` for labels and `low`–`medium` for the agent; prompt caching on the stable system prompt and tools | Under $0.10 per board estimated |
 | NFR-20 | Safety | A board is someone's voice: refresh never removes safety, core or people tiles; it always needs parent approval | Unit tests (FR-404) |
+| NFR-21 | Safety | Nothing on a minor's board is adult content, whatever the taste graph returns (FR-211) | Unit and pipeline tests |
 
 ---
 
@@ -229,18 +234,18 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 └───────────────────────────────────────────┬───────────────────────────────────────────────┘
                                             │ HTTPS (JSON / NDJSON)
 ┌───────────────────────────── Next.js API routes (Vercel, Node) ───────────────────────────┐
-│  /api/status   /api/resolve   /api/board   /api/baseline   /api/refresh   /api/pictogram    │
+│  /api/status   /api/resolve   /api/board   /api/baseline   /api/refresh                     │
 │        │                          │                                                         │
 │        ▼                          ▼                                                         │
 │  ┌──────────────┐      ┌──────────────────────────────┐      ┌───────────────────────┐     │
 │  │ Qloo client  │◄─────│  Agent orchestrator          │─────►│ Board engine          │     │
-│  │ live | mock  │      │  LLM mode: Claude tool runner│      │ ranking · layout ·    │     │
+│  │ live | mock  │      │  LLM mode: Gemini or Claude  │      │ ranking · layout ·    │     │
 │  │ cache · trace│      │  Scripted mode: fixed plan   │      │ safety rules · OBF    │     │
 │  │ fallbacks    │      └──────────────┬───────────────┘      └───────────────────────┘     │
 │  └──────┬───────┘                     │                                                     │
 │         │                             ▼                                                     │
 │         │                  ┌──────────────────────┐   ┌──────────────────────┐              │
-│         │                  │ LLM client (Claude)  │   │ Pictogram service    │              │
+│         │                  │ LLM (Gemini/Claude)  │   │ Pictogram service    │              │
 │         │                  │ live | mock(template)│   │ ARASAAC + fallback   │              │
 │         │                  └──────────────────────┘   └──────────────────────┘              │
 └─────────┼───────────────────────────────────────────────────────────────────────────────────┘
@@ -255,7 +260,7 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | Framework | Next.js 16 (App Router) + TypeScript | One deployable unit for UI and API; keys stay server-side; Vercel hosting |
 | Styling | Tailwind CSS v4 | Fast, consistent, responsive |
 | Validation | zod | Validates API inputs and Claude tool schemas (`betaZodTool`) |
-| LLM | Claude Opus 5.5 (`claude-opus-5-5`) through `@anthropic-ai/sdk`: the tool runner for the agent, and `messages.parse` + `zodOutputFormat` for labels | Tool use and structured outputs |
+| LLM | Gemini 3.5 Flash through `@google/genai` (function calling for the agent, JSON output for labels), or Claude Opus 5.5 (`claude-opus-5-5`) through `@anthropic-ai/sdk` (the tool runner for the agent, `messages.parse` for labels). Claude is used when both keys are set | Tool use and structured outputs |
 | TTS | Web Speech API | Free, offline-capable, multilingual |
 | Pictograms | ARASAAC REST API | Free AAC symbol set, widely used in Spanish-speaking AAC |
 | Storage | localStorage (client); in-memory LRU (server cache) | Privacy-first; no database needed |
@@ -265,97 +270,110 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 ### 5.3 Module layout
 ```
 hometiles/
-├─ docs/                      SRS.md · PLAN.md
-├─ scripts/qloo-check.ts      hour-0 capability checks (FR-705)
+├─ docs/                      SRS.md · PLAN.md · ARCHITECTURE.md · DEVPOST.md
+├─ scripts/                   qloo-check.mts (FR-705) · smoke.mts · live-check.ts (demo board against live Qloo)
 ├─ src/
 │  ├─ app/
-│  │  ├─ page.tsx             landing + demo personas
+│  │  ├─ page.tsx             landing + demo personas (Leo first)
 │  │  ├─ create/page.tsx      intake wizard
-│  │  ├─ board/page.tsx       board player + panels (board loaded from local store)
-│  │  └─ api/{status,resolve,board,baseline,refresh,pictogram}/route.ts
+│  │  ├─ generate/page.tsx    streamed agent steps
+│  │  ├─ board/page.tsx       parent view + child mode (board loaded from local store)
+│  │  └─ api/{status,resolve,board,baseline,refresh}/route.ts
 │  ├─ lib/
 │  │  ├─ config.ts            env + modes
-│  │  ├─ qloo/                types · client (live) · mock · cache · trace · fallbacks · index (facade)
-│  │  ├─ llm/                 claude.ts (live) · templates.ts (mock)
-│  │  ├─ agent/               tools.ts · orchestrator.ts (LLM) · scripted.ts · steps.ts
-│  │  ├─ board/               types · core-vocab · ranking · layout · safety · refresh · obf · baseline
+│  │  ├─ i18n.ts              the language registry (en default, hi, es)
+│  │  ├─ http.ts              zod schemas, size cap, per-route rate limits
+│  │  ├─ qloo/                types · live · mock · mock-data · parse · cache · trace · index (facade)
+│  │  ├─ llm/                 claude.ts · gemini.ts · shared.ts · index.ts (router, local snack proposals)
+│  │  ├─ agent/               run.ts (LLM agent + scripted planner) · toolbox.ts (research tools, age screen) · baseline.ts
+│  │  ├─ board/               types · vocab · engine (ranking, layout, refresh) · smart · sentence · age · temperament · obf
+│  │  ├─ client/              store.ts (localStorage) · speech.ts (Web Speech API)
 │  │  ├─ pictograms.ts
 │  │  └─ personas.ts          fictional demo personas
-│  └─ components/             Tile · BoardGrid · SentenceBar · WhyPopover · TracePanel · CompareView · RefreshReview · IntakeForm
-└─ tests/                     ranking · safety · obf · qloo-adapters
+│  └─ components/             LockGuard · kid/ (KidBoard, BigTile, HoldToUnlock) · WhyDialog · TraceDialog · CompareDialog · RefreshDialog · landing/
+└─ tests/                     age · engine · pipeline · qloo · sentence · smart
 ```
 
 ### 5.4 Main sequence: generate a board
-1. The UI POSTs `/api/board` with the profile (loves already resolved to Qloo IDs where possible).
-2. The orchestrator starts and streams `step` events.
+1. The UI POSTs `/api/board` with the profile.
+2. Each love is resolved to a Qloo ID with `/search`, then the agent starts and streams `step` events.
 3. Tools run, in parallel where possible:
-   - `expand_personal_taste` (insights ×5 types)
-   - `audience_profile` (demographics per candidate)
-   - `find_local_places` (heatmap → places)
-   - `find_local_brands`
+   - `expand_personal_taste` (insights ×4 types, plus up to 2 picks from a parent's music)
+   - `match_temperament` (insights for TV and films with the temperament's descriptor tags)
+   - `find_local_brands` (food brands, personal and city-level; LLM-proposed local snacks checked in Qloo)
+   - `find_local_places` (heatmap → places, plus a radius search)
    - `shared_with_family` (compare)
+   - `audience_profile` (demographics per candidate)
    - `whats_rising` (trending)
-4. The board engine ranks the candidates and fills the layout (core, safety and people tiles are fixed; rotating slots are filled by quota).
-5. The LLM writes bilingual labels, tell phrases and banter (structured output). Mock mode uses templates.
-6. Pictogram lookup.
-7. Stream the final `board` event (board + trace). The UI saves it on the device.
+4. Every result for a minor passes the age screen (FR-211). Any tool the agent skipped is run by the scripted planner.
+5. The board engine ranks the candidates and fills the layout (core, safety and people tiles are fixed; rotating slots are filled by quota).
+6. The LLM writes tile labels and spoken phrases (structured output). Mock mode, or an empty LLM label, uses templates.
+7. Pictogram lookup for core and safety words.
+8. Stream the final `board` event (board + trace). The UI saves it on the device.
 
 ### 5.5 Refresh sequence
-1. The UI aggregates the tap log into `{entityId or tileId → count}`.
-2. POST `/api/refresh` with the board summary and counts.
-3. Top entities (weighted) → insights for new candidates. Unused rotating tiles → the move-or-replace policy. Drift → compare(previous, current).
+1. The UI aggregates the tap log into `{tileId → count}`.
+2. POST `/api/refresh` with an anonymous profile (no names, no family), the rotating tiles and the counts.
+3. No taps: return no suggestions. Otherwise the 4 most-tapped entities (each keeping its Qloo type) seed insights for new candidates, and unused rotating tiles go through the move-or-replace policy.
 4. Return suggestions with reasons.
 5. The parent approves. The UI applies the changes on the device.
 
-### 5.6 Agent tools (Claude tool runner, `betaZodTool`)
-| Tool | Input | Output (compact JSON) |
-|---|---|---|
-| `expand_personal_taste` | types[], take | candidates[{id, name, type, affinity, tags, image}] |
-| `find_local_places` | radius_m, use_heatmap | places[{id, name, distance_m, affinity, geohash, reasons}] |
-| `find_local_brands` | take | brands[...] |
-| `audience_profile` | entity_ids[] | {id → {age skew, top band}} |
-| `shared_with_family` | member | shared[{id, name, type, score_a, score_b}] |
-| `whats_rising` | entity_ids[] | rising[{id, velocity, sparkline}] |
-| `compose_board` | tile picks + labels + phrases + banter | validated board draft → engine |
+### 5.6 Agent tools (Gemini function calling or Claude tool runner)
+The same 7 tools, with zod schemas, go to whichever provider runs the agent. Each returns a short text summary to the LLM and adds candidates (with reasons) for the engine.
 
-The agent is told the board's slot budget and category quotas. It must call `compose_board` exactly once. Prompt steering and `strict: true` are used because forced `tool_choice` is unavailable on Opus 5.5.
+| Tool | Input | What it does |
+|---|---|---|
+| `expand_personal_taste` | types[] (tv_show, videogame, artist, movie) | Related favourites per type, with explainability; adds a parent's music nudge for artists |
+| `match_temperament` | take | TV shows and films with the temperament's Qloo tags (union); only when a temperament is given |
+| `find_local_brands` | take | Food brands that fit the child's taste and the city; LLM-proposed local snacks that Qloo confirms |
+| `find_local_places` | radius_m, use_heatmap | Heatmap hot-spots near home, then places inside them, plus a radius search |
+| `shared_with_family` | relation | Compare with that family member; the result names the relation, never the person |
+| `audience_profile` | max | Demographics for the top candidates, to route tiles to friends or elders |
+| `whats_rising` | — | Trend-biased picks and their trending series |
+
+The agent's brief holds the city, age band and group, temperament, languages, favourites and family relations. It never holds names. The agent has a 60 s budget; then the scripted planner fills any gaps.
 
 ---
 
 ## 6. Data model (TypeScript)
 ```ts
-type Lang = "en" | "hi" | "es";
+type Lang = "en" | "hi" | "es";            // from src/lib/i18n.ts
 type AgeBand = "24_and_younger" | "25_to_29" | "30_to_34" | "35_to_44" | "45_to_54" | "55_and_older";
-interface EntityRef { qlooId?: string; name: string; type: QlooType; image?: string }
-interface Profile { id; displayName; ageBand: AgeBand; isChild: boolean; city: string;
-  home?: { lat: number; lon: number }; primaryLang: Lang; secondaryLang?: Lang;
+type AgeGroup = "young" | "child" | "teen" | "adult";   // under 8 · 8–12 · 13–17 · 18+
+type Temperament = "energetic" | "calm" | "shy" | "curious" | "sporty" | "creative" | "funny";
+type Localized = Partial<Record<Lang, string>> & { en: string };
+interface EntityRef { qlooId?: string; name: string; type: QlooType; image?: string; nameLocal?: LocalNames }
+interface Profile { id; displayName; ageBand: AgeBand; isChild: boolean /* under 13 */; ageGroup?: AgeGroup;
+  temperament?: Temperament[] /* up to 2 */; city: string; home?: { lat: number; lon: number };
+  primaryLang: Lang; secondaryLang?: Lang;
   loves: EntityRef[]; family: { name: string; relation: string; loves: EntityRef[] }[] }
-interface Reason { kind: "personal"|"local"|"age"|"shared"|"trending"|"audience"|"core";
+interface Reason { kind: "personal"|"temperament"|"local"|"age"|"shared"|"trending"|"audience"|"core"|"safety"|"people"|"usage";
   text: string; value?: number; callId?: string }
 interface Tile { id; kind: "core"|"safety"|"people"|"rotating"; category: Category;
-  label: Record<Lang,string>; speak: Record<Lang,string>; image?: { url; source: "arasaac"|"qloo"|"emoji" };
-  emoji?: string; entity?: EntityRef & { affinity?: number }; locked: boolean;
-  partner?: "friends"|"elders"|"everyone"; reasons: Reason[]; score?: number }
-interface Folder { id; category: Category; title: Record<Lang,string>; tileIds: string[] }
-interface Board { id; profileId; version: number; createdAt; mode: { qloo: "live"|"mock"; llm: "live"|"mock" };
-  tiles: Record<string, Tile>; folders: Folder[]; home: string[]; trace: TraceEntry[] }
+  label: Localized; speak: Localized; emoji: string; image?: { url; source: "arasaac"|"qloo" };
+  entity?: EntityRef & { affinity?: number; distanceM?: number }; locked: boolean;
+  partner?: "friends"|"elders"|"everyone"; reasons: Reason[]; score?: number; moved?: boolean; trend?: number[] }
+interface Folder { id: Category; title: Localized; emoji: string; tileIds: string[] }
+interface Board { id; version: number; createdAt; profile: Profile;
+  mode: { qloo: "live"|"mock"; llm: "live"|"mock"; agent: "llm"|"scripted" };
+  tiles: Record<string, Tile>; folders: Folder[]; coreIds: string[]; trace: TraceEntry[];
+  heat?: { lat; lon; affinity }[]; notes: string[] }
 interface TraceEntry { id; tool; endpoint; params: Record<string,string>; status: number|"fallback"|"error";
   ms: number; count: number; top: string[]; mode: "live"|"mock"; note?: string }
 interface TapEvent { tileId: string; ts: number }
-interface Suggestion { action: "add"|"replace"|"move"; tile?: Tile; targetTileId?: string; reason: string }
+interface Suggestion { id; action: "add"|"replace"|"move"; folder: Category; tile?: Tile; targetTileId?: string; reason: string }
 ```
 
 ## 7. External interfaces
 
 ### 7.1 Internal REST API
-| Method & path | Body | Returns |
-|---|---|---|
-| GET `/api/status` | — | `{ qlooMode, llmMode, baseUrl }` |
-| POST `/api/resolve` | `{ query, types? }` | `{ results: EntityRef[] }` |
-| POST `/api/board` | `{ profile }` | NDJSON: `{type:"step",...}` …, then `{type:"board", board}` |
-| POST `/api/baseline` | `{ profile }` | `{ tiles: Tile[] }` (LLM-only, no Qloo) |
-| POST `/api/refresh` | `{ profile, board, counts }` | `{ suggestions, drift?, trace }` |
-| GET `/api/pictogram?q=&lang=` | — | `{ url? }` |
+| Method & path | Body | Returns | Rate limit (per IP) |
+|---|---|---|---|
+| GET `/api/status` | — | `{ qlooMode, llmMode, agentMode, provider, baseUrl, model }` | — |
+| POST `/api/resolve` | `{ query, types? }` | `{ results: EntityRef[] }` | 30/min |
+| POST `/api/board` | `{ profile }` | NDJSON: `{type:"step",...}`, `{type:"trace",...}` …, then `{type:"board", board}` | 4/min |
+| POST `/api/baseline` | `{ profile }` | `{ tiles, source }` (LLM-only, no Qloo) | 4/min |
+| POST `/api/refresh` | `{ profile (anonymous), tiles, counts }` | `{ suggestions, trace, seededBy }` | 6/min |
 
 ### 7.2 Qloo endpoints used
 `/search` · `/v2/insights` (entity types, `urn:demographics`, `urn:heatmap`) · `/v2/analysis/compare` · `/v2/trending` · `/v2/tags` (optional). Header `X-Api-Key`; base URL from `QLOO_BASE_URL`.
@@ -365,9 +383,16 @@ interface Suggestion { action: "add"|"replace"|"move"; tile?: Tile; targetTileId
 QLOO_API_KEY=            # empty → mock mode
 QLOO_BASE_URL=https://hackathon.api.qloo.com
 QLOO_MODE=auto           # auto | mock | live
-ANTHROPIC_API_KEY=       # empty → scripted agent + template labels
+QLOO_TREND_START=2025-06-01   # trending window in live mode (the hackathon data ends around Sep 2025)
+QLOO_TREND_END=2025-09-30
+GEMINI_API_KEY=          # or GOOGLE_API_KEY
+GEMINI_MODEL=gemini-3.5-flash
+ANTHROPIC_API_KEY=       # no LLM key at all → scripted agent + template labels
+LLM_PROVIDER=auto        # auto (Claude if its key is set, else Gemini) | anthropic | gemini
 LLM_MODE=auto            # auto | mock | live
 LLM_MODEL=claude-opus-5-5
+AGENT_MODE=auto          # auto | llm | scripted
+PICTOGRAMS=on            # off → no ARASAAC lookups
 ```
 
 ---
@@ -377,20 +402,21 @@ LLM_MODEL=claude-opus-5-5
 |---|---|---|
 | Qloo key arrives late | Can't demo live | Mock mode (C5), Discord request, one env switch |
 | Demographics or heatmap blocked on hackathon keys | Fewer advanced features | Fallbacks (FR-703); the trace shows them honestly |
-| Thin India coverage in Qloo | A weak Delhi demo | Second demo persona (Los Angeles, es/en); detect coverage with `qloo:check` |
+| Thin India coverage in Qloo | A weak Delhi demo | Leo (London) is the first demo child, with Los Angeles and Delhi as the others; detect coverage with `qloo:check` and `live-check.ts` |
+| Qloo returns adult content for a child (energy drinks, M-rated games, adult sitcoms rated TV-PG, all seen in testing) | An unsafe board | Our own age screen on every result (FR-211) |
 | LLM latency or cost | Slow demo | Effort `low`; parallel tools; cache; scripted fallback |
-| Hindi TTS voice missing on a device | Silent tiles | Fall back to English speech; label stays visible |
+| No voice for the board's language on a device | Silent tiles | Say the English text with an English voice; label stays visible |
 | Cboard import incompatibility | Export fails | Print board fallback; validate the OBF structure |
 | Judges say "an LLM could do this" | Lower idea score | The Without Qloo toggle plus trace evidence |
 
 ## 9. Acceptance and demo script (judges, 60 seconds)
-1. Landing → **"Try Aarav (Delhi)"**. Agent steps stream; the board appears.
-2. Tap "मुझे चाहिए" (I want) + a nearby chaat place tile. It speaks in Hindi.
+1. Landing → **"Try Leo (London)"**. Agent steps stream; the board appears.
+2. Tap "want" + a snack tile. It says "I want …". For Hindi, try Aarav (Delhi): "चाहिए" + a snack says "मुझे … चाहिए".
 3. Open **"Why this tile?"** to see the Qloo affinity, distance and source call.
 4. Toggle **Without Qloo**: the generic board vs ours, with the diff highlighted.
-5. **Talk Together** folder: tiles shared with Dadu (compare).
+5. **Talk Together** folder: tiles shared with Grandma (compare).
 6. **Simulate a week** → refresh suggestions → **Approve** → the board updates.
 7. **Export .obf** / **Print**.
 
 ## 10. Traceability
-FR-1xx → intake UI · FR-2xx → `lib/agent`, `lib/board` · FR-3xx → components · FR-4xx → `lib/board/refresh`, `safety` · FR-5xx → `lib/qloo` + agent tools · FR-6xx → panels and export · FR-7xx → `lib/qloo/index`, `scripts/qloo-check.ts` · NFRs → see the plan's verification checklist.
+FR-1xx → `app/create`, `lib/board/temperament` · FR-2xx → `lib/agent`, `lib/llm`, `lib/board/age` · FR-3xx → `components/kid`, `lib/board/sentence`, `lib/client/speech` · FR-4xx → `lib/board/engine` (`planRefresh`), `app/api/refresh` · FR-5xx → `lib/qloo` + agent tools · FR-6xx → dialogs and export · FR-7xx → `lib/qloo/index`, `scripts/qloo-check.mts`, `scripts/live-check.ts` · FR-8xx → `components/kid`, `components/LockGuard`, `lib/board/smart` · NFRs → see the plan's verification checklist.
