@@ -21,7 +21,8 @@ import {
   type KidSettings,
   type SaidEntry,
 } from "@/lib/client/store";
-import { KidBoard, utterance } from "@/components/kid/KidBoard";
+import { KidBoard } from "@/components/kid/KidBoard";
+import { composeSentence } from "@/lib/board/sentence";
 import { WhyDialog } from "@/components/WhyDialog";
 import { TraceDialog } from "@/components/TraceDialog";
 import { CompareDialog } from "@/components/CompareDialog";
@@ -188,7 +189,7 @@ export default function BoardPage() {
         seq.forEach((id, k) => taps.push({ tileId: id, ts: base.getTime() + k * 4000 + n++ }));
         if (d < 2 && seq.length > 1) {
           const tiles = seq.map(tile);
-          addSaid(board.id, { text: utterance(tiles, board.profile.primaryLang), tileIds: seq, ts: base.getTime() + 9000 });
+          addSaid(board.id, { text: composeSentence(tiles, board.profile.primaryLang), tileIds: seq, ts: base.getTime() + 9000 });
         }
       }
     }

@@ -6,7 +6,7 @@ import { useState } from "react";
 import type { Tile } from "@/lib/board/types";
 import { speak } from "@/lib/client/speech";
 import { BigTile } from "@/components/kid/BigTile";
-import { utterance } from "@/components/kid/KidBoard";
+import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 
 const t = (id: string, kind: Tile["kind"], category: Tile["category"], emoji: string, en: string, hi: string, sayEn: string, sayHi: string): Tile => ({
   id,
@@ -21,10 +21,10 @@ const t = (id: string, kind: Tile["kind"], category: Tile["category"], emoji: st
 
 const CORE = [t("core-i", "core", "core", "🙋", "I", "मैं", "I", "मैं"), t("core-want", "core", "core", "🤲", "want", "चाहिए", "want", "चाहिए"), t("core-go", "core", "core", "🚶", "go", "चलो", "go", "चलो")];
 const NEXT = [
-  t("golgappe", "rotating", "places", "🥟", "Sharma Ji Chaat · 300 m", "शर्मा जी चाट", "I want to go to Sharma Ji Chaat", "मुझे शर्मा जी चाट जाना है"),
+  t("golgappe", "rotating", "places", "🥟", "Sharma Ji Chaat", "शर्मा जी चाट", "I want to go to Sharma Ji Chaat", "मुझे शर्मा जी चाट जाना है"),
   t("parleg", "rotating", "food", "🍪", "Parle-G", "पारले-जी", "I want Parle-G", "मुझे पारले-जी चाहिए"),
   t("bheem", "rotating", "favourites", "📺", "Chhota Bheem", "छोटा भीम", "Chhota Bheem is my favourite!", "छोटा भीम मेरा पसंदीदा है!"),
-  t("dadu", "rotating", "together", "🎵", "Rafi songs with Dadu", "दादू के साथ रफ़ी", "Let's listen to Rafi together, Dadu!", "दादू, चलो साथ में रफ़ी सुनते हैं!"),
+  t("dadu", "rotating", "together", "🎵", "Rafi songs", "रफ़ी के गाने", "Let's listen to Rafi together, Dadu!", "दादू, चलो साथ में रफ़ी सुनते हैं!"),
   t("bheem-joke", "rotating", "fun", "😂", "Bheem would beat you!", "भीम तुम्हें हरा देगा!", "Bheem would beat you!", "भीम तुम्हें हरा देगा!"),
   t("toilet", "safety", "safety", "🚽", "toilet", "टॉयलेट", "I need the toilet", "मुझे टॉयलेट जाना है"),
 ];
@@ -33,10 +33,10 @@ export function HeroDemo() {
   const [sentence, setSentence] = useState<Tile[]>([]);
   const [said, setSaid] = useState<string | null>(null);
   const tap = (tile: Tile) => {
-    speak(tile.speak.hi ?? tile.speak.en, "hi");
+    speak(tileSpeech(tile, "hi"), "hi");
     const next = [...sentence, tile].slice(-4);
     setSentence(next);
-    setSaid(utterance(next, "hi"));
+    setSaid(composeSentence(next, "hi"));
   };
   return (
     <div className="relative mx-auto w-full max-w-md">
