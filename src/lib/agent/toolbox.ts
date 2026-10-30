@@ -37,6 +37,8 @@ const KID_PLACE_TAGS = [
   "urn:tag:category:place:zoo",
   "urn:tag:children:place:good_for_kids",
 ];
+// Somewhere to run around: on live Qloo the kid-friendly filter alone returns almost only cafés and desserts.
+const OUTDOOR_TAGS = ["urn:tag:category:place:park", "urn:tag:category:place:playground", "urn:tag:category:place:zoo"];
 const NIGHTLIFE_TAGS = ["urn:tag:category:place:bar", "urn:tag:category:place:night_club", "urn:tag:category:place:lounge"];
 // Found by testing live Qloo for four children: energy drinks came back as "snacks" for 8–9-year-olds.
 const ENERGY_DRINK_TAGS = ["urn:tag:genre:brand:food_and_beverage:drinks:energy_drink"];
@@ -340,17 +342,22 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
       }
     }
   }
-  const radiusSearch = await ctx.qloo
-    .insights(
-      home
-        ? { type: "urn:entity:place", interests: ids, point: home, radiusM, age: ctx.profile.ageBand, explain: true, take: 15, ...safety }
-        : { type: "urn:entity:place", interests: ids, locationQuery: ctx.profile.city, radiusM, age: ctx.profile.ageBand, explain: true, take: 15, ...safety },
-      "find_local_places",
-    )
-    .catch(() => [] as QEntity[]);
+  const where = home ? { point: home } : { locationQuery: ctx.profile.city };
+  const [radiusSearch, outdoor] = await Promise.all([
+    ctx.qloo
+      .insights({ type: "urn:entity:place", interests: ids, ...where, radiusM, age: ctx.profile.ageBand, explain: true, take: 15, ...safety }, "find_local_places")
+      .catch(() => [] as QEntity[]),
+    ctx.profile.isChild
+      ? ctx.qloo
+          .insights({ type: "urn:entity:place", interests: ids, ...where, radiusM, age: ctx.profile.ageBand, take: 4, filterTags: OUTDOOR_TAGS, excludeTags: NIGHTLIFE_TAGS }, "find_local_places")
+          .catch(() => [] as QEntity[])
+      : Promise.resolve([] as QEntity[]),
+  ]);
+  // Parks and playgrounds are ranked on closeness, not taste affinity (every child can use the nearest park).
+  const outdoorIds = new Set(outdoor.map((e) => e.id));
   const byId = new Map<string, QEntity>();
   const seenNames = new Set<string>();
-  [...places, ...radiusSearch].forEach((e) => {
+  [...places, ...radiusSearch, ...outdoor].forEach((e) => {
     const prev = byId.get(e.id);
     byId.set(e.id, prev ? { ...prev, affinity: Math.max(prev.affinity ?? 0, e.affinity ?? 0), distanceM: prev.distanceM ?? e.distanceM } : e);
   });
@@ -365,8 +372,10 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
     const reasons: Reason[] = [personalReason(ctx, e)];
     if (dist !== undefined) reasons.push({ kind: "local", text: `${dist < 1000 ? `${dist} m` : `${(dist / 1000).toFixed(1)} km`} from home`, value: dist });
     if (heatUsed && places.some((p) => p.id === e.id)) reasons.push({ kind: "local", text: "Inside a taste hot-spot on Qloo's heatmap" });
+    if (outdoorIds.has(e.id)) reasons.push({ kind: "local", text: "A park or playground near home: somewhere to run around" });
     const local = dist !== undefined ? Math.max(0, 1 - dist / (radiusM * 1.2)) : 0.5;
-    upsert(ctx, { entity: { ...e, distanceM: dist }, category: "places", personal: e.affinity ?? 0.5, local, reasons });
+    const personal = outdoorIds.has(e.id) ? Math.max(e.affinity ?? 0, 0.75) : (e.affinity ?? 0.5);
+    upsert(ctx, { entity: { ...e, distanceM: dist }, category: "places", personal, local, ageFit: outdoorIds.has(e.id) && ctx.profile.isChild ? 1 : undefined, reasons });
   }
   return `Found ${byId.size} places near home${heatUsed ? " (via heatmap hot-spots)" : ""}: ${[...byId.values()].slice(0, 6).map((e) => e.name).join(", ")}`;
 }
