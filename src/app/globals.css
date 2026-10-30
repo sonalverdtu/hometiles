@@ -1,14 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #fffaf3;
+  color-scheme: light;
+
+  --bg: #fff8ef;
   --surface: #ffffff;
-  --ink: #1f2328;
-  --muted: #5b6470;
-  --line: #eadfce;
+  --surface-2: #fbf3e8;
+  --ink: #1d1b26;
+  --muted: #5d5a6b;
+  --line: #ecdfcd;
   --brand: #e2572b;
+  --brand-face: linear-gradient(180deg, #ec6233 0%, #c9431b 100%);
+  --brand-edge: #9a3112;
+  --brand-soft: #ffe9df;
   --brand-ink: #ffffff;
-  --accent: #1f7a6d;
+  --accent: #0f7b6c;
+  --accent-soft: #dcf3ee;
+  --grape: #6d4fe0;
+  --grape-soft: #ece7ff;
+  --sun: #ffc93c;
   --focus: #1d4ed8;
 
   --c-core: #fff1b3;
@@ -33,12 +43,29 @@
 
   --kid-bg: #f3efe8;
   --go: #15803d;
+
+  --shadow-sm: 0 1px 2px rgb(60 35 10 / 0.06), 0 2px 8px rgb(60 35 10 / 0.05);
+  --shadow-md: 0 14px 34px -14px rgb(60 35 10 / 0.28);
+  --shadow-lg: 0 40px 80px -28px rgb(60 35 10 / 0.4);
+  --ease-spring: cubic-bezier(0.3, 0.7, 0.4, 1.5);
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
   --font-sans: var(--font-latin), var(--font-deva), system-ui, sans-serif;
+  --font-display: var(--font-baloo), var(--font-latin), var(--font-deva), system-ui, sans-serif;
+}
+
+/* Lets the lock ring's conic-gradient angle animate. */
+@property --deg {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -47,61 +74,181 @@ body {
   font-family: var(--font-latin), var(--font-deva), system-ui, sans-serif;
 }
 
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-baloo), var(--font-latin), var(--font-deva), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
+/* Component classes live in the components layer, so Tailwind utilities (px-6, border-[…], shadow-[…]) can still override them. */
+@layer components {
+/* ---------- 3D pushable buttons ---------- */
+
 .btn {
+  --btn-face: var(--surface);
+  --btn-edge: #dccbb3;
+  --btn-ink: var(--ink);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 0.9rem;
+  border: 1.5px solid var(--btn-edge);
+  background: var(--btn-face);
+  color: var(--btn-ink);
+  padding: 0.55rem 0.95rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  box-shadow:
+    0 4px 0 var(--btn-edge),
+    0 10px 18px -10px rgb(60 35 10 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.5);
+  transform: translateY(0);
+  transition:
+    transform 0.14s var(--ease-spring),
+    box-shadow 0.14s ease,
+    filter 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+  box-shadow:
+    0 6px 0 var(--btn-edge),
+    0 14px 22px -10px rgb(60 35 10 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+.btn:active {
+  transform: translateY(4px);
+  transition-duration: 40ms;
+  box-shadow:
+    0 0 0 var(--btn-edge),
+    0 2px 4px -2px rgb(60 35 10 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.5);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+.btn-primary {
+  --btn-face: var(--brand-face);
+  --btn-edge: var(--brand-edge);
+  --btn-ink: var(--brand-ink);
+  border-color: #b43a15;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+}
+.btn-accent {
+  --btn-face: linear-gradient(180deg, #14917f 0%, #0d6f61 100%);
+  --btn-edge: #08473f;
+  --btn-ink: #fff;
+  border-color: #0b5c51;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+}
+.btn-dark {
+  --btn-face: linear-gradient(180deg, #34313f 0%, #1d1b26 100%);
+  --btn-edge: #000;
+  --btn-ink: #fff;
+  border-color: #000;
+}
+.btn-lg {
+  padding: 0.85rem 1.4rem;
+  font-size: 1.05rem;
+  border-radius: 1.1rem;
+}
+
+/* ---------- Surfaces, chips, inputs ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.chip {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--line);
+  border-radius: 999px;
+  border: 2px solid var(--line);
   background: var(--surface);
-  padding: 0.5rem 0.85rem;
-  font-weight: 600;
-  font-size: 0.875rem;
-  line-height: 1.2;
+  padding: 0.5rem 0.9rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 3px 0 var(--line);
+  transition:
+    transform 0.12s var(--ease-spring),
+    box-shadow 0.12s,
+    background 0.15s,
+    border-color 0.15s;
 }
-.btn:hover {
-  background: #fff4e8;
+.chip:hover {
+  transform: translateY(-1px);
 }
-.btn-primary {
-  background: var(--brand);
-  color: var(--brand-ink);
+.chip:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--line);
+}
+.chip[aria-checked="true"],
+.chip[aria-pressed="true"] {
   border-color: var(--brand);
-}
-.btn-primary:hover {
-  background: #c8471f;
+  background: var(--brand-soft);
+  box-shadow: 0 3px 0 var(--brand);
 }
 
-.tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  min-height: 6.5rem;
-  border-radius: 1rem;
-  border: 2px solid rgb(0 0 0 / 0.08);
-  padding: 0.5rem 0.4rem 0.6rem;
-  text-align: center;
-  transition: transform 0.08s ease;
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.06);
+.input {
+  width: 100%;
+  min-width: 0;
+  border-radius: 0.9rem;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
-.tile:active {
-  transform: scale(0.97);
+.input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgb(226 87 43 / 0.15);
 }
-@media (prefers-reduced-motion: reduce) {
-  .tile {
-    transition: none;
-  }
-  .tile:active {
-    transform: none;
-  }
+
+.glass {
+  background: rgb(255 248 239 / 0.72);
+  backdrop-filter: saturate(1.6) blur(14px);
+  -webkit-backdrop-filter: saturate(1.6) blur(14px);
 }
+
+.text-gradient {
+  background: linear-gradient(100deg, #e2572b 0%, #f08a24 45%, #6d4fe0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Soft colour blobs behind hero sections. */
+.blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(60px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ---------- Child board tiles (3D, pressable) ---------- */
 
 .kid-tile {
   position: relative;
@@ -111,20 +258,35 @@ body {
   justify-content: center;
   gap: 0.3rem;
   border-radius: 1.25rem;
-  border: 3px solid;
+  border: 2.5px solid var(--edge, rgb(0 0 0 / 0.12));
   padding: 0.6rem 0.4rem;
   text-align: center;
   color: var(--ink);
-  box-shadow: 0 3px 0 rgb(0 0 0 / 0.08);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  box-shadow:
+    0 5px 0 var(--edge, rgb(0 0 0 / 0.12)),
+    0 12px 18px -12px rgb(40 25 10 / 0.45),
+    inset 0 2px 0 rgb(255 255 255 / 0.7);
+  transform: translateY(0);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    filter 0.15s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-.kid-tile:active {
-  transform: translateY(2px) scale(0.98);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.08);
+.kid-tile:hover {
+  filter: brightness(1.03) saturate(1.05);
 }
+.kid-tile:active,
+.kid-tile.is-pressed {
+  transform: translateY(5px);
+  box-shadow:
+    0 0 0 var(--edge, rgb(0 0 0 / 0.12)),
+    0 3px 6px -4px rgb(40 25 10 / 0.4),
+    inset 0 2px 0 rgb(255 255 255 / 0.7);
+}
+
 .kid-action {
   display: flex;
   min-width: 3.1rem;
@@ -134,13 +296,24 @@ body {
   border-radius: 1rem;
   border: 2px solid var(--line);
   padding: 0.25rem 0.6rem;
+  box-shadow: 0 4px 0 var(--line);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
   touch-action: manipulation;
+}
+.kid-action:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 var(--line);
 }
 @media (min-width: 640px) {
   .kid-action {
     min-width: 4rem;
   }
 }
+
+/* ---------- Motion ---------- */
+
 @keyframes kidFade {
   from {
     opacity: 0;
@@ -162,15 +335,221 @@ body {
 .kid-tile-pop {
   animation: kidPop 0.4s ease;
 }
-@media (prefers-reduced-motion: reduce) {
-  .kid-fade,
-  .kid-tile-pop {
-    animation: none;
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
   }
-  .kid-tile {
-    transition: none;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
+.fade-up {
+  animation: fadeUp 0.6s var(--ease-spring) both;
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-4deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.06) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: popIn 0.5s var(--ease-spring) both;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(calc(var(--r, 0deg) * -1));
+  }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes wave {
+  from {
+    opacity: 0.7;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+.sound-wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 3px solid currentColor;
+  animation: wave 1.2s ease-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, #f1e7d9 25%, #fbf5ec 50%, #f1e7d9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+
+@keyframes lockFill {
+  0%,
+  15% {
+    --deg: 0deg;
+  }
+  80%,
+  100% {
+    --deg: 360deg;
+  }
+}
+@keyframes grow {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes tapRing {
+  from {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+}
+.modal-backdrop {
+  animation: backdropIn 0.2s ease both;
+}
+.modal-panel {
+  animation: sheetUp 0.32s var(--ease-spring) both;
+}
+@media (min-width: 640px) {
+  .modal-panel {
+    animation-name: scaleIn;
+  }
+}
+
+/* Sections rise in as they scroll into view (pure CSS, only where supported). */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+/* 3D phone used on the landing page and the parent preview. */
+.phone {
+  position: relative;
+  border-radius: 2.6rem;
+  padding: 0.6rem;
+  background: linear-gradient(145deg, #3b3846 0%, #15141b 55%, #2c2a35 100%);
+  box-shadow:
+    inset 0 0 0 2px #4a4757,
+    inset 0 2px 1px rgb(255 255 255 / 0.25),
+    var(--shadow-lg);
+}
+.phone-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: var(--kid-bg);
+}
+.tilt-3d {
+  transform: perspective(1600px) rotateY(-16deg) rotateX(7deg) rotateZ(1.5deg);
+  transition: transform 0.7s var(--ease-spring);
+}
+.tilt-3d:hover {
+  transform: perspective(1600px) rotateY(-6deg) rotateX(3deg) rotateZ(0.5deg);
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Print ---------- */
 
 .print-only {
   display: none;
@@ -185,7 +564,6 @@ body {
   body {
     background: white;
   }
-  .tile,
   .kid-tile {
     break-inside: avoid;
     min-height: 5rem;
