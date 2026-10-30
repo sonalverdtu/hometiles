@@ -56,8 +56,8 @@ export const LONDON_CENTER = { lat: 51.539, lon: -0.1426 };
 /** The mock's demo cities. A location query or point is matched to the nearest one. */
 export const CITIES = {
   delhi: { center: DELHI_CENTER, culture: "in" as Culture, match: /delhi|rajouri|india|noida|gurgaon/ },
-  la: { center: LA_CENTER, culture: "latam" as Culture, match: /los angeles|la|boyle|california/ },
-  london: { center: LONDON_CENTER, culture: "uk" as Culture, match: /london|camden|england|uk|britain/ },
+  la: { center: LA_CENTER, culture: "latam" as Culture, match: /los angeles|\bla\b|boyle|california/ },
+  london: { center: LONDON_CENTER, culture: "uk" as Culture, match: /london|camden|england|\buk\b|britain/ },
 };
 export type CityId = keyof typeof CITIES;
 

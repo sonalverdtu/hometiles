@@ -3,23 +3,30 @@
 import { z } from "zod";
 import { AGE_BANDS, QLOO_TYPES } from "./qloo/types";
 import { LANG_CODES, type Lang } from "./i18n";
+import { AGE_GROUPS } from "./board/age";
 
 const MAX_BODY = 32 * 1024;
 const WINDOW_MS = 60_000;
-const LIMIT = 30;
 const hits = new Map<string, number[]>();
 
-export function rateLimited(req: Request): boolean {
+/** Per route and IP: building a board costs dozens of Qloo and LLM calls, so it gets a much lower limit than search. */
+export function rateLimited(req: Request, bucket = "api", limit = 30): boolean {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const key = `${bucket}:${ip}`;
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
   recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > LIMIT;
+  hits.set(key, recent);
+  if (hits.size > 5000) for (const [k, v] of hits) if (now - v[v.length - 1] > WINDOW_MS) hits.delete(k);
+  return recent.length > limit;
 }
 
-export async function readJson<T>(req: Request, schema: z.ZodType<T>): Promise<{ ok: true; data: T } | { ok: false; res: Response }> {
-  if (rateLimited(req)) return { ok: false, res: Response.json({ error: "Too many requests, slow down a little." }, { status: 429 }) };
+export async function readJson<T>(
+  req: Request,
+  schema: z.ZodType<T>,
+  rate: { bucket: string; limit: number } = { bucket: "api", limit: 30 },
+): Promise<{ ok: true; data: T } | { ok: false; res: Response }> {
+  if (rateLimited(req, rate.bucket, rate.limit)) return { ok: false, res: Response.json({ error: "Too many requests, slow down a little." }, { status: 429 }) };
   const text = await req.text();
   if (text.length > MAX_BODY) return { ok: false, res: Response.json({ error: "Request too large" }, { status: 413 }) };
   let raw: unknown;
@@ -47,6 +54,7 @@ export const ProfileSchema = z.object({
   displayName: z.string().min(1).max(40),
   ageBand: z.enum(AGE_BANDS),
   isChild: z.boolean(),
+  ageGroup: z.enum(AGE_GROUPS).optional(),
   city: z.string().min(2).max(120),
   home: z.object({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180) }).optional(),
   primaryLang: Lang,

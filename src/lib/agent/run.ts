@@ -4,8 +4,9 @@
 import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { getConfig } from "../config";
-import { Qloo } from "../qloo";
+import { Qloo, type QlooType } from "../qloo";
 import { Tracer, type TraceEntry } from "../qloo/trace";
+import { ageGroupOf } from "../board/age";
 import { arasaacUrl } from "../pictograms";
 import { claude, FALLBACK_BETA } from "../llm/claude";
 import { writeTileText } from "../llm";
@@ -87,6 +88,7 @@ async function agentic(ctx: AgentCtx) {
     city: p.city,
     age_band: p.ageBand,
     is_child: p.isChild,
+    age_group: ageGroupOf(p),
     languages: [p.primaryLang, p.secondaryLang].filter(Boolean),
     favourites: p.loves.map((l) => `${l.name} (${l.type.split(":")[2]})${l.qlooId ? "" : " [unresolved]"}`),
     family: p.family.map((f) => ({ relation: f.relation, has_favourites: f.loves.some((l) => l.qlooId) })),
@@ -150,13 +152,18 @@ async function tileText(profile: Profile, picks: Candidate[], hooks: RunHooks): 
     );
     if (!parsed) return undefined;
     const out: Record<string, TileText> = {};
+    const nameOf = new Map(picks.map((c) => [c.entity.id, c.entity.name]));
     for (const t of parsed.tiles) {
-      const label = { en: primary === "en" ? t.label_primary : secondary === "en" ? t.label_secondary : t.label_primary } as Localized;
-      const speak = { en: primary === "en" ? t.speak_primary : secondary === "en" ? t.speak_secondary : t.speak_primary } as Localized;
+      // An empty label would make a blank, silent tile: keep the template text for that tile instead.
+      if (!t.label_primary.trim() || !t.speak_primary.trim() || !nameOf.has(t.id)) continue;
+      // label.en is the fallback every screen and voice can use: when neither language is English, it is Qloo's own name.
+      const name = nameOf.get(t.id)!;
+      const label = { en: primary === "en" ? t.label_primary : secondary === "en" ? t.label_secondary : name } as Localized;
+      const speak = { en: primary === "en" ? t.speak_primary : secondary === "en" ? t.speak_secondary : name } as Localized;
       label[primary] = t.label_primary;
       speak[primary] = t.speak_primary;
-      label[secondary] = t.label_secondary;
-      speak[secondary] = t.speak_secondary;
+      if (t.label_secondary.trim()) label[secondary] = t.label_secondary;
+      if (t.speak_secondary.trim()) speak[secondary] = t.speak_secondary;
       out[t.id] = { label, speak };
     }
     return out;
@@ -221,13 +228,14 @@ export async function generateBoard(profileIn: Profile, hooks: RunHooks): Promis
 }
 
 /** Fresh candidates for the weekly refresh, seeded by what actually got tapped (weighted by count). */
-export async function refreshCandidates(profile: Profile, top: { id: string; name: string }[], hooks: RunHooks) {
+export async function refreshCandidates(profile: Profile, top: { id: string; name: string; type?: QlooType }[], hooks: RunHooks) {
   const tracer = new Tracer(hooks.trace);
   const ctx: AgentCtx = {
     profile: {
       ...profile,
       loves: [
-        ...top.map((t) => ({ qlooId: t.id, name: t.name, type: "urn:entity:tv_show" as const })),
+        // Seeds keep their real type, so a most-tapped snack seeds snacks rather than being read as a TV show.
+        ...top.map((t) => ({ qlooId: t.id, name: t.name, type: t.type ?? ("urn:entity:tv_show" as const) })),
         ...profile.loves,
       ].slice(0, 8),
     },

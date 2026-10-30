@@ -125,19 +125,20 @@ function fixedTiles(profile: Profile): Tile[] {
     locked: true,
     reasons: [{ kind: "safety", text: "Safety word: never removed automatically" }],
   }));
-  const family = profile.family.length
-    ? profile.family.map((f) => ({ name: f.name, relation: f.relation }))
+  // A family's own names are used as typed, in every language; the defaults are the word for Mum/Dad in each one.
+  const family: { name: Localized; relation: string }[] = profile.family.length
+    ? profile.family.map((f) => ({ name: localized(() => f.name), relation: f.relation }))
     : [
-        { name: "Mom", relation: "mother" },
-        { name: "Dad", relation: "father" },
+        { name: { en: "Mom", hi: "मम्मी", es: "Mamá" }, relation: "mother" },
+        { name: { en: "Dad", hi: "पापा", es: "Papá" }, relation: "father" },
       ];
   const people: Tile[] = family.map((f, i) => ({
     id: `people-${i}`,
     kind: "people",
     category: "people",
-    label: { en: f.name, hi: f.name, es: f.name },
-    speak: localized((l) => PHRASES.people[l](f.name)),
-    emoji: personEmoji(`${f.relation} ${f.name}`),
+    label: f.name,
+    speak: localized((l) => PHRASES.people[l](f.name[l] ?? f.name.en)),
+    emoji: personEmoji(`${f.relation} ${f.name.en}`),
     locked: true,
     reasons: [{ kind: "people", text: `${f.relation}: added by the family` }],
   }));

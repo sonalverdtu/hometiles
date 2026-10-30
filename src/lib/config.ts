@@ -35,6 +35,8 @@ export function getConfig() {
     geminiModel: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
     llmModel: process.env.LLM_MODEL ?? "claude-opus-5-5",
     pictograms: (process.env.PICTOGRAMS ?? "on").toLowerCase() !== "off",
+    // The hackathon dataset's trend history ends around Sep 2025, so live mode reads this window, not "now".
+    trendWindow: [process.env.QLOO_TREND_START ?? "2025-06-01", process.env.QLOO_TREND_END ?? "2025-09-30"] as [string, string],
   };
 }
 

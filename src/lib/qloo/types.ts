@@ -46,6 +46,8 @@ export interface QEntity {
   explain?: { entityId: string; score: number }[];
   /** Localised display name when known (e.g. Devanagari). */
   nameLocal?: Partial<Record<"hi" | "es", string>>;
+  /** ESRB (games) or MPAA/TV rating when Qloo has one, e.g. "E10+", "TV-PG". */
+  contentRating?: string;
 }
 
 export interface QDemographics {

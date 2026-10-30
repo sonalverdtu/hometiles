@@ -6,6 +6,7 @@ import type { Qloo } from "../qloo";
 import type { AgeBand, QDemographics, QEntity, QHeatCell, QlooType } from "../qloo/types";
 import type { Candidate } from "../board/engine";
 import type { EntityRef, Partner, Profile, Reason } from "../board/types";
+import { ageGroupOf, isMinor, ratingOk, screenRatings } from "../board/age";
 
 export interface AgentCtx {
   profile: Profile;
@@ -34,15 +35,29 @@ const KID_PLACE_TAGS = [
   "urn:tag:children:place:good_for_kids",
 ];
 const NIGHTLIFE_TAGS = ["urn:tag:category:place:bar", "urn:tag:category:place:night_club", "urn:tag:category:place:lounge"];
+// Found by testing live Qloo for four children: energy drinks came back as "snacks" for 8–9-year-olds.
+const ENERGY_DRINK_TAGS = ["urn:tag:genre:brand:food_and_beverage:drinks:energy_drink"];
+// Explicit rap styles that came back for a 9-year-old who loves a film-song singer.
+const EXPLICIT_MUSIC_TAGS = ["urn:tag:genre:mumble_rap", "urn:tag:style:qloo:soundcloud_rap", "urn:tag:style:qloo:trap"];
 const FOOD_BRAND_TAGS = ["urn:tag:genre:brand:food_and_beverage"];
 const isFoodBrand = (e: QEntity) => e.tags.some((t) => /food_and_beverage|genre:brand:dining/.test(t.id)) || e.tags.length === 0;
-// Not for a child's board, whatever the taste graph says.
-const ADULT_WORDS = /(bar|pub|lounge|brew|brewery|wine|liquor|beer|vodka|whisk(e)?y|casino|hookah|energy drink|g fuel|red bull|monster energy|slim jim)/i;
-const kidSafe = (e: QEntity) => !ADULT_WORDS.test(e.name) && !e.tags.some((t) => /alcohol|beer|wine|spirits|energy_drink|nightlife|night_club|tobacco/.test(t.id));
+// Not for a child's board, whatever the taste graph says (word-boundary, so "Barbie" passes).
+const ADULT_WORDS = /\b(bar|pub|lounge|brew(ery|ing)?|wine|liquor|beer|vodka|whisk(e)?y|casino|hookah|energy drink|g fuel|red bull|monster energy|slim jim|starbucks|dunkin|coffee|espresso|diet (coke|pepsi)|pepsi nitro|protinex|protein)\b/i;
+const ADULT_TAGS = /alcohol|beer|wine|spirits|energy_drink|nightlife|night_club|tobacco|coffee|supermarket|grocery/;
+const YOUNG_TAGS = /mumble_rap|soundcloud_rap|style:qloo:trap|horrorcore|drill/;
+/** Screens a Qloo result for a minor: names, tags, and the rating Qloo reports (its own rating filter misses games). */
+function ageSafe(ctx: AgentCtx, e: QEntity): boolean {
+  const g = ageGroupOf(ctx.profile);
+  if (!isMinor(g)) return true;
+  if (ADULT_WORDS.test(e.name) || e.tags.some((t) => ADULT_TAGS.test(t.id))) return false;
+  if (g !== "teen" && e.tags.some((t) => YOUNG_TAGS.test(t.id))) return false;
+  const kind = e.type === "urn:entity:videogame" ? "game" : e.type === "urn:entity:tv_show" || e.type === "urn:entity:movie" ? "screen" : null;
+  return !kind || ratingOk(g, e.contentRating, kind);
+}
+const minor = (ctx: AgentCtx) => isMinor(ageGroupOf(ctx.profile));
+const ratings = (ctx: AgentCtx) => screenRatings(ageGroupOf(ctx.profile));
 /** "Rajouri Garden, New Delhi" → "New Delhi": Qloo's location queries and heatmaps work best at city level. */
 const cityOnly = (city: string) => city.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? city;
-
-const KID_RATINGS = ["G", "PG", "TV-Y", "TV-Y7", "TV-G", "TV-PG"];
 
 // Seed each kind of recommendation with the favourites of a related kind (shows → shows/films, music → music),
 // so a love of Minecraft doesn't turn into rap recommendations.
@@ -131,13 +146,14 @@ export async function expandPersonalTaste(ctx: AgentCtx, types: QlooType[] = FAV
             age: ctx.profile.ageBand,
             explain: true,
             take,
-            contentRating: ctx.profile.isChild ? KID_RATINGS : undefined,
+            contentRating: ratings(ctx),
             // Children recognise well-known names: keep music to popular artists.
             popularityMin: ctx.profile.isChild && type === "urn:entity:artist" ? 0.85 : undefined,
+            excludeTags: ctx.profile.isChild && type === "urn:entity:artist" ? EXPLICIT_MUSIC_TAGS : undefined,
           },
           "expand_personal_taste",
         )
-        .then((l) => (ctx.profile.isChild ? l.filter(kidSafe) : l))
+        .then((l) => l.filter((e) => ageSafe(ctx, e)))
         .catch(() => [] as QEntity[]),
     ),
   );
@@ -154,16 +170,17 @@ export async function findLocalBrands(ctx: AgentCtx, take = 12) {
   ctx.emit(`Finding snacks and brands popular around ${ctx.profile.city}…`, "find_local_brands");
   ctx.ran.add("find_local_brands");
   const ids = loveIds(ctx.profile.loves);
+  const noEnergy = minor(ctx) ? ENERGY_DRINK_TAGS : undefined;
   const [personal, local] = await Promise.all([
-    ctx.qloo.insights({ type: "urn:entity:brand", interests: ids, age: ctx.profile.ageBand, explain: true, filterTags: FOOD_BRAND_TAGS, take }, "find_local_brands").catch(() => []),
+    ctx.qloo.insights({ type: "urn:entity:brand", interests: ids, age: ctx.profile.ageBand, explain: true, filterTags: FOOD_BRAND_TAGS, excludeTags: noEnergy, take }, "find_local_brands").catch(() => []),
     ctx.qloo
-      .insights({ type: "urn:entity:brand", interests: ids, locationQuery: cityOnly(ctx.profile.city), age: ctx.profile.ageBand, take: 30 }, "find_local_brands")
+      .insights({ type: "urn:entity:brand", interests: ids, locationQuery: cityOnly(ctx.profile.city), age: ctx.profile.ageBand, excludeTags: noEnergy, take: 30 }, "find_local_brands")
       .then((l) => l.filter(isFoodBrand))
       .catch(() => []),
   ]);
   const localMap = new Map(local.map((e) => [e.id, e.affinity ?? 0.5]));
   const all = new Map<string, QEntity>();
-  [...personal, ...local].filter((e) => !ctx.profile.isChild || kidSafe(e)).forEach((e) => all.set(e.id, all.get(e.id) ?? e));
+  [...personal, ...local].filter((e) => ageSafe(ctx, e)).forEach((e) => all.set(e.id, all.get(e.id) ?? e));
   for (const e of all.values()) {
     const p = personal.find((x) => x.id === e.id);
     const loc = localMap.get(e.id);
@@ -177,6 +194,7 @@ export async function findLocalBrands(ctx: AgentCtx, take = 12) {
 
 export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap = true) {
   const safety = ctx.profile.isChild ? { filterTags: KID_PLACE_TAGS, excludeTags: NIGHTLIFE_TAGS } : { excludeTags: NIGHTLIFE_TAGS };
+  const away = (e: QEntity) => e.distanceM ?? (ctx.profile.home && e.location ? distanceM(ctx.profile.home, e.location) : Infinity);
   ctx.emit("Mapping where their kind of taste lives near home…", "find_local_places");
   ctx.ran.add("find_local_places");
   const ids = loveIds(ctx.profile.loves);
@@ -218,12 +236,13 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
     const prev = byId.get(e.id);
     byId.set(e.id, prev ? { ...prev, affinity: Math.max(prev.affinity ?? 0, e.affinity ?? 0), distanceM: prev.distanceM ?? e.distanceM } : e);
   });
-  for (const e of byId.values()) {
-    if (ctx.profile.isChild && !kidSafe(e)) continue;
+  // Nearest first, so a chain keeps its closest branch.
+  for (const e of [...byId.values()].sort((a, b) => away(a) - away(b))) {
+    if (!ageSafe(ctx, e)) continue;
     const rawDist = e.distanceM ?? (home && e.location ? distanceM(home, e.location) : undefined);
     const dist = rawDist === undefined ? undefined : Math.round(rawDist / 10) * 10;
     const nameKey = e.name.toLowerCase().replace(/\s*-.*$/, "").trim();
-    if (seenNames.has(nameKey)) continue; // chains: keep the nearest/first branch only
+    if (seenNames.has(nameKey)) continue; // chains: keep the nearest branch only
     seenNames.add(nameKey);
     const reasons: Reason[] = [personalReason(ctx, e)];
     if (dist !== undefined) reasons.push({ kind: "local", text: `${dist < 1000 ? `${dist} m` : `${(dist / 1000).toFixed(1)} km`} from home`, value: dist });
@@ -275,7 +294,8 @@ export async function sharedWithFamily(ctx: AgentCtx, relation?: string) {
   for (const m of members) {
     ctx.emit(`Comparing their taste with ${m.name}'s to find things to share…`, "shared_with_family");
     const shared = await ctx.qloo
-      .compare(mine, loveIds(m.loves), ["urn:entity:tv_show", "urn:entity:movie", "urn:entity:artist"], "shared_with_family", ctx.profile.isChild ? KID_RATINGS : undefined)
+      .compare(mine, loveIds(m.loves), ["urn:entity:tv_show", "urn:entity:movie", "urn:entity:artist"], "shared_with_family", ratings(ctx))
+      .then((l) => l.filter((e) => ageSafe(ctx, e)))
       .catch(() => []);
     for (const e of shared.slice(0, 6)) {
       const ab = e as QEntity & { a?: number; b?: number };
@@ -294,7 +314,8 @@ export async function sharedWithFamily(ctx: AgentCtx, relation?: string) {
         ],
       });
     }
-    out.push(`${m.name}: ${shared.slice(0, 4).map((e) => e.name).join(", ") || "nothing shared"}`);
+    // This result goes back to the LLM: it gets the relation, never the family member's name.
+    out.push(`${m.relation}: ${shared.slice(0, 4).map((e) => e.name).join(", ") || "nothing shared"}`);
   }
   return `Shared picks → ${out.join("; ")}`;
 }
@@ -306,7 +327,7 @@ export async function whatsRising(ctx: AgentCtx, today = new Date()) {
   // Qloo trending doesn't support video games yet.
   const types: QlooType[] = ["urn:entity:tv_show", "urn:entity:movie", "urn:entity:artist"];
   const lists = await Promise.all(
-    types.map((type) => ctx.qloo.insights({ type, interests: seedsFor(ctx, type), age: ctx.profile.ageBand, trends: "high", take: 8, contentRating: ctx.profile.isChild ? KID_RATINGS : undefined }, "whats_rising").catch(() => [] as QEntity[])),
+    types.map((type) => ctx.qloo.insights({ type, interests: seedsFor(ctx, type), age: ctx.profile.ageBand, trends: "high", take: 8, contentRating: ratings(ctx) }, "whats_rising").then((l) => l.filter((e) => ageSafe(ctx, e))).catch(() => [] as QEntity[])),
   );
   // Top 3 per type (prefer picks not already on the shelf) so every type gets a chance to show it's rising.
   const pool = lists.flatMap((l) => {
@@ -335,8 +356,9 @@ export async function whatsRising(ctx: AgentCtx, today = new Date()) {
     const prev = ctx.candidates.get(e.id);
     const reason: Reason =
       delta !== undefined
-        ? { kind: "trending", text: `Rising: up ${delta.toFixed(1)} percentile points in 8 weeks`, value: delta }
+        ? { kind: "trending", text: `Rising: up ${delta.toFixed(1)} percentile points over ${pts!.length} weeks of Qloo trending data`, value: delta }
         : { kind: "trending", text: "Trending now (Qloo trend bias)" };
+    if (prev?.category === "together") continue; // a family tile stays a family tile
     if (prev && rising <= 3 && (delta === undefined || delta >= 5)) {
       // A clearly rising pick earns a spot in "What's new" (freeing its favourites slot for someone else).
       ctx.candidates.set(e.id, { ...prev, category: "new", trend: pts, reasons: [...prev.reasons, reason] });

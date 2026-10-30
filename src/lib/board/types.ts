@@ -4,6 +4,7 @@ import type { AgeBand, QlooType } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
 
 import type { Lang } from "../i18n";
+import type { AgeGroup } from "./age";
 export type { Lang };
 export type Localized = Partial<Record<Lang, string>> & { en: string };
 
@@ -29,7 +30,9 @@ export interface Profile {
   id: string;
   displayName: string;
   ageBand: AgeBand;
+  /** true for any child under 13 (kept for older boards); ageGroup is the finer version. */
   isChild: boolean;
+  ageGroup?: AgeGroup;
   city: string;
   home?: { lat: number; lon: number };
   primaryLang: Lang;

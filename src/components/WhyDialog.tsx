@@ -55,7 +55,7 @@ export function WhyDialog({ tile, lang, onClose, onToggleLock }: { tile: Tile; l
 
       {tile.trend && tile.trend.length > 1 && (
         <div className="mt-3 rounded-2xl border border-[var(--line)] p-3">
-          <p className="text-xs text-[var(--muted)]">Popularity percentile, last 8 weeks (Qloo trending)</p>
+          <p className="text-xs text-[var(--muted)]">Popularity percentile, week by week (Qloo trending)</p>
           <Sparkline values={tile.trend} />
         </div>
       )}

@@ -8,7 +8,7 @@ import type { StreamEvent } from "@/lib/board/types";
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
-  const body = await readJson(req, z.object({ profile: ProfileSchema }));
+  const body = await readJson(req, z.object({ profile: ProfileSchema }), { bucket: "board", limit: 4 });
   if (!body.ok) return body.res;
 
   const encoder = new TextEncoder();
