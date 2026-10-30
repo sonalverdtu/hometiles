@@ -4,7 +4,7 @@
 import { getConfig } from "../config";
 import { insightsParams, qlooGet, type Params } from "./live";
 import { mockGet } from "./mock";
-import { parseDemographics, parseEntityList, parseHeatmap, parseTrending } from "./parse";
+import { parseCompareTags, parseDemographics, parseEntityList, parseHeatmap, parseTrending } from "./parse";
 import type { Tracer } from "./trace";
 import type { AgeBand, InsightsQuery, QDemographics, QEntity, QHeatCell, QlooType, QTrendPoint } from "./types";
 import { QlooError } from "./types";
@@ -109,19 +109,49 @@ export class Qloo {
     }
   }
 
-  /** Entities both groups would enjoy. Falls back to scoring candidates per group and keeping the maximin. */
-  async compare(a: string[], b: string[], types: QlooType[], tool = "shared_with_family"): Promise<(QEntity & { a?: number; b?: number })[]> {
+  /**
+   * Entities both groups would enjoy. Live Qloo's compare returns the tags the two groups share;
+   * we chain those shared tags into an insights call seeded by both groups. If compare is unavailable
+   * or shares nothing, fall back to scoring candidates per group and keeping the maximin.
+   */
+  async compare(a: string[], b: string[], types: QlooType[], tool = "shared_with_family", contentRating?: string[]): Promise<(QEntity & { a?: number; b?: number; sharedTags?: string[] })[]> {
     if (!a.length || !b.length) return [];
-    const params: Params = {
-      "a.signal.interests.entities": a.join(","),
-      "b.signal.interests.entities": b.join(","),
-      "filter.type": types.join(","),
-      take: "10",
-    };
+    const params: Params = { "a.signal.interests.entities": a.join(","), "b.signal.interests.entities": b.join(",") };
     try {
-      const out = await this.call(tool, "/v2/analysis/compare", params, (j) => parseEntityList(j), (e) => e.name);
-      if (out.length) return out;
-      throw new QlooError("empty compare", 200);
+      const started = Date.now();
+      const raw: unknown = this.mode === "live" ? await qlooGet("/v2/analysis/compare", params) : await mockGet("/v2/analysis/compare", { ...params, "filter.type": types.join(","), take: "10" });
+      const entities = parseEntityList(raw);
+      const tags = parseCompareTags(raw);
+      const aIds = new Set(tags.a.map((t) => t.id));
+      const shared: { id: string; name: string; score?: number }[] = tags.shared.length ? tags.shared : tags.b.filter((t) => aIds.has(t.id));
+      this.tracer.add({
+        tool,
+        endpoint: "/v2/analysis/compare",
+        params,
+        status: 200,
+        ms: Date.now() - started,
+        count: entities.length || shared.length,
+        top: entities.length ? entities.slice(0, 4).map((e) => e.name) : shared.slice(0, 5).map((t) => `#${t.name}`),
+        mode: this.mode,
+        note: !entities.length && shared.length ? "shared tags → chained into insights" : undefined,
+      });
+      if (entities.length) return entities;
+      if (!shared.length) throw new QlooError("compare shared nothing", 200);
+      const tagIds = shared
+        .sort((x, y) => (y.score ?? 0) - (x.score ?? 0))
+        .slice(0, 5)
+        .map((t) => t.id);
+      const names = shared.slice(0, 5).map((t) => t.name);
+      const pools = await Promise.all(
+        types.map((type) => this.insights({ type, interests: [...a, ...b], tags: tagIds, take: 6, contentRating }, tool).catch(() => [] as QEntity[])),
+      );
+      const exclude = new Set([...a, ...b]);
+      return pools
+        .flat()
+        .filter((e) => !exclude.has(e.id))
+        .sort((x, y) => (y.affinity ?? 0) - (x.affinity ?? 0))
+        .slice(0, 8)
+        .map((e) => ({ ...e, sharedTags: names }));
     } catch {
       this.note(tool, "/v2/analysis/compare", "compare unavailable/empty → per-person scoring, keep maximin");
       const pools = await Promise.all(types.map((type) => this.insights({ type, interests: [...a, ...b], take: 15 }, tool).catch(() => [])));
@@ -142,15 +172,47 @@ export class Qloo {
     }
   }
 
-  /** Weekly trend series for one entity, or null if unavailable (fallback: bias.trends). */
+  /**
+   * Weekly trend series for one entity (percentiles normalised to 0–100), or null (fallback: bias.trends).
+   * The hackathon dataset's trend history can end before today, so an empty window retries the last known one.
+   */
   async trending(entityId: string, type: QlooType, start: string, end: string, tool = "whats_rising"): Promise<QTrendPoint[] | null> {
-    const params: Params = { "filter.type": type, "signal.interests.entities": entityId, "filter.start_date": start, "filter.end_date": end };
-    try {
-      const pts = await this.call(tool, "/v2/trending", params, parseTrending, (p) => `${p.date}: p${p.percentile.toFixed(0)}`);
-      return pts.length ? pts : null;
-    } catch {
-      return null;
+    // The hackathon dataset's trend history currently ends around Sep 2025: try that window first when live.
+    const windows: [string, string][] = this.mode === "live" ? [["2025-06-01", "2025-09-30"]] : [[start, end]];
+    for (const [s0, e0] of windows) {
+      const params: Params = { "filter.type": type, "signal.interests.entities": entityId, "filter.start_date": s0, "filter.end_date": e0 };
+      try {
+        const pts = await this.call(tool, "/v2/trending", params, parseTrending, (p) => `${p.date}: ${p.percentile.toFixed(2)}`);
+        if (pts.length) {
+          const scale = pts.every((p) => p.percentile <= 1) ? 100 : 1;
+          return pts.map((p) => ({ ...p, percentile: p.percentile * scale }));
+        }
+      } catch {
+        return null;
+      }
     }
+    return null;
+  }
+
+  /** Best /search hit whose name actually matches what the parent typed (avoids "Parle-G" → "G Fuel"). */
+  async resolve(name: string, type: QlooType): Promise<QEntity | null> {
+    const hits = await this.search(name, [type], 5).catch(() => [] as QEntity[]);
+    const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9ऀ-ॿ ]/g, " ").replace(/\s+/g, " ").trim();
+    const want = norm(name);
+    const tokens = new Set(want.split(" ").filter((t) => t.length > 1));
+    let best: QEntity | null = null;
+    let bestScore = 0;
+    for (const h of hits) {
+      const got = norm(h.name);
+      const gotTokens = got.split(" ");
+      const overlap = gotTokens.filter((t) => tokens.has(t)).length / Math.max(1, tokens.size);
+      const score = got === want ? 2 : got.startsWith(want) || want.startsWith(got) ? 1.5 : overlap;
+      if (score > bestScore) {
+        bestScore = score;
+        best = h;
+      }
+    }
+    return bestScore >= 0.6 ? best : null;
   }
 }
 

@@ -1,7 +1,7 @@
 // "Without Qloo" comparison board (FR-601): what you get from the same intake with no taste graph.
 
 import { getConfig } from "../config";
-import { llmOnlyBaseline } from "../llm/claude";
+import { baselineTilesLLM } from "../llm";
 import type { Profile } from "../board/types";
 
 export interface BaselineTile {
@@ -32,7 +32,7 @@ const GENERIC: Record<"in" | "latam" | "other", BaselineTile[]> = {
 export async function baselineTiles(profile: Profile): Promise<{ tiles: BaselineTile[]; source: "llm" | "mock" }> {
   if (getConfig().llmMode === "live") {
     try {
-      const tiles = await llmOnlyBaseline(profile);
+      const tiles = await baselineTilesLLM(profile);
       return { tiles: tiles.map((t) => ({ category: t.category, label: t.label_en, labelPrimary: t.label_primary })), source: "llm" };
     } catch {
       // fall through to the mock list

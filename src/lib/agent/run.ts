@@ -7,7 +7,9 @@ import { getConfig } from "../config";
 import { Qloo } from "../qloo";
 import { Tracer, type TraceEntry } from "../qloo/trace";
 import { arasaacUrl } from "../pictograms";
-import { claude, FALLBACK_BETA, writeTileText } from "../llm/claude";
+import { claude, FALLBACK_BETA } from "../llm/claude";
+import { writeTileText } from "../llm";
+import { runGeminiAgent, type AgentTool } from "../llm/gemini";
 import { assembleBoard, QUOTAS, rankCandidates, type Candidate, type TileText } from "../board/engine";
 import { CORE, SAFETY } from "../board/vocab";
 import type { Board, Localized, Profile } from "../board/types";
@@ -40,46 +42,46 @@ who-loves-what audience checks (audience_profile, after you have candidates), an
 Call independent tools in parallel. When done, reply with 2-3 short sentences for the parent explaining what you focused on and why.
 Do not invent places or facts; the board is built only from tool results.`;
 
-async function agentic(ctx: AgentCtx) {
-  const { llmModel } = getConfig();
-  const tools = [
-    betaZodTool({
-      name: "expand_personal_taste",
-      description: "Find shows, games, music and films the person is likely to love, from their favourites (Qloo insights).",
-      inputSchema: z.object({ types: z.array(z.enum(["tv_show", "video_game", "artist", "movie"])).min(1) }),
-      run: async ({ types }) => expandPersonalTaste(ctx, types.map((t) => `urn:entity:${t}` as const)),
-    }),
-    betaZodTool({
-      name: "find_local_brands",
-      description: "Find snacks, foods and brands popular where the person lives and that fit their taste.",
-      inputSchema: z.object({ take: z.number().int().min(4).max(20) }),
-      run: async ({ take }) => findLocalBrands(ctx, take),
-    }),
-    betaZodTool({
-      name: "find_local_places",
-      description: "Find real places near home that fit the person's taste. Uses Qloo's heatmap to find taste hot-spots first.",
-      inputSchema: z.object({ radius_m: z.number().int().min(500).max(8000), use_heatmap: z.boolean() }),
-      run: async ({ radius_m, use_heatmap }) => findLocalPlaces(ctx, radius_m, use_heatmap),
-    }),
-    betaZodTool({
-      name: "shared_with_family",
-      description: "Compare the person's taste with a family member's (by relation, e.g. 'grandfather') to find things they can enjoy together.",
-      inputSchema: z.object({ relation: z.string() }),
-      run: async ({ relation }) => sharedWithFamily(ctx, relation),
-    }),
-    betaZodTool({
-      name: "audience_profile",
-      description: "Check which age groups love the current candidates, to route tiles to the right conversation partner.",
-      inputSchema: z.object({ max: z.number().int().min(4).max(20) }),
-      run: async ({ max }) => audienceProfile(ctx, max),
-    }),
-    betaZodTool({
-      name: "whats_rising",
-      description: "Find picks that fit the person's taste and are rising right now.",
-      inputSchema: z.object({}),
-      run: async () => whatsRising(ctx),
-    }),
+/** The research tools, described once and handed to whichever LLM provider runs the agent. */
+function agentTools(ctx: AgentCtx): AgentTool[] {
+  const tool = <S extends z.ZodObject>(name: string, description: string, schema: S, run: (input: z.infer<S>) => Promise<string>): AgentTool => ({
+    name,
+    description,
+    schema,
+    run: (input) => run(input as z.infer<S>),
+  });
+  return [
+    tool(
+      "expand_personal_taste",
+      "Find shows, games, music and films the person is likely to love, from their favourites (Qloo insights).",
+      z.object({ types: z.array(z.enum(["tv_show", "videogame", "artist", "movie"])).min(1) }),
+      ({ types }) => expandPersonalTaste(ctx, types.map((t) => `urn:entity:${t}` as const)),
+    ),
+    tool("find_local_brands", "Find snacks, foods and brands that fit the person's taste and are popular where they live.", z.object({ take: z.number().int().min(4).max(20) }), ({ take }) =>
+      findLocalBrands(ctx, take),
+    ),
+    tool(
+      "find_local_places",
+      "Find real places near home that fit the person's taste. Uses Qloo's heatmap to find taste hot-spots first.",
+      z.object({ radius_m: z.number().int().min(500).max(8000), use_heatmap: z.boolean() }),
+      ({ radius_m, use_heatmap }) => findLocalPlaces(ctx, radius_m, use_heatmap),
+    ),
+    tool(
+      "shared_with_family",
+      "Compare the person's taste with a family member's (by relation, e.g. 'grandfather') to find things they can enjoy together.",
+      z.object({ relation: z.string() }),
+      ({ relation }) => sharedWithFamily(ctx, relation),
+    ),
+    tool("audience_profile", "Check which age groups love the current candidates, to route tiles to the right conversation partner.", z.object({ max: z.number().int().min(4).max(12) }), ({ max }) =>
+      audienceProfile(ctx, max),
+    ),
+    tool("whats_rising", "Find picks that fit the person's taste and are rising right now.", z.object({}), () => whatsRising(ctx)),
   ];
+}
+
+async function agentic(ctx: AgentCtx) {
+  const cfg = getConfig();
+  const tools = agentTools(ctx);
   const p = ctx.profile;
   const brief = {
     city: p.city,
@@ -89,24 +91,30 @@ async function agentic(ctx: AgentCtx) {
     favourites: p.loves.map((l) => `${l.name} (${l.type.split(":")[2]})${l.qlooId ? "" : " [unresolved]"}`),
     family: p.family.map((f) => ({ relation: f.relation, has_favourites: f.loves.some((l) => l.qlooId) })),
   };
-  ctx.emit("Agent is planning which Qloo tools to use…", "agent");
-  const final = await claude().beta.messages.toolRunner({
-    model: llmModel,
-    max_tokens: 16000,
-    max_iterations: 8,
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
-    output_config: { effort: "low" },
-    system: AGENT_SYSTEM,
-    tools,
-    messages: [{ role: "user", content: `Build the evidence for this person's board:\n${JSON.stringify(brief)}` }],
-  });
-  const summary = final.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as { text: string }).text)
-    .join(" ")
-    .trim();
-  if (summary) ctx.notes.unshift(summary);
+  const userPrompt = `Build the evidence for this person's board:
+${JSON.stringify(brief)}`;
+  ctx.emit(`Agent (${cfg.llmProvider === "gemini" ? "Gemini" : "Claude"}) is planning which Qloo tools to use…`, "agent");
+  let summary = "";
+  if (cfg.llmProvider === "gemini") {
+    summary = await runGeminiAgent(AGENT_SYSTEM, userPrompt, tools);
+  } else {
+    const final = await claude().beta.messages.toolRunner({
+      model: cfg.llmModel,
+      max_tokens: 16000,
+      max_iterations: 8,
+      betas: [FALLBACK_BETA],
+      fallbacks: "default",
+      output_config: { effort: "low" },
+      system: AGENT_SYSTEM,
+      tools: tools.map((t) => betaZodTool({ name: t.name, description: t.description, inputSchema: t.schema, run: (input) => t.run(input) })),
+      messages: [{ role: "user", content: userPrompt }],
+    });
+    summary = final.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { text: string }).text)
+      .join(" ");
+  }
+  if (summary.trim()) ctx.notes.unshift(summary.trim());
 }
 
 /** Make sure every section has evidence even if the agent skipped a tool. */
@@ -123,9 +131,10 @@ async function fillGaps(ctx: AgentCtx) {
 
 function shortlist(cands: Candidate[]): Candidate[] {
   const counts: Record<string, number> = {};
+  // Keep extra favourites so the board engine can balance kinds (shows, games, music, films).
   return rankCandidates(cands).filter((c) => {
     const n = counts[c.category] ?? 0;
-    if (n >= QUOTAS[c.category]) return false;
+    if (n >= QUOTAS[c.category] * (c.category === "favourites" ? 2 : 1)) return false;
     counts[c.category] = n + 1;
     return true;
   });

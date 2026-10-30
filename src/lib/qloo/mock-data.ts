@@ -43,7 +43,7 @@ function item(
 }
 
 const TV = "urn:entity:tv_show" as const;
-const GAME = "urn:entity:video_game" as const;
+const GAME = "urn:entity:videogame" as const;
 const ARTIST = "urn:entity:artist" as const;
 const MOVIE = "urn:entity:movie" as const;
 const BRAND = "urn:entity:brand" as const;

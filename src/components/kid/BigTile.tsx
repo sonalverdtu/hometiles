@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Lang, Tile } from "@/lib/board/types";
 import { pick } from "@/lib/board/vocab";
 
@@ -38,6 +39,7 @@ export function BigTile({
   highlight?: boolean;
 }) {
   const s = SIZE[size];
+  const [broken, setBroken] = useState(false);
   const mainLang = labels === "secondary" && secondary ? secondary : primary;
   const main = pick(tile.label, mainLang);
   const sub = labels === "both" && secondary ? pick(tile.label, secondary) : null;
@@ -50,9 +52,9 @@ export function BigTile({
         className={`kid-tile w-full ${highlight ? "kid-tile-pop" : ""}`}
         style={{ minHeight: s.min, background: `var(--c-${tile.category})`, borderColor: `var(--b-${tile.category})` }}
       >
-        {tile.image ? (
+        {tile.image && !broken ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={tile.image.url} alt="" className={`${s.img} rounded-xl bg-white/80 object-contain`} loading="lazy" draggable={false} />
+          <img src={tile.image.url} alt="" className={`${s.img} rounded-xl bg-white/80 object-contain`} loading="lazy" draggable={false} onError={() => setBroken(true)} />
         ) : (
           <span aria-hidden className={`${s.icon} leading-none`}>{tile.emoji}</span>
         )}
