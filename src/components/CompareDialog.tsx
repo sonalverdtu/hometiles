@@ -38,7 +38,7 @@ export function CompareDialog({ board, lang, onClose }: { board: Board; lang: La
     <Modal title="With vs without Qloo" onClose={onClose} wide>
       <p className="mb-4 text-sm text-[var(--muted)]">
         Same intake, two boards. On the left: a generic AI answer with no taste data
-        {base?.source === "mock" ? " (mock stand-in: add an Anthropic key to generate it live)" : ""}. On the right: HomeTiles, grounded in Qloo.
+        {base?.source === "mock" ? " (mock stand-in: add a Gemini or Anthropic key to generate it live)" : ""}. On the right: HomeTiles, grounded in Qloo.
       </p>
       <div className="mb-4 grid gap-2 sm:grid-cols-3">
         <Stat big={`${grounded}/${allOurs.length}`} text="tiles backed by Qloo evidence (vs 0)" />

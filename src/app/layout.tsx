@@ -29,8 +29,10 @@ function Logo() {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${latin.variable} ${deva.variable} ${baloo.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    // suppressHydrationWarning: browser extensions (Grammarly, ColorZilla…) add attributes to <html>/<body>
+    // before React loads. It only ignores attribute differences on these two elements, not their children.
+    <html lang="en" suppressHydrationWarning className={`${latin.variable} ${deva.variable} ${baloo.variable} h-full antialiased`}>
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         <LockGuard />
         <header className="site-chrome no-print glass sticky top-0 z-40 border-b border-[var(--line)]/70">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
