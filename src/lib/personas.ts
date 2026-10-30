@@ -15,7 +15,7 @@ export const PERSONAS: Record<string, Profile> = {
     secondaryLang: "en",
     loves: [
       { name: "Chhota Bheem", type: "urn:entity:tv_show" },
-      { name: "Minecraft", type: "urn:entity:video_game" },
+      { name: "Minecraft", type: "urn:entity:videogame" },
       { name: "Arijit Singh", type: "urn:entity:artist" },
       { name: "Parle-G", type: "urn:entity:brand" },
     ],
@@ -46,7 +46,7 @@ export const PERSONAS: Record<string, Profile> = {
     loves: [
       { name: "Encanto", type: "urn:entity:movie" },
       { name: "Karol G", type: "urn:entity:artist" },
-      { name: "Roblox", type: "urn:entity:video_game" },
+      { name: "Roblox", type: "urn:entity:videogame" },
       { name: "Takis", type: "urn:entity:brand" },
     ],
     family: [

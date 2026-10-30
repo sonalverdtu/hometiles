@@ -10,7 +10,7 @@ export const QLOO_TYPES = [
   "urn:entity:place",
   "urn:entity:podcast",
   "urn:entity:tv_show",
-  "urn:entity:video_game",
+  "urn:entity:videogame",
 ] as const;
 
 export type QlooType = (typeof QLOO_TYPES)[number];
@@ -81,6 +81,13 @@ export interface InsightsQuery {
   trends?: "off" | "low" | "medium" | "high";
   explain?: boolean;
   resultEntities?: string[];
+  /** Restrict results to these tag IDs (union), e.g. kid-friendly place categories. */
+  filterTags?: string[];
+  excludeTags?: string[];
+  /** MPAA-style ratings for movies and TV, e.g. ["G", "PG"]. */
+  contentRating?: string[];
+  /** Minimum popularity percentile (0–1). */
+  popularityMin?: number;
   take?: number;
 }
 

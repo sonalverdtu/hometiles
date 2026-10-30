@@ -8,7 +8,7 @@ import { setPendingProfile } from "@/lib/client/store";
 
 const TYPES: { id: QlooType; label: string; emoji: string; example: string }[] = [
   { id: "urn:entity:tv_show", label: "Cartoon / show", emoji: "📺", example: "e.g. Chhota Bheem" },
-  { id: "urn:entity:video_game", label: "Game", emoji: "🎮", example: "e.g. Minecraft" },
+  { id: "urn:entity:videogame", label: "Game", emoji: "🎮", example: "e.g. Minecraft" },
   { id: "urn:entity:brand", label: "Snack / drink", emoji: "🍪", example: "e.g. Parle-G" },
   { id: "urn:entity:artist", label: "Singer / music", emoji: "🎵", example: "e.g. Arijit Singh" },
   { id: "urn:entity:movie", label: "Movie", emoji: "🎬", example: "e.g. Encanto" },

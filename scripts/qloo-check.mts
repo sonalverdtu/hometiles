@@ -33,7 +33,7 @@ const probes: [string, string][] = [
   ["Arijit Singh", "urn:entity:artist"],
   ["Parle-G", "urn:entity:brand"],
   ["Haldiram's", "urn:entity:brand"],
-  ["Minecraft", "urn:entity:video_game"],
+  ["Minecraft", "urn:entity:videogame"],
   ["Encanto", "urn:entity:movie"],
   ["Karol G", "urn:entity:artist"],
   ["Takis", "urn:entity:brand"],

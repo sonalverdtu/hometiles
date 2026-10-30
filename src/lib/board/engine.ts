@@ -4,7 +4,7 @@
 import type { QEntity } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
 import type { Board, Category, Folder, Lang, Localized, Partner, Profile, Reason, Suggestion, Tile } from "./types";
-import { BANTER, CORE, FOLDER_META, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
+import { BANTER, CORE, FOLDER_META, newPhrase, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
 
 export const QUOTAS: Record<"food" | "places" | "favourites" | "together" | "new", number> = {
   favourites: 10,
@@ -69,7 +69,7 @@ function localized(fn: (lang: Lang) => string): Localized {
 }
 
 export function candidateToTile(c: Candidate, text?: TileText): Tile {
-  const tpl = c.category === "together" ? togetherPhrase(c.entity.type) : PHRASES[c.category];
+  const tpl = c.category === "together" ? togetherPhrase(c.entity.type) : c.category === "new" ? newPhrase(c.entity.type) : PHRASES[c.category];
   return {
     id: `t-${c.entity.id}`,
     kind: "rotating",
@@ -201,10 +201,21 @@ export function assembleBoard(input: AssembleInput): Board {
   for (const c of ranked) {
     const n = counts[c.category] ?? 0;
     if (n >= QUOTAS[c.category]) continue;
+    // Keep favourites varied: at most 4 of any one kind (shows, games, music, films).
+    const typeKey = `${c.category}|${c.entity.type}`;
+    if (c.category === "favourites" && (counts[typeKey] ?? 0) >= 4) continue;
+    counts[typeKey] = (counts[typeKey] ?? 0) + 1;
     const tile = candidateToTile(c, input.text?.[c.entity.id]);
     tiles[tile.id] = tile;
     folders[c.category].push(tile.id);
     counts[c.category] = n + 1;
+  }
+  // Second pass: if the per-kind cap left favourites slots empty, fill them with the best remaining picks.
+  for (const c of ranked) {
+    if (c.category !== "favourites" || folders.favourites.length >= QUOTAS.favourites || tiles[`t-${c.entity.id}`]) continue;
+    const tile = candidateToTile(c, input.text?.[c.entity.id]);
+    tiles[tile.id] = tile;
+    folders.favourites.push(tile.id);
   }
   const favs = folders.favourites.map((id) => tiles[id]);
   for (const t of funTiles(favs)) {

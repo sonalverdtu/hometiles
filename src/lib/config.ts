@@ -12,8 +12,14 @@ function pickMode(setting: string | undefined, hasKey: boolean): Mode {
 export function getConfig() {
   const qlooKey = process.env.QLOO_API_KEY?.trim() ?? "";
   const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim() ?? "";
+  const geminiKey = (process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY ?? "").trim();
+  const providerSetting = (process.env.LLM_PROVIDER ?? "auto").toLowerCase();
+  const llmProvider: "anthropic" | "gemini" | null =
+    providerSetting === "gemini" ? (geminiKey ? "gemini" : null)
+    : providerSetting === "anthropic" ? (anthropicKey ? "anthropic" : null)
+    : anthropicKey ? "anthropic" : geminiKey ? "gemini" : null;
   const qlooMode = pickMode(process.env.QLOO_MODE, qlooKey.length > 0);
-  const llmMode = pickMode(process.env.LLM_MODE, anthropicKey.length > 0);
+  const llmMode = pickMode(process.env.LLM_MODE, llmProvider !== null);
   const agentSetting = (process.env.AGENT_MODE ?? "auto").toLowerCase();
   const agentMode: "llm" | "scripted" =
     agentSetting === "scripted" ? "scripted" : agentSetting === "llm" && llmMode === "live" ? "llm" : llmMode === "live" ? "llm" : "scripted";
@@ -24,6 +30,9 @@ export function getConfig() {
     qlooMode,
     llmMode,
     agentMode,
+    llmProvider,
+    geminiKey,
+    geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
     llmModel: process.env.LLM_MODEL ?? "claude-opus-5-5",
     pictograms: (process.env.PICTOGRAMS ?? "on").toLowerCase() !== "off",
   };

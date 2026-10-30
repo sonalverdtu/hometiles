@@ -60,7 +60,16 @@ export function parseEntity(rawIn: unknown, fallbackType?: QlooType): QEntity | 
   const loc = isObj(raw.location) ? raw.location : undefined;
   const lat = loc ? (num(loc.lat) ?? num(loc.latitude)) : undefined;
   const lon = loc ? (num(loc.lon) ?? num(loc.lng) ?? num(loc.longitude)) : undefined;
-  const nameLocal = isObj(raw.name_local) ? (raw.name_local as QEntity["nameLocal"]) : undefined;
+  let nameLocal = isObj(raw.name_local) ? (raw.name_local as QEntity["nameLocal"]) : undefined;
+  // Live Qloo carries localized names in properties.akas: [{ value, languages: ["hi", ...] }]
+  for (const aka of arr(props.akas)) {
+    if (!isObj(aka)) continue;
+    const value = str(aka.value)?.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim();
+    const langs = arr(aka.languages).filter((l): l is string => typeof l === "string");
+    for (const l of ["hi", "es"] as const) {
+      if (value && langs.includes(l) && !nameLocal?.[l]) nameLocal = { ...nameLocal, [l]: value };
+    }
+  }
   return {
     id,
     name,
@@ -134,4 +143,23 @@ export function parseTrending(json: unknown): QTrendPoint[] {
       };
     })
     .filter((p): p is QTrendPoint => !!p);
+}
+
+export interface CompareTags {
+  shared: (QTag & { score?: number })[];
+  a: QTag[];
+  b: QTag[];
+}
+
+/** /v2/analysis/compare returns tag overlaps: { results: { tags: [...shared], a: [...], b: [...] } }. */
+export function parseCompareTags(json: unknown): CompareTags {
+  const tagList = (v: unknown) =>
+    arr(v)
+      .map((t): (QTag & { score?: number }) | null =>
+        isObj(t) && str(t.tag_id) && str(t.name)
+          ? { id: str(t.tag_id)!, name: str(t.name)!, type: str(t.subtype), score: num(get(t, "query.score")) }
+          : null,
+      )
+      .filter((t): t is QTag & { score?: number } => !!t);
+  return { shared: tagList(get(json, "results.tags")), a: tagList(get(json, "results.a")), b: tagList(get(json, "results.b")) };
 }

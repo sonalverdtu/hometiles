@@ -18,7 +18,48 @@ export interface AgentCtx {
   ran: Set<string>;
 }
 
-const FAVOURITE_TYPES: QlooType[] = ["urn:entity:tv_show", "urn:entity:video_game", "urn:entity:artist", "urn:entity:movie"];
+// Kid-friendly place categories (Qloo tag IDs). Adults get nightlife excluded instead.
+const KID_PLACE_TAGS = [
+  "urn:tag:category:place:ice_cream_shop",
+  "urn:tag:category:place:bakery",
+  "urn:tag:category:place:park",
+  "urn:tag:category:place:playground",
+  "urn:tag:category:place:fast_food",
+  "urn:tag:category:place:snack_bar",
+  "urn:tag:category:place:indian_sweets_shop",
+  "urn:tag:genre:place:restaurant:dessert_shop",
+  "urn:tag:genre:place:restaurant:street_food",
+  "urn:tag:category:place:toy_store",
+  "urn:tag:category:place:zoo",
+  "urn:tag:children:place:good_for_kids",
+];
+const NIGHTLIFE_TAGS = ["urn:tag:category:place:bar", "urn:tag:category:place:night_club", "urn:tag:category:place:lounge"];
+const FOOD_BRAND_TAGS = ["urn:tag:genre:brand:food_and_beverage"];
+const isFoodBrand = (e: QEntity) => e.tags.some((t) => /food_and_beverage|genre:brand:dining/.test(t.id)) || e.tags.length === 0;
+// Not for a child's board, whatever the taste graph says.
+const ADULT_WORDS = /(bar|pub|lounge|brew|brewery|wine|liquor|beer|vodka|whisk(e)?y|casino|hookah|energy drink|g fuel|red bull|monster energy|slim jim)/i;
+const kidSafe = (e: QEntity) => !ADULT_WORDS.test(e.name) && !e.tags.some((t) => /alcohol|beer|wine|spirits|energy_drink|nightlife|night_club|tobacco/.test(t.id));
+/** "Rajouri Garden, New Delhi" → "New Delhi": Qloo's location queries and heatmaps work best at city level. */
+const cityOnly = (city: string) => city.split(",").map((s) => s.trim()).filter(Boolean).pop() ?? city;
+
+const KID_RATINGS = ["G", "PG", "TV-Y", "TV-Y7", "TV-G", "TV-PG"];
+
+// Seed each kind of recommendation with the favourites of a related kind (shows → shows/films, music → music),
+// so a love of Minecraft doesn't turn into rap recommendations.
+const SEED_TYPES: Partial<Record<QlooType, QlooType[]>> = {
+  "urn:entity:tv_show": ["urn:entity:tv_show", "urn:entity:movie"],
+  "urn:entity:movie": ["urn:entity:movie", "urn:entity:tv_show"],
+  "urn:entity:artist": ["urn:entity:artist"],
+  "urn:entity:videogame": ["urn:entity:videogame"],
+};
+
+function seedsFor(ctx: AgentCtx, type: QlooType): string[] {
+  const related = SEED_TYPES[type];
+  const matched = related ? ctx.profile.loves.filter((l) => related.includes(l.type)) : [];
+  return loveIds(matched.length ? matched : ctx.profile.loves);
+}
+
+const FAVOURITE_TYPES: QlooType[] = ["urn:entity:tv_show", "urn:entity:videogame", "urn:entity:artist", "urn:entity:movie"];
 
 const loveIds = (loves: EntityRef[]) => loves.map((l) => l.qlooId).filter((x): x is string => !!x);
 
@@ -63,8 +104,7 @@ export async function resolveLoves(ctx: AgentCtx) {
     all
       .filter((l) => !l.qlooId)
       .map(async (l) => {
-        const hits = await ctx.qloo.search(l.name, [l.type], 3).catch(() => []);
-        const best = hits.find((h) => h.type === l.type) ?? hits[0];
+        const best = await ctx.qloo.resolve(l.name, l.type).catch(() => null);
         if (best) {
           l.qlooId = best.id;
           l.image = l.image ?? best.image;
@@ -84,7 +124,20 @@ export async function expandPersonalTaste(ctx: AgentCtx, types: QlooType[] = FAV
   const results = await Promise.all(
     types.map((type) =>
       ctx.qloo
-        .insights({ type, interests: ids, age: ctx.profile.ageBand, explain: true, take }, "expand_personal_taste")
+        .insights(
+          {
+            type,
+            interests: seedsFor(ctx, type),
+            age: ctx.profile.ageBand,
+            explain: true,
+            take,
+            contentRating: ctx.profile.isChild ? KID_RATINGS : undefined,
+            // Children recognise well-known names: keep music to popular artists.
+            popularityMin: ctx.profile.isChild && type === "urn:entity:artist" ? 0.85 : undefined,
+          },
+          "expand_personal_taste",
+        )
+        .then((l) => (ctx.profile.isChild ? l.filter(kidSafe) : l))
         .catch(() => [] as QEntity[]),
     ),
   );
@@ -102,24 +155,28 @@ export async function findLocalBrands(ctx: AgentCtx, take = 12) {
   ctx.ran.add("find_local_brands");
   const ids = loveIds(ctx.profile.loves);
   const [personal, local] = await Promise.all([
-    ctx.qloo.insights({ type: "urn:entity:brand", interests: ids, locationQuery: ctx.profile.city, age: ctx.profile.ageBand, explain: true, take }, "find_local_brands").catch(() => []),
-    ctx.qloo.insights({ type: "urn:entity:brand", locationQuery: ctx.profile.city, age: ctx.profile.ageBand, take }, "find_local_brands").catch(() => []),
+    ctx.qloo.insights({ type: "urn:entity:brand", interests: ids, age: ctx.profile.ageBand, explain: true, filterTags: FOOD_BRAND_TAGS, take }, "find_local_brands").catch(() => []),
+    ctx.qloo
+      .insights({ type: "urn:entity:brand", interests: ids, locationQuery: cityOnly(ctx.profile.city), age: ctx.profile.ageBand, take: 30 }, "find_local_brands")
+      .then((l) => l.filter(isFoodBrand))
+      .catch(() => []),
   ]);
   const localMap = new Map(local.map((e) => [e.id, e.affinity ?? 0.5]));
   const all = new Map<string, QEntity>();
-  [...personal, ...local].forEach((e) => all.set(e.id, all.get(e.id) ?? e));
+  [...personal, ...local].filter((e) => !ctx.profile.isChild || kidSafe(e)).forEach((e) => all.set(e.id, all.get(e.id) ?? e));
   for (const e of all.values()) {
     const p = personal.find((x) => x.id === e.id);
     const loc = localMap.get(e.id);
     const reasons: Reason[] = [];
     if (p) reasons.push(personalReason(ctx, p));
     if (loc !== undefined) reasons.push({ kind: "local", text: `Popular around ${ctx.profile.city} (local affinity ${loc.toFixed(2)})`, value: loc });
-    upsert(ctx, { entity: e, category: "food", personal: p?.affinity ?? 0.4, local: loc, reasons });
+    upsert(ctx, { entity: e, category: "food", personal: p?.affinity ?? loc ?? 0.4, local: loc !== undefined ? Math.min(1, loc + 0.1) : undefined, reasons });
   }
   return `Found ${all.size} brands/snacks: ${[...all.values()].slice(0, 8).map((e) => e.name).join(", ")}`;
 }
 
 export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap = true) {
+  const safety = ctx.profile.isChild ? { filterTags: KID_PLACE_TAGS, excludeTags: NIGHTLIFE_TAGS } : { excludeTags: NIGHTLIFE_TAGS };
   ctx.emit("Mapping where their kind of taste lives near home…", "find_local_places");
   ctx.ran.add("find_local_places");
   const ids = loveIds(ctx.profile.loves);
@@ -127,7 +184,7 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
   let places: QEntity[] = [];
   let heatUsed = false;
   if (useHeatmap) {
-    const cells = await ctx.qloo.heatmap(ids, ctx.profile.city, ctx.profile.ageBand);
+    const cells = await ctx.qloo.heatmap(ids, cityOnly(ctx.profile.city), ctx.profile.ageBand);
     if (cells?.length) {
       ctx.heat = cells;
       const near = home ? cells.filter((c) => distanceM(home, c) <= radiusM) : cells;
@@ -138,7 +195,7 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
         const lists = await Promise.all(
           hot.map((h) =>
             ctx.qloo
-              .insights({ type: "urn:entity:place", interests: ids, geohash: h.geohash, age: ctx.profile.ageBand, explain: true, take: 6 }, "find_local_places")
+              .insights({ type: "urn:entity:place", interests: ids, geohash: h.geohash, age: ctx.profile.ageBand, explain: true, take: 6, ...safety }, "find_local_places")
               .then((l) => l.map((e) => ({ ...e, affinity: Math.round((((e.affinity ?? 0.5) + h.affinity) / 2) * 1000) / 1000 })))
               .catch(() => [] as QEntity[]),
           ),
@@ -150,18 +207,24 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
   const radiusSearch = await ctx.qloo
     .insights(
       home
-        ? { type: "urn:entity:place", interests: ids, point: home, radiusM, age: ctx.profile.ageBand, explain: true, take: 12 }
-        : { type: "urn:entity:place", interests: ids, locationQuery: ctx.profile.city, radiusM, age: ctx.profile.ageBand, explain: true, take: 12 },
+        ? { type: "urn:entity:place", interests: ids, point: home, radiusM, age: ctx.profile.ageBand, explain: true, take: 15, ...safety }
+        : { type: "urn:entity:place", interests: ids, locationQuery: ctx.profile.city, radiusM, age: ctx.profile.ageBand, explain: true, take: 15, ...safety },
       "find_local_places",
     )
     .catch(() => [] as QEntity[]);
   const byId = new Map<string, QEntity>();
+  const seenNames = new Set<string>();
   [...places, ...radiusSearch].forEach((e) => {
     const prev = byId.get(e.id);
     byId.set(e.id, prev ? { ...prev, affinity: Math.max(prev.affinity ?? 0, e.affinity ?? 0), distanceM: prev.distanceM ?? e.distanceM } : e);
   });
   for (const e of byId.values()) {
-    const dist = e.distanceM ?? (home && e.location ? distanceM(home, e.location) : undefined);
+    if (ctx.profile.isChild && !kidSafe(e)) continue;
+    const rawDist = e.distanceM ?? (home && e.location ? distanceM(home, e.location) : undefined);
+    const dist = rawDist === undefined ? undefined : Math.round(rawDist / 10) * 10;
+    const nameKey = e.name.toLowerCase().replace(/\s*-.*$/, "").trim();
+    if (seenNames.has(nameKey)) continue; // chains: keep the nearest/first branch only
+    seenNames.add(nameKey);
     const reasons: Reason[] = [personalReason(ctx, e)];
     if (dist !== undefined) reasons.push({ kind: "local", text: `${dist < 1000 ? `${dist} m` : `${(dist / 1000).toFixed(1)} km`} from home`, value: dist });
     if (heatUsed && places.some((p) => p.id === e.id)) reasons.push({ kind: "local", text: "Inside a taste hot-spot on Qloo's heatmap" });
@@ -180,7 +243,7 @@ function partnerFor(d: QDemographics, band: AgeBand): { partner: Partner; ageFit
   return { partner: "everyone", ageFit: own, text: "Loved across age groups, so everyone can join in" };
 }
 
-export async function audienceProfile(ctx: AgentCtx, max = 14) {
+export async function audienceProfile(ctx: AgentCtx, max = 8) {
   const top = [...ctx.candidates.values()]
     .filter((c) => c.category !== "places")
     .sort((a, b) => b.personal - a.personal)
@@ -211,7 +274,9 @@ export async function sharedWithFamily(ctx: AgentCtx, relation?: string) {
   const out: string[] = [];
   for (const m of members) {
     ctx.emit(`Comparing their taste with ${m.name}'s to find things to share…`, "shared_with_family");
-    const shared = await ctx.qloo.compare(mine, loveIds(m.loves), FAVOURITE_TYPES).catch(() => []);
+    const shared = await ctx.qloo
+      .compare(mine, loveIds(m.loves), ["urn:entity:tv_show", "urn:entity:movie", "urn:entity:artist"], "shared_with_family", ctx.profile.isChild ? KID_RATINGS : undefined)
+      .catch(() => []);
     for (const e of shared.slice(0, 6)) {
       const ab = e as QEntity & { a?: number; b?: number };
       upsert(ctx, {
@@ -219,7 +284,14 @@ export async function sharedWithFamily(ctx: AgentCtx, relation?: string) {
         category: "together",
         personal: e.affinity ?? 0.5,
         partner: /grand|dadu|dadi|nana|nani|abuel/i.test(m.relation + m.name) ? "elders" : "everyone",
-        reasons: [{ kind: "shared", text: `Something ${ctx.profile.displayName} and ${m.name} would both enjoy${ab.a !== undefined ? ` (${ab.a.toFixed(2)} / ${ab.b?.toFixed(2)})` : ` (shared affinity ${(e.affinity ?? 0).toFixed(2)})`}` }],
+        reasons: [
+          {
+            kind: "shared",
+            text: (e as QEntity & { sharedTags?: string[] }).sharedTags?.length
+              ? `${ctx.profile.displayName} and ${m.name} share a taste for ${(e as QEntity & { sharedTags?: string[] }).sharedTags!.slice(0, 3).join(", ")} (Qloo compare)`
+              : `Something ${ctx.profile.displayName} and ${m.name} would both enjoy${ab.a !== undefined ? ` (${ab.a.toFixed(2)} / ${ab.b?.toFixed(2)})` : ` (shared affinity ${(e.affinity ?? 0).toFixed(2)})`}`,
+          },
+        ],
       });
     }
     out.push(`${m.name}: ${shared.slice(0, 4).map((e) => e.name).join(", ") || "nothing shared"}`);
@@ -231,14 +303,15 @@ export async function whatsRising(ctx: AgentCtx, today = new Date()) {
   ctx.emit("Spotting what's rising right now that fits their taste…", "whats_rising");
   ctx.ran.add("whats_rising");
   const ids = loveIds(ctx.profile.loves);
-  const types: QlooType[] = ["urn:entity:tv_show", "urn:entity:video_game", "urn:entity:artist"];
+  // Qloo trending doesn't support video games yet.
+  const types: QlooType[] = ["urn:entity:tv_show", "urn:entity:movie", "urn:entity:artist"];
   const lists = await Promise.all(
-    types.map((type) => ctx.qloo.insights({ type, interests: ids, age: ctx.profile.ageBand, trends: "high", take: 8 }, "whats_rising").catch(() => [] as QEntity[])),
+    types.map((type) => ctx.qloo.insights({ type, interests: seedsFor(ctx, type), age: ctx.profile.ageBand, trends: "high", take: 8, contentRating: ctx.profile.isChild ? KID_RATINGS : undefined }, "whats_rising").catch(() => [] as QEntity[])),
   );
   // Top 3 per type (prefer picks not already on the shelf) so every type gets a chance to show it's rising.
   const pool = lists.flatMap((l) => {
     const sorted = [...l].sort((a, b) => (b.affinity ?? 0) - (a.affinity ?? 0));
-    return [...sorted.filter((e) => !ctx.candidates.has(e.id)), ...sorted.filter((e) => ctx.candidates.has(e.id))].slice(0, 3);
+    return [...sorted.filter((e) => !ctx.candidates.has(e.id)), ...sorted.filter((e) => ctx.candidates.has(e.id))].slice(0, 2);
   });
   const end = today.toISOString().slice(0, 10);
   const start = new Date(today.getTime() - 56 * 86400000).toISOString().slice(0, 10);
@@ -251,6 +324,11 @@ export async function whatsRising(ctx: AgentCtx, today = new Date()) {
     })
     .filter((x) => x.delta === undefined || x.delta >= 2)
     .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
+  // If the trend history is flat, fall back to Qloo's trend-biased ranking itself for a couple of fresh picks.
+  if (!scored.length) {
+    const fresh = pool.filter((e) => !ctx.candidates.has(e.id)).slice(0, 2);
+    for (const e of fresh) scored.push({ e, pts: undefined, delta: undefined });
+  }
   let rising = 0;
   for (const { e, pts, delta } of scored) {
     rising++;

@@ -64,9 +64,21 @@ const TOGETHER_VERB: Record<"watch" | "listen" | "play" | "eat", Tpl> = {
   eat: { en: (n) => `Let's have ${n} together!`, hi: (n) => `चलो साथ में ${n} खाते हैं!`, es: (n) => `¡Comamos ${n} juntos!` },
 };
 
+const NEW_VERB: Record<"watch" | "listen" | "play", Tpl> = {
+  watch: { en: (n) => `Have you seen ${n}?`, hi: (n) => `क्या तुमने ${n} देखा?`, es: (n) => `¿Ya viste ${n}?` },
+  listen: { en: (n) => `Have you heard ${n}?`, hi: (n) => `क्या तुमने ${n} सुना?`, es: (n) => `¿Ya escuchaste a ${n}?` },
+  play: { en: (n) => `Have you played ${n}?`, hi: (n) => `क्या तुमने ${n} खेला?`, es: (n) => `¿Ya jugaste ${n}?` },
+};
+
+export function newPhrase(type: string): Tpl {
+  if (/artist|podcast/.test(type)) return NEW_VERB.listen;
+  if (/videogame/.test(type)) return NEW_VERB.play;
+  return NEW_VERB.watch;
+}
+
 export function togetherPhrase(type: string): Tpl {
   if (/artist|podcast/.test(type)) return TOGETHER_VERB.listen;
-  if (/video_game/.test(type)) return TOGETHER_VERB.play;
+  if (/videogame/.test(type)) return TOGETHER_VERB.play;
   if (/brand|place/.test(type)) return TOGETHER_VERB.eat;
   return TOGETHER_VERB.watch;
 }
@@ -87,7 +99,7 @@ export const REACTIONS: { label: Localized; emoji: string }[] = [
 export const TYPE_EMOJI: Record<string, string> = {
   "urn:entity:tv_show": "📺",
   "urn:entity:movie": "🎬",
-  "urn:entity:video_game": "🎮",
+  "urn:entity:videogame": "🎮",
   "urn:entity:artist": "🎵",
   "urn:entity:brand": "🍪",
   "urn:entity:place": "📍",
