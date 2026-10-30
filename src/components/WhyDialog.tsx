@@ -8,6 +8,7 @@ import { Sparkline } from "./Sparkline";
 
 const KIND: Record<Reason["kind"], { icon: string; title: string; bg: string }> = {
   personal: { icon: "💜", title: "Matches what they love", bg: "var(--grape-soft)" },
+  temperament: { icon: "🧩", title: "Fits what they're like", bg: "var(--c-fun)" },
   local: { icon: "📍", title: "Near home", bg: "var(--c-places)" },
   age: { icon: "🎂", title: "Right for their age", bg: "var(--c-core)" },
   audience: { icon: "👥", title: "Who enjoys it", bg: "var(--c-people)" },

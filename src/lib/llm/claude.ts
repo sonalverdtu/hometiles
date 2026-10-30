@@ -5,6 +5,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { getConfig } from "../config";
 import type { Profile } from "../board/types";
 import { BaselineSchema, LANG_NAME, TILE_TEXT_SYSTEM, TileTextSchema, type TileTextInput } from "./shared";
+import type { z } from "zod";
 
 export const FALLBACK_BETA = "server-side-fallback-2026-07-01";
 
@@ -38,6 +39,21 @@ export async function writeTileText(profile: Profile, items: TileTextInput[]) {
   });
   if (response.stop_reason === "refusal") throw new Error("Claude declined the labelling request");
   return { parsed: response.parsed_output, primary, secondary };
+}
+
+/** Any small structured task: the reply is parsed against the zod schema. */
+export async function claudeJson<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<T> {
+  const response = await claude().beta.messages.parse({
+    model: getConfig().llmModel,
+    max_tokens: 4000,
+    betas: [FALLBACK_BETA],
+    fallbacks: "default",
+    output_config: { effort: "low", format: betaZodOutputFormat(schema) },
+    system,
+    messages: [{ role: "user", content: prompt }],
+  });
+  if (response.stop_reason === "refusal" || !response.parsed_output) throw new Error("Claude returned no structured answer");
+  return response.parsed_output as T;
 }
 
 /** "Without Qloo" board: what an LLM produces from the same intake with no external data (FR-601). */

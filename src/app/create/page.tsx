@@ -6,6 +6,7 @@ import type { EntityRef, Lang, Profile } from "@/lib/board/types";
 import { DEFAULT_LANG, LANG_CODES, langLabel } from "@/lib/i18n";
 import type { AgeBand, QlooType } from "@/lib/qloo/types";
 import type { AgeGroup } from "@/lib/board/age";
+import { TEMPERAMENT, TEMPERAMENTS, type Temperament } from "@/lib/board/temperament";
 import { setPendingProfile } from "@/lib/client/store";
 
 const TYPES: { id: QlooType; label: string; emoji: string; example: string; cat: string }[] = [
@@ -144,6 +145,7 @@ export default function CreatePage() {
   const [secondary, setSecondary] = useState<Lang | "">("");
   const [type, setType] = useState(TYPES[0]);
   const [favs, setFavs] = useState<Fav[]>([]);
+  const [temper, setTemper] = useState<Temperament[]>([]);
   const [family, setFamily] = useState<{ name: string; relation: string; singers: string }[]>([{ name: "", relation: "mother", singers: "" }]);
   const [err, setErr] = useState<string | null>(null);
   const key = useRef(1);
@@ -167,6 +169,7 @@ export default function CreatePage() {
       ageBand: age.id,
       isChild: age.group === "young" || age.group === "child",
       ageGroup: age.group,
+      temperament: temper.length ? temper : undefined,
       city: city.trim(),
       home,
       primaryLang: primary,
@@ -299,13 +302,39 @@ export default function CreatePage() {
                   <p className="mt-3 text-xs text-[var(--muted)]">
                     {favs.length}/5 added · ✓ means Qloo knows it. Unmatched names are searched again when the board is built.
                   </p>
+
+                  <fieldset className="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                    <legend className="px-1 text-sm font-bold">What is {who} like? (optional, up to 2)</legend>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {TEMPERAMENTS.map((t) => {
+                        const on = temper.includes(t);
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            aria-pressed={on}
+                            title={TEMPERAMENT[t].hint}
+                            disabled={!on && temper.length >= 2}
+                            onClick={() => setTemper((xs) => (on ? xs.filter((x) => x !== t) : [...xs, t].slice(-2)))}
+                            className="chip disabled:opacity-40"
+                          >
+                            <span aria-hidden>{TEMPERAMENT[t].emoji}</span> {TEMPERAMENT[t].label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      Qloo doesn&apos;t guess a child&apos;s personality. The agent turns your pick into Qloo&apos;s own tags for shows and films (calm, gentle, energetic…),
+                      and adds a few that fit next to the ones from their favourites.
+                    </p>
+                  </fieldset>
                 </div>
               )}
 
               {step === 3 && (
                 <div>
                   <p className="font-display text-2xl font-extrabold">Who&apos;s at home?</p>
-                  <p className="mb-4 text-sm text-[var(--muted)]">They become “My people” tiles. Add a grandparent&apos;s favourite singers and the agent finds things they can enjoy together.</p>
+                  <p className="mb-4 text-sm text-[var(--muted)]">They become “My people” tiles. Add anyone&apos;s favourite singers: the agent finds things to enjoy together, and a parent&apos;s music gently widens the child&apos;s own music picks.</p>
                   <div className="space-y-3">
                     {family.map((f, i) => (
                       <div key={i} className="pop-in grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3 sm:grid-cols-[1fr_1fr_auto]">

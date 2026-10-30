@@ -11,6 +11,7 @@ export const PERSONAS: Record<string, Profile> = {
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",
+    temperament: ["energetic", "funny"],
     city: "Camden, London",
     home: { lat: 51.539, lon: -0.1426 },
     primaryLang: "en",
@@ -21,7 +22,7 @@ export const PERSONAS: Record<string, Profile> = {
       { name: "Cadbury", type: "urn:entity:brand" },
     ],
     family: [
-      { name: "Mum", relation: "mother", loves: [] },
+      { name: "Mum", relation: "mother", loves: [{ name: "Ed Sheeran", type: "urn:entity:artist" }] },
       { name: "Dad", relation: "father", loves: [] },
       {
         name: "Grandma",
@@ -39,6 +40,7 @@ export const PERSONAS: Record<string, Profile> = {
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",
+    temperament: ["curious"],
     city: "Rajouri Garden, New Delhi",
     home: { lat: 28.6492, lon: 77.122 },
     primaryLang: "hi",
@@ -70,6 +72,7 @@ export const PERSONAS: Record<string, Profile> = {
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",
+    temperament: ["creative"],
     city: "Boyle Heights, Los Angeles",
     home: { lat: 34.0333, lon: -118.205 },
     primaryLang: "es",

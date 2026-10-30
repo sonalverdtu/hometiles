@@ -30,7 +30,7 @@ async function generate(params: Omit<GenerateContentParameters, "model">) {
   throw lastErr instanceof Error ? lastErr : new Error("Gemini request failed");
 }
 
-async function json<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<T> {
+export async function json<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<T> {
   const res = await generate({
     contents: prompt,
     config: { systemInstruction: system, responseMimeType: "application/json", responseJsonSchema: z.toJSONSchema(schema) },

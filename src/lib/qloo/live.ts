@@ -66,8 +66,9 @@ export async function qlooGet(path: string, params: Params): Promise<unknown> {
       }
     } catch (err) {
       if (err instanceof QlooError) throw err;
-      // A timeout means Qloo is slow right now; trying again would only spend the agent's time budget.
-      if (ctrl.signal.aborted) throw new QlooError(`Qloo timed out (${path})`, 0);
+      // One more try after a timeout (Qloo is sometimes briefly slow), but never for heatmaps: a second
+      // 25 s wait would eat the agent's whole time budget.
+      if (ctrl.signal.aborted && (attempt >= 1 || params["filter.type"] === "urn:heatmap")) throw new QlooError(`Qloo timed out (${path})`, 0);
       lastErr = err;
       retryAfter = 300;
     } finally {
@@ -85,6 +86,7 @@ export function insightsParams(q: InsightsQuery): Params {
   const p: Params = { "filter.type": q.type, take: String(q.take ?? 20) };
   if (q.interests?.length) p["signal.interests.entities"] = q.interests.join(",");
   if (q.tags?.length) p["signal.interests.tags"] = q.tags.join(",");
+  if (q.tags?.length && q.tagsOperator) p["operator.signal.interests.tags"] = q.tagsOperator;
   const isPlace = q.type === "urn:entity:place";
   if (q.geohash) p["filter.location.geohash"] = q.geohash;
   else if (q.point) {
