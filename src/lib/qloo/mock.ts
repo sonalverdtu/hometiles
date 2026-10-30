@@ -3,7 +3,7 @@
 
 import { distanceM, geohashEncode, parseWktPoint } from "../geo";
 import type { Params } from "./live";
-import { BY_ID, CATALOGUE, DELHI_CENTER, LA_CENTER, type Audience, type Culture, type MockItem } from "./mock-data";
+import { BY_ID, CATALOGUE, CITIES, type Audience, type CityId, type Culture, type MockItem } from "./mock-data";
 import { QlooError } from "./types";
 
 function hash01(s: string): number {
@@ -32,15 +32,18 @@ function toEntity(it: MockItem, query?: Record<string, unknown>) {
   };
 }
 
-function cityOf(params: Params): "delhi" | "la" | undefined {
+function cityOf(params: Params): CityId | undefined {
   const q = (params["signal.location.query"] ?? params["filter.location.query"] ?? "").toLowerCase();
-  if (/delhi|rajouri|india|noida|gurgaon/.test(q)) return "delhi";
-  if (/los angeles|\bla\b|boyle|california/.test(q)) return "la";
+  for (const [id, c] of Object.entries(CITIES)) if (q && c.match.test(q)) return id as CityId;
   const wkt = params["filter.location"] ?? params["signal.location"];
   const p = wkt ? parseWktPoint(wkt) : null;
-  if (p) return distanceM(p, DELHI_CENTER) < distanceM(p, LA_CENTER) ? "delhi" : "la";
+  if (p) {
+    return (Object.entries(CITIES) as [CityId, (typeof CITIES)[CityId]][]).sort((a, b) => distanceM(p, a[1].center) - distanceM(p, b[1].center))[0][0];
+  }
   const gh = params["filter.location.geohash"];
-  if (gh) return gh.startsWith("tt") ? "delhi" : "la";
+  if (gh) {
+    return (Object.entries(CITIES) as [CityId, (typeof CITIES)[CityId]][]).find(([, c]) => geohashEncode(c.center.lat, c.center.lon, 2) === gh.slice(0, 2))?.[0];
+  }
   return undefined;
 }
 
@@ -57,7 +60,10 @@ const BANDS = ["24_and_younger", "25_to_29", "30_to_34", "35_to_44", "45_to_54",
 function cultureOfInterests(items: MockItem[]): Culture | undefined {
   const c = items.filter((i) => i.culture !== "global").map((i) => i.culture);
   if (!c.length) return undefined;
-  return c.filter((x) => x === "in").length >= c.filter((x) => x === "latam").length ? "in" : "latam";
+  // The most common non-global culture among the interests.
+  const counts = new Map<Culture, number>();
+  for (const x of c) counts.set(x, (counts.get(x) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 }
 
 function scoreItem(it: MockItem, interests: MockItem[], tagSet: Set<string>, culture: Culture | undefined, params: Params) {
@@ -86,7 +92,8 @@ function insights(params: Params) {
   const interests = interestIds.map((id) => BY_ID.get(id)).filter((x): x is MockItem => !!x);
   const tagSet = new Set(interests.flatMap((i) => i.tags));
   for (const t of list(params["signal.interests.tags"])) tagSet.add(t.replace("urn:tag:mock:", ""));
-  const culture = cultureOfInterests(interests) ?? (cityOf(params) === "delhi" ? "in" : cityOf(params) === "la" ? "latam" : undefined);
+  const cityId = cityOf(params);
+  const culture = cultureOfInterests(interests) ?? (cityId ? CITIES[cityId].culture : undefined);
   const city = cityOf(params);
   const onlyIds = new Set(list(params["filter.results.entities"]));
   const point = parseWktPoint(params["filter.location"] ?? "") ?? undefined;
@@ -99,7 +106,7 @@ function insights(params: Params) {
     pool = pool.filter((c) => (city ? c.city === city : true));
     if (geohash) pool = pool.filter((c) => c.lat !== undefined && geohashEncode(c.lat, c.lon!, geohash.length).startsWith(geohash.slice(0, 5)));
   }
-  if (type === "urn:entity:brand" && city) pool = pool.filter((c) => c.culture === (city === "delhi" ? "in" : "latam") || c.culture === "global");
+  if (type === "urn:entity:brand" && city) pool = pool.filter((c) => c.culture === CITIES[city].culture || c.culture === "global");
 
   const take = Number(params.take ?? "20");
   const entities = pool
@@ -131,8 +138,8 @@ function demographics(params: Params) {
 }
 
 function heatmap(params: Params) {
-  const city = cityOf(params) ?? "delhi";
-  const center = city === "delhi" ? DELHI_CENTER : LA_CENTER;
+  const city = cityOf(params) ?? "london";
+  const center = CITIES[city].center;
   const interests = list(params["signal.interests.entities"]).map((id) => BY_ID.get(id)).filter((x): x is MockItem => !!x);
   const tagSet = new Set(interests.flatMap((i) => i.tags));
   const hotspots = CATALOGUE.filter((c) => c.type === "urn:entity:place" && c.city === city && c.lat !== undefined).map((c) => ({

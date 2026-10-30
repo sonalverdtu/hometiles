@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { pick } from "@/lib/board/vocab";
+import { UI } from "@/lib/i18n";
 import { predict } from "@/lib/board/smart";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { addSaid, getSaid, getTaps, logTap, type KidSettings, type SaidEntry } from "@/lib/client/store";
@@ -87,7 +88,7 @@ export function KidBoard({
       {/* Sentence bar */}
       <div className="flex items-stretch gap-2 border-b border-[var(--line)] bg-white/90 p-2 shadow-[0_6px_16px_-12px_rgb(60_35_10/0.4)]">
         <div className="flex min-h-14 flex-1 flex-wrap items-center gap-1.5 rounded-2xl border-2 border-[var(--line)] bg-[var(--surface-2)] px-2 py-1" aria-live="polite" aria-label="What I'm saying">
-          {sentence.length === 0 && <span className="px-1 text-sm text-[var(--muted)]">{lang === "hi" ? "टाइल दबाओ…" : lang === "es" ? "Toca las fichas…" : "Tap the pictures…"}</span>}
+          {sentence.length === 0 && <span className="px-1 text-sm text-[var(--muted)]">{UI[lang].tapHint}</span>}
           {sentence.map((t, i) => (
             <span key={i} className="pop-in font-display flex items-center gap-1 rounded-xl border-2 px-2 py-0.5 text-base font-bold" style={{ background: `var(--c-${t.category})`, borderColor: `var(--b-${t.category})` }}>
               <span aria-hidden>{t.emoji}</span>
@@ -102,7 +103,7 @@ export function KidBoard({
         </div>
         <button type="button" onClick={sayAll} disabled={!sentence.length} className="kid-action border-[#0e5e2c] bg-[var(--go)] text-white shadow-[0_4px_0_#0e5e2c] disabled:opacity-40" aria-label="Speak the sentence">
           <span className="text-2xl" aria-hidden>🔊</span>
-          <span className="text-xs font-bold">{lang === "hi" ? "बोलो" : lang === "es" ? "Hablar" : "Speak"}</span>
+          <span className="text-xs font-bold">{UI[lang].speak}</span>
         </button>
         <button type="button" onClick={() => setSentence((s) => s.slice(0, -1))} className="kid-action bg-white" aria-label="Delete last word">
           <span className="text-2xl" aria-hidden>⌫</span>
@@ -127,7 +128,7 @@ export function KidBoard({
             onClick={() => setView("smart")}
             className={`font-display rounded-2xl border-2 py-2 text-base font-extrabold transition-all ${view === "smart" ? "translate-y-[3px] border-[var(--brand)] bg-[var(--brand-soft)] shadow-[0_1px_0_var(--brand)]" : "border-[var(--line)] bg-white shadow-[0_4px_0_var(--line)]"}`}
           >
-            ⭐ {lang === "hi" ? "मेरे लिए" : lang === "es" ? "Para mí" : "For me"}
+            ⭐ {UI[lang].forMe}
           </button>
           <button
             type="button"
@@ -139,7 +140,7 @@ export function KidBoard({
             }}
             className={`font-display rounded-2xl border-2 py-2 text-base font-extrabold transition-all ${view === "classic" ? "translate-y-[3px] border-[var(--brand)] bg-[var(--brand-soft)] shadow-[0_1px_0_var(--brand)]" : "border-[var(--line)] bg-white shadow-[0_4px_0_var(--line)]"}`}
           >
-            📁 {lang === "hi" ? "सारे शब्द" : lang === "es" ? "Todas" : "All words"}
+            📁 {UI[lang].allWords}
           </button>
         </div>
       )}
@@ -156,7 +157,7 @@ export function KidBoard({
           <>
             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
               <span aria-hidden>✨</span>
-              {lang === "hi" ? "शायद अब यह कहना है" : lang === "es" ? "Quizás quieres decir" : "Maybe next"}
+              {UI[lang].maybeNext}
             </div>
             <div className="grid gap-2" style={grid} key={pulse}>
               {predictions.map((p, i) => (
@@ -167,7 +168,7 @@ export function KidBoard({
             </div>
             {said.length > 0 && (
               <div className="mt-4">
-                <div className="mb-2 text-sm font-bold text-[var(--muted)]">💬 {lang === "hi" ? "पहले कहा" : lang === "es" ? "Dije antes" : "Said before"}</div>
+                <div className="mb-2 text-sm font-bold text-[var(--muted)]">💬 {UI[lang].saidBefore}</div>
                 <div className="flex flex-wrap gap-2">
                   {said.slice(0, compact ? 3 : 6).map((s) => (
                     <button key={s.ts} type="button" onClick={() => speak(s.text, lang)} className="chip text-base">
@@ -182,7 +183,7 @@ export function KidBoard({
           <>
             <div className="mb-2 flex items-center gap-2">
               <button type="button" onClick={() => setFolder(null)} className="btn font-display text-lg">
-                ⬅ {lang === "hi" ? "वापस" : lang === "es" ? "Atrás" : "Back"}
+                ⬅ {UI[lang].back}
               </button>
               <span className="text-lg font-extrabold">
                 {openFolder.emoji} {pick(openFolder.title, lang)}

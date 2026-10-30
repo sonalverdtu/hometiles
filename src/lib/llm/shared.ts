@@ -1,9 +1,9 @@
 // Prompts and output schemas shared by every LLM provider.
 
 import { z } from "zod";
-import type { Lang } from "../board/types";
+import { LANGUAGES, type Lang } from "../i18n";
 
-export const LANG_NAME: Record<Lang, string> = { en: "English", hi: "Hindi (Devanagari script)", es: "Spanish" };
+export const LANG_NAME = Object.fromEntries(Object.entries(LANGUAGES).map(([k, v]) => [k, v.llm])) as Record<Lang, string>;
 
 export const TileTextSchema = z.object({
   tiles: z.array(

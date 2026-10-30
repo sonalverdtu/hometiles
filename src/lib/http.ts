@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { AGE_BANDS, QLOO_TYPES } from "./qloo/types";
+import { LANG_CODES, type Lang } from "./i18n";
 
 const MAX_BODY = 32 * 1024;
 const WINDOW_MS = 60_000;
@@ -32,7 +33,7 @@ export async function readJson<T>(req: Request, schema: z.ZodType<T>): Promise<{
   return { ok: true, data: parsed.data };
 }
 
-const Lang = z.enum(["en", "hi", "es"]);
+const Lang = z.enum(LANG_CODES as [Lang, ...Lang[]]);
 const EntityRefSchema = z.object({
   qlooId: z.string().max(120).optional(),
   name: z.string().min(1).max(120),
