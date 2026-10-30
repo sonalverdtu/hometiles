@@ -202,7 +202,7 @@ export default function CreatePage() {
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--brand)]">New board</p>
           <h1 className="mt-1 text-4xl font-extrabold sm:text-5xl">Make a board for {name.trim() ? name.trim() : "a child"}</h1>
-          <p className="mt-2 text-[var(--muted)]">Three quick steps. Names stay on this device; only Qloo IDs and the city are sent to Qloo.</p>
+          <p className="mt-2 text-[var(--muted)]">Three quick steps. Names never go to the AI or to Qloo; only favourites, the city and age do.</p>
 
           {/* Stepper */}
           <ol className="relative mt-7 grid grid-cols-3" aria-label="Progress">
