@@ -194,17 +194,17 @@ export default function CreatePage() {
               📍 {home ? "Home location set (rounded to about 100 m)" : "Use my location for places near home (optional)"}
             </button>
             <div className="grid grid-cols-2 gap-3">
-              <label className="grid gap-1 text-sm font-bold">
+              <label className="grid min-w-0 gap-1 text-sm font-bold">
                 Language at home
-                <select className="rounded-xl border-2 border-[var(--line)] px-3 py-3 text-base font-normal" value={primary} onChange={(e) => setPrimary(e.target.value as Lang)}>
+                <select className="w-full min-w-0 rounded-xl border-2 border-[var(--line)] px-3 py-3 text-base font-normal" value={primary} onChange={(e) => setPrimary(e.target.value as Lang)}>
                   <option value="hi">हिंदी Hindi</option>
                   <option value="es">Español Spanish</option>
                   <option value="en">English</option>
                 </select>
               </label>
-              <label className="grid gap-1 text-sm font-bold">
+              <label className="grid min-w-0 gap-1 text-sm font-bold">
                 Second language
-                <select className="rounded-xl border-2 border-[var(--line)] px-3 py-3 text-base font-normal" value={secondary} onChange={(e) => setSecondary(e.target.value as Lang | "")}>
+                <select className="w-full min-w-0 rounded-xl border-2 border-[var(--line)] px-3 py-3 text-base font-normal" value={secondary} onChange={(e) => setSecondary(e.target.value as Lang | "")}>
                   <option value="">None</option>
                   <option value="en">English</option>
                   <option value="hi">हिंदी Hindi</option>

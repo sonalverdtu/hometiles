@@ -94,7 +94,7 @@ export default function GeneratePage() {
         <span aria-hidden className="grid h-14 w-14 animate-pulse place-items-center rounded-2xl bg-[var(--brand)] text-3xl text-white">▦</span>
         <div>
           <h1 className="text-2xl font-extrabold">Building {name ? `${name}'s` : "the"} board…</h1>
-          <p className="text-sm text-[var(--muted)]">The agent is researching with Qloo. This takes a few seconds.</p>
+          <p className="text-sm text-[var(--muted)]">The agent is researching with Qloo. This takes about a minute.</p>
         </div>
       </div>
       <p className="mt-1 text-sm text-[var(--muted)]" aria-live="polite">
