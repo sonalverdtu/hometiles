@@ -25,16 +25,19 @@ const waiting: (() => void)[] = [];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function acquire() {
+  // A released slot passes straight to the next waiter (release() doesn't decrement then), so a new caller
+  // can never slip in between and push the count past MAX_IN_FLIGHT.
   if (inFlight >= MAX_IN_FLIGHT) await new Promise<void>((r) => waiting.push(r));
-  inFlight++;
+  else inFlight++;
   const gap = lastStart + MIN_GAP_MS - Date.now();
   lastStart = Math.max(Date.now(), lastStart + MIN_GAP_MS);
   if (gap > 0) await sleep(gap);
 }
 
 function release() {
-  inFlight--;
-  waiting.shift()?.();
+  const next = waiting.shift();
+  if (next) next();
+  else inFlight--;
 }
 
 export async function qlooGet(path: string, params: Params): Promise<unknown> {

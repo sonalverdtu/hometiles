@@ -63,8 +63,12 @@ export function BigTile({
         ) : (
           <span aria-hidden className={`${s.img} ${s.icon} grid place-items-center leading-none`}>{tile.emoji}</span>
         )}
-        <span className={`font-display line-clamp-2 font-bold leading-tight ${s.text}`}>{main}</span>
-        {sub && sub !== main && <span className="line-clamp-1 text-xs font-medium opacity-70">{sub}</span>}
+        <span lang={mainLang} className={`font-display line-clamp-2 font-bold leading-tight ${s.text}`}>{main}</span>
+        {sub && sub !== main && (
+          <span lang={secondary} className="line-clamp-1 text-xs font-medium opacity-70">
+            {sub}
+          </span>
+        )}
       </button>
       {onInfo && tile.kind === "rotating" && (
         <button

@@ -49,7 +49,8 @@ export function toObf(board: Board, lang: Lang, columns = 6): ObfBoard {
     let image_id: string | undefined;
     if (t.image?.url) {
       image_id = `img${i + 1}`;
-      images.push({ id: image_id, url: t.image.url, content_type: "image/png", width: 300, height: 300 });
+      const type = /\.jpe?g(\?|$)/i.test(t.image.url) ? "image/jpeg" : /\.webp(\?|$)/i.test(t.image.url) ? "image/webp" : "image/png";
+      images.push({ id: image_id, url: t.image.url, content_type: type, width: 300, height: 300 });
     }
     buttons.push({
       id: bid,
@@ -75,6 +76,7 @@ export function toObf(board: Board, lang: Lang, columns = 6): ObfBoard {
     buttons,
     grid: { rows, columns, order },
     images,
-    license: { type: "CC-By", author_name: "HomeTiles", author_url: "https://github.com/" },
+    // Pictograms are ARASAAC (Sergio Palao, Government of Aragón), whose licence is the binding one.
+    license: { type: "CC BY-NC-SA 4.0", author_name: "Sergio Palao / ARASAAC (pictograms); HomeTiles (board)", author_url: "https://arasaac.org" },
   };
 }

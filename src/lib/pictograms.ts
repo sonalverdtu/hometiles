@@ -19,7 +19,7 @@ export async function arasaacUrl(keyword: string, lang = "en"): Promise<string |
     cache.set(key, url);
     return url;
   } catch {
-    cache.set(key, null);
+    // A timeout or network error says nothing about the word: try again next time.
     return null;
   } finally {
     clearTimeout(timer);

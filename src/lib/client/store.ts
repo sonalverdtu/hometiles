@@ -11,11 +11,16 @@ const safe = <T,>(fn: () => T, fallback: T): T => {
   }
 };
 
-export function saveBoard(board: Board) {
-  safe(() => {
-    localStorage.setItem(`ht:board:${board.id}`, JSON.stringify(board));
+const MAX_TRACE = 250;
+
+/** false when the browser refused to store it (storage full or blocked). */
+export function saveBoard(board: Board): boolean {
+  const slim = board.trace.length > MAX_TRACE ? { ...board, trace: board.trace.slice(-MAX_TRACE) } : board;
+  return safe(() => {
+    localStorage.setItem(`ht:board:${board.id}`, JSON.stringify(slim));
     localStorage.setItem("ht:latest", board.id);
-  }, undefined);
+    return true;
+  }, false);
 }
 
 export function loadBoard(id?: string | null): Board | null {

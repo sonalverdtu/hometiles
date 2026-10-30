@@ -3,7 +3,7 @@
 
 import type { QEntity } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
-import { LANG_CODES } from "../i18n";
+import { LANG_CODES, type LocalNames } from "../i18n";
 import type { Board, Category, Folder, Lang, Localized, Partner, Profile, Reason, Suggestion, Tile } from "./types";
 import { BANTER, CORE, FOLDER_META, newPhrase, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
 
@@ -58,7 +58,7 @@ function mergeReasons(a: Reason[], b: Reason[]): Reason[] {
   return [...a, ...b].filter((r) => (seen.has(r.text) ? false : (seen.add(r.text), true)));
 }
 
-export function displayName(e: { name: string; nameLocal?: Partial<Record<"hi" | "es", string>> }, lang: Lang): string {
+export function displayName(e: { name: string; nameLocal?: LocalNames }, lang: Lang): string {
   if (lang === "en") return e.name;
   return e.nameLocal?.[lang] ?? e.name;
 }

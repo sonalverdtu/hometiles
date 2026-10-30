@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { AGE_BANDS, QLOO_TYPES } from "./qloo/types";
-import { LANG_CODES, type Lang } from "./i18n";
+import { LANG_CODES, LOCAL_LANGS, type Lang } from "./i18n";
 import { AGE_GROUPS } from "./board/age";
 import { TEMPERAMENTS } from "./board/temperament";
 
@@ -47,7 +47,7 @@ const EntityRefSchema = z.object({
   name: z.string().min(1).max(120),
   type: z.enum(QLOO_TYPES),
   image: z.string().url().max(500).optional(),
-  nameLocal: z.object({ hi: z.string().max(120).optional(), es: z.string().max(120).optional() }).optional(),
+  nameLocal: z.partialRecord(z.enum(LOCAL_LANGS as [Exclude<Lang, "en">, ...Exclude<Lang, "en">[]]), z.string().max(120)).optional(),
 });
 
 export const ProfileSchema = z.object({
