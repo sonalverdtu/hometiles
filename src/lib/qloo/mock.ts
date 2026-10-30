@@ -5,6 +5,7 @@ import { distanceM, geohashEncode, parseWktPoint } from "../geo";
 import type { Params } from "./live";
 import { BY_ID, CATALOGUE, CITIES, type Audience, type CityId, type Culture, type MockItem } from "./mock-data";
 import { QlooError } from "./types";
+import { MOCK_TEMPERAMENT_TAGS } from "../board/temperament";
 
 function hash01(s: string): number {
   let h = 2166136261;
@@ -90,8 +91,11 @@ function insights(params: Params) {
   if (type === "urn:heatmap") return heatmap(params);
   const interestIds = list(params["signal.interests.entities"]);
   const interests = interestIds.map((id) => BY_ID.get(id)).filter((x): x is MockItem => !!x);
-  const tagSet = new Set(interests.flatMap((i) => i.tags));
+  let tagSet = new Set(interests.flatMap((i) => i.tags));
   for (const t of list(params["signal.interests.tags"])) tagSet.add(t.replace("urn:tag:mock:", ""));
+  // Like live Qloo, temperament tags outweigh the seed's own tags.
+  const mood = list(params["signal.interests.tags"]).flatMap((t) => MOCK_TEMPERAMENT_TAGS[t] ?? []);
+  if (mood.length) tagSet = new Set(mood);
   const cityId = cityOf(params);
   const culture = cultureOfInterests(interests) ?? (cityId ? CITIES[cityId].culture : undefined);
   const city = cityOf(params);

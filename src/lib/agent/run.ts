@@ -18,6 +18,7 @@ import {
   audienceProfile,
   expandPersonalTaste,
   findLocalBrands,
+  matchTemperament,
   findLocalPlaces,
   resolveLoves,
   sharedWithFamily,
@@ -31,13 +32,13 @@ export interface RunHooks {
 }
 
 async function scripted(ctx: AgentCtx) {
-  await Promise.all([expandPersonalTaste(ctx), findLocalBrands(ctx), findLocalPlaces(ctx), sharedWithFamily(ctx)]);
+  await Promise.all([expandPersonalTaste(ctx), matchTemperament(ctx), findLocalBrands(ctx), findLocalPlaces(ctx), sharedWithFamily(ctx)]);
   await Promise.all([audienceProfile(ctx), whatsRising(ctx)]);
 }
 
 const AGENT_SYSTEM = `You are the research agent inside HomeTiles, which builds AAC communication boards for non-speaking people.
 Your job: gather evidence from Qloo's taste graph so the board holds the person's real foods, places and favourite things.
-Use the tools. Cover all of these before you finish: favourites (expand_personal_taste), local snacks/brands (find_local_brands),
+Use the tools. Cover all of these before you finish: favourites (expand_personal_taste), shows that fit their temperament if one is given (match_temperament), local snacks/brands (find_local_brands),
 places near home (find_local_places), things to share with each family member who has favourites (shared_with_family),
 who-loves-what audience checks (audience_profile, after you have candidates), and what's rising (whats_rising).
 Call independent tools in parallel. When done, reply with 2-3 short sentences for the parent explaining what you focused on and why.
@@ -57,6 +58,12 @@ function agentTools(ctx: AgentCtx): AgentTool[] {
       "Find shows, games, music and films the person is likely to love, from their favourites (Qloo insights).",
       z.object({ types: z.array(z.enum(["tv_show", "videogame", "artist", "movie"])).min(1) }),
       ({ types }) => expandPersonalTaste(ctx, types.map((t) => `urn:entity:${t}` as const)),
+    ),
+    tool(
+      "match_temperament",
+      "Find shows and films that fit what the child is like (e.g. calm, energetic), from Qloo descriptor tags. Only when the brief lists a temperament.",
+      z.object({ take: z.number().int().min(3).max(10) }),
+      ({ take }) => matchTemperament(ctx, take),
     ),
     tool("find_local_brands", "Find snacks, foods and brands that fit the person's taste and are popular where they live.", z.object({ take: z.number().int().min(4).max(20) }), ({ take }) =>
       findLocalBrands(ctx, take),
@@ -89,6 +96,7 @@ async function agentic(ctx: AgentCtx) {
     age_band: p.ageBand,
     is_child: p.isChild,
     age_group: ageGroupOf(p),
+    temperament: p.temperament ?? [],
     languages: [p.primaryLang, p.secondaryLang].filter(Boolean),
     favourites: p.loves.map((l) => `${l.name} (${l.type.split(":")[2]})${l.qlooId ? "" : " [unresolved]"}`),
     family: p.family.map((f) => ({ relation: f.relation, has_favourites: f.loves.some((l) => l.qlooId) })),
@@ -124,6 +132,7 @@ async function fillGaps(ctx: AgentCtx) {
   const gaps: Promise<unknown>[] = [];
   if (!ctx.ran.has("expand_personal_taste")) gaps.push(expandPersonalTaste(ctx));
   if (!ctx.ran.has("find_local_brands")) gaps.push(findLocalBrands(ctx));
+  if (!ctx.ran.has("match_temperament") && ctx.profile.temperament?.length) gaps.push(matchTemperament(ctx));
   if (!ctx.ran.has("find_local_places")) gaps.push(findLocalPlaces(ctx));
   if (!ctx.ran.has("shared_with_family")) gaps.push(sharedWithFamily(ctx));
   await Promise.all(gaps);

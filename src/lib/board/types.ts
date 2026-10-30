@@ -5,6 +5,7 @@ import type { TraceEntry } from "../qloo/trace";
 
 import type { Lang } from "../i18n";
 import type { AgeGroup } from "./age";
+import type { Temperament } from "./temperament";
 export type { Lang };
 export type Localized = Partial<Record<Lang, string>> & { en: string };
 
@@ -33,6 +34,8 @@ export interface Profile {
   /** true for any child under 13 (kept for older boards); ageGroup is the finer version. */
   isChild: boolean;
   ageGroup?: AgeGroup;
+  /** What the child is like (up to 2), turned into Qloo descriptor tags for shows and films. */
+  temperament?: Temperament[];
   city: string;
   home?: { lat: number; lon: number };
   primaryLang: Lang;
@@ -42,7 +45,7 @@ export interface Profile {
 }
 
 export interface Reason {
-  kind: "personal" | "local" | "age" | "shared" | "trending" | "audience" | "core" | "safety" | "people" | "usage";
+  kind: "personal" | "temperament" | "local" | "age" | "shared" | "trending" | "audience" | "core" | "safety" | "people" | "usage";
   text: string;
   value?: number;
   callId?: string;

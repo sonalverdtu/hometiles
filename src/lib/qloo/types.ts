@@ -75,6 +75,8 @@ export interface InsightsQuery {
   type: QlooType;
   interests?: string[];
   tags?: string[];
+  /** "union" = any of the tags counts (Qloo's default needs all of them at once, a much weaker shift). */
+  tagsOperator?: "union";
   locationQuery?: string;
   point?: { lat: number; lon: number };
   radiusM?: number;
