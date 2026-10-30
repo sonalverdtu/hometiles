@@ -12,7 +12,8 @@ import { HoldToUnlock } from "./HoldToUnlock";
 
 type View = "smart" | "classic";
 
-const SMART_CORE = new Set(["core-i", "core-want", "core-more", "core-stop", "core-yes", "core-no", "core-go"]);
+// The first 8 core slots, identical on both boards (motor planning). "All words" adds its extra core words after these.
+const CORE_SLOTS = ["core-i", "core-want", "core-more", "core-stop", "core-yes", "core-no", "core-go", "safety-help"];
 
 export function KidBoard({
   board,
@@ -52,10 +53,10 @@ export function KidBoard({
 
   const last = sentence[sentence.length - 1]?.id ?? null;
   const predictions = useMemo(() => predict(board, last, taps, new Date(), compact ? 8 : 12), [board, last, taps, compact]);
-  const allCore = board.coreIds.map((id) => board.tiles[id]).filter(Boolean);
   // The smart board keeps the 8 most-used core words so predictions fit on one phone screen; "All words" shows every core word.
-  const core = view === "smart" ? allCore.filter((t) => SMART_CORE.has(t.id)) : allCore;
-  const help = board.tiles["safety-help"];
+  const slotCore = CORE_SLOTS.map((id) => board.tiles[id]).filter(Boolean);
+  const extraCore = board.coreIds.filter((id) => !CORE_SLOTS.includes(id)).map((id) => board.tiles[id]).filter(Boolean);
+  const core = view === "smart" ? slotCore : [...slotCore, ...extraCore];
 
   const tap = useCallback(
     (t: Tile) => {
@@ -79,7 +80,6 @@ export function KidBoard({
 
   const grid = { gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin(size)}, 1fr))` };
   const coreSize: TileSize = size === "xl" ? "s" : "xs";
-  const coreGrid = { gridTemplateColumns: `repeat(auto-fill, minmax(${size === "xl" ? "6rem" : "4.6rem"}, 1fr))` };
   const openFolder = board.folders.find((f) => f.id === folder);
 
   return (
@@ -144,13 +144,12 @@ export function KidBoard({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2">
-        {/* Core words: same place on both boards, always (motor planning). */}
-        <div className="mb-3 grid gap-2" style={coreGrid}>
+      <div className="@container flex-1 overflow-y-auto p-2">
+        {/* Core words: same place on both boards, always (motor planning). 4 or 8 columns, so the 8 slots never reflow mid-row. */}
+        <div className="mb-3 grid grid-cols-4 gap-2 @2xl:grid-cols-8">
           {core.map((t) => (
             <BigTile key={t.id} tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
           ))}
-          {help && <BigTile tile={help} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />}
         </div>
 
         {view === "smart" ? (
