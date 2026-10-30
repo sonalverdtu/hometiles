@@ -62,6 +62,8 @@ export interface Tile {
   entity?: EntityRef & { affinity?: number; distanceM?: number };
   locked: boolean;
   partner?: Partner;
+  /** Names of the family members this tile is shared with (Together tiles). */
+  sharedWith?: string[];
   reasons: Reason[];
   score?: number;
   moved?: boolean;

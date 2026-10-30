@@ -118,6 +118,7 @@ function upsert(ctx: AgentCtx, c: Candidate) {
     personal: Math.max(prev.personal, c.personal),
     local: c.local ?? prev.local,
     partner: c.partner ?? prev.partner,
+    sharedWith: [...new Set([...(prev.sharedWith ?? []), ...(c.sharedWith ?? [])])],
     trend: c.trend ?? prev.trend,
     entity: { ...prev.entity, distanceM: c.entity.distanceM ?? prev.entity.distanceM, image: prev.entity.image ?? c.entity.image },
     reasons: [...prev.reasons, ...c.reasons.filter((r) => !prev.reasons.some((p) => p.text === r.text))],
@@ -442,6 +443,7 @@ export async function sharedWithFamily(ctx: AgentCtx, relation?: string) {
         category: "together",
         personal: e.affinity ?? 0.5,
         partner: /grand|dadu|dadi|nana|nani|abuel/i.test(m.relation + m.name) ? "elders" : "everyone",
+        sharedWith: [m.name],
         reasons: [
           {
             kind: "shared",

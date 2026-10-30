@@ -23,8 +23,8 @@ export function langLabel(l: Lang): string {
 }
 
 /** The few words the child-mode screen itself shows. */
-export const UI: Record<Lang, Record<"tapHint" | "speak" | "forMe" | "allWords" | "maybeNext" | "saidBefore" | "back" | "moreWords", string>> = {
-  en: { tapHint: "Tap the pictures…", speak: "Speak", forMe: "For me", allWords: "All words", maybeNext: "Maybe next", saidBefore: "Said before", back: "Back", moreWords: "More words" },
-  hi: { tapHint: "टाइल दबाओ…", speak: "बोलो", forMe: "मेरे लिए", allWords: "सारे शब्द", maybeNext: "शायद अब यह कहना है", saidBefore: "पहले कहा", back: "वापस", moreWords: "और शब्द" },
-  es: { tapHint: "Toca las fichas…", speak: "Hablar", forMe: "Para mí", allWords: "Todas", maybeNext: "Quizás quieres decir", saidBefore: "Dije antes", back: "Atrás", moreWords: "Más palabras" },
+export const UI: Record<Lang, Record<"tapHint" | "speak" | "forMe" | "allWords" | "maybeNext" | "saidBefore" | "back" | "moreWords" | "talkingAbout", string>> = {
+  en: { tapHint: "Tap the pictures…", speak: "Speak", forMe: "For me", allWords: "All words", maybeNext: "Maybe next", saidBefore: "Said before", back: "Back", moreWords: "More words", talkingAbout: "Talking about" },
+  hi: { tapHint: "टाइल दबाओ…", speak: "बोलो", forMe: "मेरे लिए", allWords: "सारे शब्द", maybeNext: "शायद अब यह कहना है", saidBefore: "पहले कहा", back: "वापस", moreWords: "और शब्द", talkingAbout: "बात हो रही है" },
+  es: { tapHint: "Toca las fichas…", speak: "Hablar", forMe: "Para mí", allWords: "Todas", maybeNext: "Quizás quieres decir", saidBefore: "Dije antes", back: "Atrás", moreWords: "Más palabras", talkingAbout: "Hablando de" },
 };
