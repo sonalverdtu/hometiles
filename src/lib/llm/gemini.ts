@@ -1,6 +1,6 @@
 // Gemini provider (server only): labels, the "Without Qloo" baseline and a function-calling agent loop.
 
-import { GoogleGenAI, type Content, type FunctionDeclaration, type Part } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel, type Content, type FunctionDeclaration, type GenerateContentParameters, type Part } from "@google/genai";
 import { z } from "zod";
 import { getConfig } from "../config";
 import type { Profile } from "../board/types";
@@ -8,13 +8,30 @@ import { BaselineSchema, LANG_NAME, TileTextSchema, type TileTextInput } from ".
 
 let client: GoogleGenAI | null = null;
 function gemini(): GoogleGenAI {
-  client ??= new GoogleGenAI({ apiKey: getConfig().geminiKey });
+  // Fail fast instead of the SDK's long retries: on overload we switch model below.
+  client ??= new GoogleGenAI({ apiKey: getConfig().geminiKey, httpOptions: { timeout: 25_000, retryOptions: { attempts: 1 } } });
   return client;
 }
 
+// If the main model is overloaded (503/429) or slow, try the next one.
+const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite"];
+
+async function generate(params: Omit<GenerateContentParameters, "model">) {
+  const models = [getConfig().geminiModel, ...FALLBACK_MODELS.filter((m) => m !== getConfig().geminiModel)];
+  let lastErr: unknown;
+  for (const model of models) {
+    try {
+      // Low thinking keeps these short, structured tasks fast.
+      return await gemini().models.generateContent({ ...params, model, config: { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }, ...params.config } });
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Gemini request failed");
+}
+
 async function json<T>(schema: z.ZodType<T>, system: string, prompt: string): Promise<T> {
-  const res = await gemini().models.generateContent({
-    model: getConfig().geminiModel,
+  const res = await generate({
     contents: prompt,
     config: { systemInstruction: system, responseMimeType: "application/json", responseJsonSchema: z.toJSONSchema(schema) },
   });
@@ -45,7 +62,8 @@ export interface AgentTool {
 }
 
 /** Manual function-calling loop: Gemini picks Qloo tools; we run them and feed results back. */
-export async function runGeminiAgent(system: string, userPrompt: string, tools: AgentTool[], maxTurns = 8): Promise<string> {
+export async function runGeminiAgent(system: string, userPrompt: string, tools: AgentTool[], maxTurns = 8, budgetMs = 60_000): Promise<string> {
+  const deadline = Date.now() + budgetMs;
   const declarations: FunctionDeclaration[] = tools.map((t) => ({
     name: t.name,
     description: t.description,
@@ -54,8 +72,8 @@ export async function runGeminiAgent(system: string, userPrompt: string, tools: 
   const contents: Content[] = [{ role: "user", parts: [{ text: userPrompt }] }];
   let summary = "";
   for (let turn = 0; turn < maxTurns; turn++) {
-    const res = await gemini().models.generateContent({
-      model: getConfig().geminiModel,
+    if (Date.now() > deadline) break; // time budget: the scripted planner fills any gaps
+    const res = await generate({
       contents,
       config: { systemInstruction: system, tools: [{ functionDeclarations: declarations }] },
     });

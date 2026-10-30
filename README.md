@@ -7,7 +7,7 @@ Non-speaking people (autistic children and adults, people with cerebral palsy, s
 **HomeTiles is an agent that builds a board around one real person.** It uses Qloo's taste graph to find their real foods, places and favourite things, in their family's language. The board speaks, learns from what gets tapped on the device, and suggests weekly updates that a parent approves.
 
 ## What it does
-- **Agentic research with Qloo.** A Claude agent (tool runner) decides which Qloo tools to call. A deterministic scripted planner is the fallback.
+- **Agentic research with Qloo.** An LLM agent (Gemini function calling or the Claude tool runner) decides which Qloo tools to call. A deterministic scripted planner is the fallback.
   - `/search`: resolves favourites to Qloo entities.
   - `/v2/insights`: related shows, games, music and films (with `signal.demographics.age` and `feature.explainability`).
   - **Heatmap → places:** finds where this taste clusters near home (`urn:heatmap`), then searches places inside those hot-spots (`filter.location.geohash`).
@@ -29,7 +29,7 @@ npm install
 cp .env.example .env.local   # keys optional
 npm run dev                  # http://localhost:3000
 ```
-With **no keys**, everything runs in **mock mode**: a synthetic catalogue answers the same endpoints in Qloo's documented response shapes. With `QLOO_API_KEY` the app calls `https://hackathon.api.qloo.com`. With `ANTHROPIC_API_KEY` the Claude agent and bilingual labels switch on (model `claude-opus-5-5`, refusal fallbacks enabled).
+With **no keys**, everything runs in **mock mode**: a synthetic catalogue answers the same endpoints in Qloo's documented response shapes. With `QLOO_API_KEY` the app calls `https://hackathon.api.qloo.com`. With `GEMINI_API_KEY` (default `gemini-3.5-flash`) or `ANTHROPIC_API_KEY` (`claude-opus-5-5`) the LLM agent and bilingual labels switch on.
 
 ```bash
 npm test             # unit tests (ranking, safety rules, OBF, Qloo parsers)
