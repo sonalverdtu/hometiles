@@ -220,9 +220,23 @@ for each tile:
   + hint after a core word ("go" → places, "eat" → food, "want" → food / favourites)
   + 1.5 × (use at this hour)  or a small time-of-day prior (morning food, evening shows)
   + 1.0 × (use this week)
+  + 1.4 × (fit with the live topic)                    ← what the last few utterances were about
   + taste prior (the tile's board score)
 then pick 12 greedily, −0.35 per repeat of the same folder (so one screen mixes food, shows, places and people)
+then keep the row steady: a tile keeps its slot while it is still in the top 12; at most 3 slots change per update
 ```
+
+**Live topic** (`src/lib/board/topic.ts`). The last 5 utterances from the past 2 hours name a topic. Each older utterance counts 0.6× the one after it, and each topic counts once per utterance. The chip above "Maybe next" shows it, for example "💬 Talking about 👵 Grandma".
+
+| The child talks about… | "Maybe next" leans towards… |
+|---|---|
+| a person (Grandma, Dada) | the Together tiles found for that person, and the person |
+| "go" or a place | places near home |
+| "eat" or a food | food and snacks |
+| "play" | favourites and jokes |
+| a favourite (Bluey) | the jokes about it, then other things of the same kind |
+
+The topic changes only when an utterance ends: Speak, Clear, or 30 seconds without a tap. It never changes mid-sentence. Core words, folders and safety words never move. Only the "Maybe next" row adapts, a few slots at a time, so the child can still find things where they left them.
 
 ---
 
