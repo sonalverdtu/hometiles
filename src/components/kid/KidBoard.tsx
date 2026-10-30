@@ -4,25 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { pick } from "@/lib/board/vocab";
 import { predict } from "@/lib/board/smart";
+import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { addSaid, getSaid, getTaps, logTap, type KidSettings, type SaidEntry } from "@/lib/client/store";
 import { speak } from "@/lib/client/speech";
 import { BigTile, tileMin, type TileSize } from "./BigTile";
 import { HoldToUnlock } from "./HoldToUnlock";
-
-const GLUE = new Set(["core-i", "core-want", "core-go", "core-eat", "core-play", "core-like", "core-please"]);
-
-/** Turns tapped tiles into something natural to say. "I + want + Parle-G" → "मुझे पारले-जी चाहिए". */
-export function utterance(tiles: Tile[], lang: Lang): string {
-  if (!tiles.length) return "";
-  if (tiles.length === 1) return pick(tiles[0].speak, lang);
-  const content = [...tiles].reverse().find((t) => t.kind !== "core");
-  const allGlue = tiles.every((t) => t === content || GLUE.has(t.id));
-  if (content && allGlue) {
-    const please = tiles.some((t) => t.id === "core-please") ? ` ${pick(tiles.find((t) => t.id === "core-please")!.label, lang)}` : "";
-    return pick(content.speak, lang) + please;
-  }
-  return tiles.map((t) => pick(t.label, lang)).join(" ");
-}
 
 type View = "smart" | "classic";
 
@@ -73,7 +59,7 @@ export function KidBoard({
 
   const tap = useCallback(
     (t: Tile) => {
-      if (settings.speakOnTap) speak(pick(t.speak, lang), lang);
+      if (settings.speakOnTap) speak(tileSpeech(t, lang), lang); // says exactly what the tile shows
       setSentence((s) => [...s, t].slice(-10));
       logTap(board.id, t.id);
       setTapsState((x) => [...x, { tileId: t.id, ts: Date.now() }]);
@@ -83,7 +69,7 @@ export function KidBoard({
   );
 
   const sayAll = () => {
-    const text = utterance(sentence, lang);
+    const text = composeSentence(sentence, lang);
     if (!text) return;
     speak(text, lang);
     const entry = { text, tileIds: sentence.map((t) => t.id), ts: Date.now() };
@@ -108,6 +94,11 @@ export function KidBoard({
               {pick(t.label, lang)}
             </span>
           ))}
+          {sentence.length > 1 && (
+            <span className="basis-full px-1 text-sm font-semibold text-[var(--go)]" aria-label="Will say">
+              🔊 {composeSentence(sentence, lang)}
+            </span>
+          )}
         </div>
         <button type="button" onClick={sayAll} disabled={!sentence.length} className="kid-action bg-[var(--go)] text-white disabled:opacity-40" aria-label="Speak the sentence">
           <span className="text-2xl" aria-hidden>🔊</span>

@@ -52,8 +52,8 @@ export function toObf(board: Board, lang: Lang, columns = 6): ObfBoard {
     }
     buttons.push({
       id: bid,
-      label: `${t.emoji} ${pick(t.label, lang)}`.trim(),
-      vocalization: pick(t.speak, lang),
+      label: pick(t.label, lang),
+      vocalization: pick(t.label, lang), // same as Cboard: a tile says its label
       image_id,
       background_color: COLORS[t.category],
       ext_hometiles_category: t.category,

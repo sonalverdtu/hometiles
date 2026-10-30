@@ -24,7 +24,7 @@ export function WhyDialog({ tile, lang, onClose, onToggleLock }: { tile: Tile; l
   return (
     <Modal title={`Why "${pick(tile.label, lang)}"?`} onClose={onClose}>
       <p className="mb-3 rounded-xl bg-[#f7f2ea] px-3 py-2 text-sm">
-        Says: <strong>{pick(tile.speak, lang)}</strong>
+        Says: <strong>{pick(tile.label, lang)}</strong>
       </p>
       <ul className="space-y-2">
         {tile.reasons.map((r, i) => (
