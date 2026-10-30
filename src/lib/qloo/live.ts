@@ -45,7 +45,7 @@ export async function qlooGet(path: string, params: Params): Promise<unknown> {
   if (cached !== undefined) return cached;
 
   let lastErr: unknown;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     await acquire();
     const ctrl = new AbortController();
     // Heatmaps return thousands of cells and can take longer than other calls.
@@ -66,6 +66,8 @@ export async function qlooGet(path: string, params: Params): Promise<unknown> {
       }
     } catch (err) {
       if (err instanceof QlooError) throw err;
+      // A timeout means Qloo is slow right now; trying again would only spend the agent's time budget.
+      if (ctrl.signal.aborted) throw new QlooError(`Qloo timed out (${path})`, 0);
       lastErr = err;
       retryAfter = 300;
     } finally {

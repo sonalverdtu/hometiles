@@ -250,6 +250,11 @@ h3,
 
 /* ---------- Child board tiles (3D, pressable) ---------- */
 
+/* Child lock: the site's header and footer leave the page entirely (no focus, no clicks). */
+html[data-kidlock] .site-chrome {
+  display: none;
+}
+
 .kid-tile {
   position: relative;
   display: flex;
@@ -272,8 +277,14 @@ h3,
     box-shadow 0.1s ease,
     filter 0.15s ease;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; /* a long press must not open "save image / open link" */
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+.kid-tile img {
+  pointer-events: none;
+  -webkit-touch-callout: none;
 }
 .kid-tile:hover {
   filter: brightness(1.03) saturate(1.05);

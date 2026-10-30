@@ -51,7 +51,8 @@ export function BigTile({
       <button
         type="button"
         onClick={() => onTap(tile)}
-        aria-label={pick(tile.speak, mainLang)}
+        onContextMenu={(e) => e.preventDefault()}
+        aria-label={main}
         className={`kid-tile w-full ${highlight ? "kid-tile-pop" : ""} ${pressed ? "is-pressed" : ""}`}
         style={{ minHeight: s.min, background: `var(--c-${tile.category})`, ["--edge" as string]: `var(--b-${tile.category})` }}
       >

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
-import { pick } from "@/lib/board/vocab";
+import { FOLDER_META, pick } from "@/lib/board/vocab";
 import { UI } from "@/lib/i18n";
 import { predict } from "@/lib/board/smart";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
@@ -12,6 +12,7 @@ import { BigTile, tileMin, type TileSize } from "./BigTile";
 import { HoldToUnlock } from "./HoldToUnlock";
 
 type View = "smart" | "classic";
+type Drawer = "need" | "words" | null;
 
 // The first 8 core slots, identical on both boards (motor planning). "All words" adds its extra core words after these.
 const CORE_SLOTS = ["core-i", "core-want", "core-more", "core-stop", "core-yes", "core-no", "core-go", "safety-help"];
@@ -41,6 +42,7 @@ export function KidBoard({
   const [taps, setTapsState] = useState<TapEvent[]>([]);
   const [said, setSaid] = useState<SaidEntry[]>([]);
   const [pulse, setPulse] = useState(0);
+  const [drawer, setDrawer] = useState<Drawer>(null);
 
   useEffect(() => {
     setTapsState(getTaps(board.id));
@@ -58,22 +60,26 @@ export function KidBoard({
   const slotCore = CORE_SLOTS.map((id) => board.tiles[id]).filter(Boolean);
   const extraCore = board.coreIds.filter((id) => !CORE_SLOTS.includes(id)).map((id) => board.tiles[id]).filter(Boolean);
   const core = view === "smart" ? slotCore : [...slotCore, ...extraCore];
+  // The smart board must still reach every safety word and every core word in one tap: two drawers under the core row.
+  const safetyTiles = board.folders.find((f) => f.id === "safety")?.tileIds.filter((id) => !CORE_SLOTS.includes(id)).map((id) => board.tiles[id]).filter(Boolean) ?? [];
+  const drawerTiles = drawer === "need" ? safetyTiles : drawer === "words" ? extraCore : [];
 
   const tap = useCallback(
     (t: Tile) => {
-      if (settings.speakOnTap) speak(tileSpeech(t, lang), lang); // says exactly what the tile shows
+      if (settings.speakOnTap) speak(tileSpeech(t, lang), lang, tileSpeech(t, "en")); // says exactly what the tile shows
       setSentence((s) => [...s, t].slice(-10));
-      logTap(board.id, t.id);
+      // Only the child's own taps (child mode) teach the predictions; a parent trying the preview doesn't.
+      if (locked) logTap(board.id, t.id);
       setTapsState((x) => [...x, { tileId: t.id, ts: Date.now() }]);
       setPulse((p) => p + 1);
     },
-    [board.id, lang, settings.speakOnTap],
+    [board.id, lang, locked, settings.speakOnTap],
   );
 
   const sayAll = () => {
     const text = composeSentence(sentence, lang);
     if (!text) return;
-    speak(text, lang);
+    speak(text, lang, composeSentence(sentence, "en"));
     const entry = { text, tileIds: sentence.map((t) => t.id), ts: Date.now() };
     addSaid(board.id, entry);
     setSaid((s) => [entry, ...s.filter((x) => x.text !== text)].slice(0, 20));
@@ -84,7 +90,7 @@ export function KidBoard({
   const openFolder = board.folders.find((f) => f.id === folder);
 
   return (
-    <div className={`flex h-full flex-col ${locked ? "bg-[var(--kid-bg)]" : ""}`}>
+    <div className={`flex h-full flex-col ${locked ? "bg-[var(--kid-bg)]" : ""}`} onContextMenu={locked ? (e) => e.preventDefault() : undefined}>
       {/* Sentence bar */}
       <div className="flex items-stretch gap-2 border-b border-[var(--line)] bg-white/90 p-2 shadow-[0_6px_16px_-12px_rgb(60_35_10/0.4)]">
         <div className="flex min-h-14 flex-1 flex-wrap items-center gap-1.5 rounded-2xl border-2 border-[var(--line)] bg-[var(--surface-2)] px-2 py-1" aria-live="polite" aria-label="What I'm saying">
@@ -155,6 +161,33 @@ export function KidBoard({
 
         {view === "smart" ? (
           <>
+            <div className="mb-3 grid grid-cols-2 gap-2">
+              {(
+                [
+                  { id: "need", emoji: FOLDER_META.safety.emoji, label: pick(FOLDER_META.safety.title, lang), bg: "var(--c-safety)", edge: "var(--b-safety)" },
+                  { id: "words", emoji: "➕", label: UI[lang].moreWords, bg: "var(--c-core)", edge: "var(--b-core)" },
+                ] as const
+              ).map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  aria-expanded={drawer === d.id}
+                  onClick={() => setDrawer((x) => (x === d.id ? null : d.id))}
+                  className={`kid-tile w-full flex-row! py-2! ${drawer === d.id ? "is-pressed" : ""}`}
+                  style={{ background: d.bg, ["--edge" as string]: d.edge }}
+                >
+                  <span aria-hidden className="text-2xl leading-none">{d.emoji}</span>
+                  <span className="font-display text-base font-extrabold">{d.label}</span>
+                </button>
+              ))}
+            </div>
+            {drawerTiles.length > 0 && (
+              <div className="kid-fade mb-3 grid grid-cols-3 gap-2 rounded-2xl bg-white/60 p-2 @2xl:grid-cols-6">
+                {drawerTiles.map((t) => (
+                  <BigTile key={t.id} tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
+                ))}
+              </div>
+            )}
             <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
               <span aria-hidden>✨</span>
               {UI[lang].maybeNext}

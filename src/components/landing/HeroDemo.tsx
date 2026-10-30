@@ -2,57 +2,131 @@
 
 // The landing page hero: a 3D phone running a real mini board. A hand taps tiles on its own, builds a
 // sentence and presses Speak, so people see (and, with sound on, hear) the experience in a few seconds.
-// Anyone can take over and tap the tiles themselves.
+// Anyone can take over and tap the tiles themselves. One demo set per fictional child; English (Leo)
+// is the default, and the switcher shows the same board working in Hindi and Spanish.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Tile } from "@/lib/board/types";
+import type { Lang, Tile } from "@/lib/board/types";
 import { speak } from "@/lib/client/speech";
 import { BigTile } from "@/components/kid/BigTile";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
-
-const t = (id: string, kind: Tile["kind"], category: Tile["category"], emoji: string, en: string, hi: string): Tile => ({
-  id,
-  kind,
-  category,
-  emoji,
-  label: { en, hi },
-  speak: { en, hi },
-  locked: kind !== "rotating",
-  reasons: [],
-});
-
-const CORE = [t("core-i", "core", "core", "🙋", "I", "मैं"), t("core-want", "core", "core", "🤲", "want", "चाहिए"), t("core-go", "core", "core", "🚶", "go", "चलो")];
-const NEXT = [
-  t("chaat", "rotating", "places", "🥟", "Sharma Chaat", "शर्मा जी चाट"),
-  t("parleg", "rotating", "food", "🍪", "Parle-G", "पारले-जी"),
-  t("bheem", "rotating", "favourites", "📺", "Chhota Bheem", "छोटा भीम"),
-  t("rafi", "rotating", "together", "🎵", "Rafi songs", "रफ़ी के गाने"),
-  t("joke", "rotating", "fun", "😂", "Bheem wins!", "भीम जीतेगा!"),
-  t("toilet", "safety", "safety", "🚽", "toilet", "टॉयलेट"),
-];
-const ALL = Object.fromEntries([...CORE, ...NEXT].map((x) => [x.id, x]));
+import { pick } from "@/lib/board/vocab";
+import { LANGUAGES, UI } from "@/lib/i18n";
 
 type Step = { tap: string } | { say: true } | { clear: true };
+
+interface DemoSet {
+  key: string;
+  name: string;
+  lang: Lang;
+  caption: string;
+  hello: string;
+  hand: string;
+  core: Tile[];
+  next: Tile[];
+  script: Step[];
+}
+
+/** A demo tile. English is always present; `native` is the label in the set's language. */
+const tile = (lang: Lang, id: string, kind: Tile["kind"], category: Tile["category"], emoji: string, en: string, native?: string): Tile => {
+  const label = lang === "en" || !native ? { en } : { en, [lang]: native };
+  return { id, kind, category, emoji, label, speak: label, locked: kind !== "rotating", reasons: [] };
+};
+
+// I + want + snack → speak; go + place → speak; a joke on its own; want + something shared → speak.
 const SCRIPT: Step[] = [
   { tap: "core-i" },
   { tap: "core-want" },
-  { tap: "parleg" },
+  { tap: "snack" },
   { say: true },
   { clear: true },
   { tap: "core-go" },
-  { tap: "chaat" },
+  { tap: "place" },
   { say: true },
   { clear: true },
   { tap: "joke" },
   { clear: true },
   { tap: "core-want" },
-  { tap: "rafi" },
+  { tap: "together" },
   { say: true },
   { clear: true },
 ];
 
+const SETS: DemoSet[] = [
+  {
+    key: "leo",
+    name: "Leo",
+    lang: "en",
+    caption: "Leo, 8, London",
+    hello: "Hello",
+    hand: "👆",
+    core: [tile("en", "core-i", "core", "core", "🙋", "I"), tile("en", "core-want", "core", "core", "🤲", "want"), tile("en", "core-go", "core", "core", "🚶", "go")],
+    next: [
+      tile("en", "place", "rotating", "places", "🛝", "Regent's Park"),
+      tile("en", "snack", "rotating", "food", "🍫", "Cadbury Buttons"),
+      tile("en", "show", "rotating", "favourites", "📺", "Bluey"),
+      tile("en", "together", "rotating", "together", "🎵", "Beatles songs"),
+      tile("en", "joke", "rotating", "fun", "😂", "Bluey wins!"),
+      tile("en", "toilet", "safety", "safety", "🚽", "toilet"),
+    ],
+    script: SCRIPT,
+  },
+  {
+    key: "aarav",
+    name: "Aarav",
+    lang: "hi",
+    caption: "Aarav, 9, Delhi",
+    hello: "नमस्ते",
+    hand: "👆🏽",
+    core: [tile("hi", "core-i", "core", "core", "🙋", "I", "मैं"), tile("hi", "core-want", "core", "core", "🤲", "want", "चाहिए"), tile("hi", "core-go", "core", "core", "🚶", "go", "चलो")],
+    next: [
+      tile("hi", "place", "rotating", "places", "🥟", "Sharma Chaat", "शर्मा जी चाट"),
+      tile("hi", "snack", "rotating", "food", "🍪", "Parle-G", "पारले-जी"),
+      tile("hi", "show", "rotating", "favourites", "📺", "Chhota Bheem", "छोटा भीम"),
+      tile("hi", "together", "rotating", "together", "🎵", "Rafi songs", "रफ़ी के गाने"),
+      tile("hi", "joke", "rotating", "fun", "😂", "Bheem wins!", "भीम जीतेगा!"),
+      tile("hi", "toilet", "safety", "safety", "🚽", "toilet", "टॉयलेट"),
+    ],
+    script: SCRIPT,
+  },
+  {
+    key: "sofia",
+    name: "Sofía",
+    lang: "es",
+    caption: "Sofía, 12, Los Angeles",
+    hello: "Hola",
+    hand: "👆🏽",
+    core: [tile("es", "core-i", "core", "core", "🙋", "I", "Yo"), tile("es", "core-want", "core", "core", "🤲", "want", "quiero"), tile("es", "core-go", "core", "core", "🚶", "go", "vamos")],
+    next: [
+      tile("es", "place", "rotating", "places", "🌮", "the taquería", "la taquería"),
+      tile("es", "snack", "rotating", "food", "🌶️", "Takis", "Takis"),
+      tile("es", "show", "rotating", "favourites", "🎬", "Encanto", "Encanto"),
+      tile("es", "together", "rotating", "together", "🎵", "Vicente's songs", "canciones de Vicente"),
+      tile("es", "joke", "rotating", "fun", "😂", "Mirabel wins!", "¡Mirabel gana!"),
+      tile("es", "toilet", "safety", "safety", "🚽", "toilet", "baño"),
+    ],
+    script: [
+      { tap: "core-i" },
+      { tap: "core-want" },
+      { tap: "snack" },
+      { say: true },
+      { clear: true },
+      { tap: "core-go" },
+      { tap: "place" },
+      { say: true },
+      { clear: true },
+      { tap: "joke" },
+      { clear: true },
+      { tap: "core-want" },
+      { tap: "show" },
+      { say: true },
+      { clear: true },
+    ],
+  },
+];
+
 const FLOATERS = [
-  { e: "🌶️", l: "Takis", c: "food", cls: "-left-14 top-24 [--r:-8deg]", d: "0s" },
+  { e: "🧸", l: "Paddington", c: "favourites", cls: "-left-14 top-24 [--r:-8deg]", d: "0s" },
   { e: "👵", l: "Abuela", c: "people", cls: "-right-8 top-12 [--r:7deg]", d: "1.2s" },
   { e: "🧃", l: "Frooti", c: "food", cls: "-left-10 bottom-28 [--r:6deg]", d: "2.1s" },
   { e: "🎮", l: "Minecraft", c: "favourites", cls: "-right-6 bottom-40 [--r:-6deg]", d: "0.6s" },
@@ -73,8 +147,14 @@ function offsetWithin(el: HTMLElement, root: HTMLElement) {
 }
 
 export function HeroDemo() {
+  const [setKey, setSetKey] = useState(SETS[0].key);
+  const demo = SETS.find((s) => s.key === setKey) ?? SETS[0];
+  const lang = demo.lang;
+  const ui = UI[lang];
+  const isEn = lang === "en";
+
   const [sentence, setSentence] = useState<Tile[]>([]);
-  const [said, setSaid] = useState<{ hi: string; en: string } | null>(null);
+  const [said, setSaid] = useState<{ text: string; en: string; lang: Lang } | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [pressed, setPressed] = useState<string | null>(null);
   const [hand, setHand] = useState<{ x: number; y: number; show: boolean; tap: number }>({ x: 200, y: 520, show: false, tap: 0 });
@@ -84,6 +164,7 @@ export function HeroDemo() {
   const sound = useRef(false);
   const userUntil = useRef(0);
   const sentenceRef = useRef<Tile[]>([]);
+  const langRef = useRef<Lang>(SETS[0].lang);
 
   const setBar = (tiles: Tile[]) => {
     sentenceRef.current = tiles;
@@ -92,38 +173,46 @@ export function HeroDemo() {
 
   const say = useCallback((tiles: Tile[]) => {
     if (!tiles.length) return;
-    const text = { hi: composeSentence(tiles, "hi"), en: composeSentence(tiles, "en") };
+    const l = langRef.current;
+    const text = { text: composeSentence(tiles, l), en: composeSentence(tiles, "en"), lang: l };
     setSaid(text);
     setSpeaking(true);
-    if (sound.current) speak(text.hi, "hi");
+    if (sound.current) speak(text.text, l);
     setTimeout(() => setSpeaking(false), 2200);
   }, []);
 
   // A real tap by the visitor: speak it, pause the robot hand for a while.
-  const userTap = (tile: Tile) => {
+  const userTap = (t: Tile) => {
     sound.current = true;
     setSoundOn(true);
     userUntil.current = Date.now() + 9000;
     setHand((h) => ({ ...h, show: false }));
-    speak(tileSpeech(tile, "hi"), "hi");
-    setBar([...sentenceRef.current, tile].slice(-4));
+    speak(tileSpeech(t, langRef.current), langRef.current);
+    setBar([...sentenceRef.current, t].slice(-4));
   };
 
+  // The robot hand plays the selected child's script; switching child restarts it.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const set = SETS.find((s) => s.key === setKey) ?? SETS[0];
+    const byId = Object.fromEntries([...set.core, ...set.next].map((x) => [x.id, x]));
     let alive = true;
+    const wait = async (ms: number) => {
+      await sleep(ms);
+      return alive;
+    };
     (async () => {
-      await sleep(900);
+      if (!(await wait(900))) return;
       let i = 0;
       while (alive) {
         if (Date.now() < userUntil.current || document.hidden) {
           await sleep(500);
           continue;
         }
-        const step = SCRIPT[i % SCRIPT.length];
+        const step = set.script[i % set.script.length];
         i++;
         if ("clear" in step) {
-          await sleep(1400);
+          if (!(await wait(1400))) return;
           setBar([]);
           setSaid(null);
           await sleep(500);
@@ -138,18 +227,20 @@ export function HeroDemo() {
         }
         const p = offsetWithin(el, root);
         setHand((h) => ({ ...h, x: p.x, y: p.y + 6, show: true }));
-        await sleep(700);
-        if (!alive || Date.now() < userUntil.current) continue;
+        if (!(await wait(700))) return;
+        if (Date.now() < userUntil.current) continue;
         setPressed(id);
         setHand((h) => ({ ...h, tap: h.tap + 1 }));
         if ("tap" in step) {
-          const tile = ALL[step.tap];
-          if (sound.current) speak(tileSpeech(tile, "hi"), "hi");
-          setBar([...sentenceRef.current, tile].slice(-4));
+          const t = byId[step.tap];
+          if (t) {
+            if (sound.current) speak(tileSpeech(t, set.lang), set.lang);
+            setBar([...sentenceRef.current, t].slice(-4));
+          }
         } else {
           say(sentenceRef.current);
         }
-        await sleep(200);
+        if (!(await wait(200))) return;
         setPressed(null);
         await sleep("say" in step ? 2000 : 650);
       }
@@ -157,13 +248,28 @@ export function HeroDemo() {
     return () => {
       alive = false;
     };
-  }, [say]);
+  }, [setKey, say]);
+
+  const chooseSet = (key: string) => {
+    if (key === setKey) return;
+    window.speechSynthesis?.cancel();
+    setBar([]);
+    setSaid(null);
+    setPressed(null);
+    setHand((h) => ({ ...h, show: false }));
+    userUntil.current = 0;
+    const next = SETS.find((s) => s.key === key);
+    if (!next) return;
+    langRef.current = next.lang;
+    setSetKey(key);
+    if (sound.current) speak(next.hello, next.lang);
+  };
 
   const toggleSound = () => {
     const next = !sound.current;
     sound.current = next;
     setSoundOn(next);
-    if (next) speak("नमस्ते", "hi");
+    if (next) speak(demo.hello, lang);
     else window.speechSynthesis?.cancel();
   };
 
@@ -185,27 +291,29 @@ export function HeroDemo() {
       {/* What the board just said, as a speech bubble. */}
       <div className="absolute -top-16 left-0 right-0 z-30 flex justify-center" aria-live="polite">
         {said ? (
-          <div key={said.hi} className="pop-in relative rounded-2xl border-2 border-[#0e5e2c] bg-white px-4 py-2 text-center shadow-[0_5px_0_#0e5e2c]">
-            <p className="font-display text-lg font-extrabold leading-tight">🗣️ “{said.hi}”</p>
-            <p className="text-xs font-semibold text-[var(--muted)]">{said.en}</p>
+          <div key={said.text} className="pop-in relative rounded-2xl border-2 border-[#0e5e2c] bg-white px-4 py-2 text-center shadow-[0_5px_0_#0e5e2c]">
+            <p className="font-display text-lg font-extrabold leading-tight" lang={said.lang}>
+              🗣️ “{said.text}”
+            </p>
+            {said.lang !== "en" && <p className="text-xs font-semibold text-[var(--muted)]">{said.en}</p>}
             <span aria-hidden className="absolute -bottom-[9px] left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-b-2 border-r-2 border-[#0e5e2c] bg-white" />
           </div>
         ) : (
-          <div className="rounded-full bg-white/80 px-4 py-1.5 text-sm font-semibold text-[var(--muted)] shadow-sm">👆 Tap the tiles. It talks, in Hindi.</div>
+          <div className="rounded-full bg-white/80 px-4 py-1.5 text-sm font-semibold text-[var(--muted)] shadow-sm">👆 Tap a picture. It talks in {LANGUAGES[lang].english}.</div>
         )}
       </div>
 
       <div className="tilt-3d">
         <div className="phone">
-          <div ref={screen} className="phone-screen" onPointerDown={() => (userUntil.current = Date.now() + 9000)}>
+          <div ref={screen} className="phone-screen" lang={lang} onPointerDown={() => (userUntil.current = Date.now() + 9000)}>
             <div aria-hidden className="mx-auto mt-2 h-5 w-24 rounded-full bg-[#15141b]" />
             {/* Sentence bar */}
             <div className="m-2 flex items-center gap-2 rounded-2xl border-2 border-[var(--line)] bg-white p-1.5">
               <div className="flex min-h-11 flex-1 flex-wrap items-center gap-1 px-1">
-                {sentence.length === 0 && <span className="text-xs text-[var(--muted)]">टाइल दबाओ…</span>}
+                {sentence.length === 0 && <span className="text-xs text-[var(--muted)]">{ui.tapHint}</span>}
                 {sentence.map((x, i) => (
                   <span key={`${x.id}-${i}`} className="pop-in font-display rounded-lg border-2 px-1.5 text-sm font-bold" style={{ background: `var(--c-${x.category})`, borderColor: `var(--b-${x.category})` }}>
-                    {x.emoji} {x.label.hi}
+                    {x.emoji} {pick(x.label, lang)}
                   </span>
                 ))}
               </div>
@@ -230,23 +338,26 @@ export function HeroDemo() {
                   </>
                 )}
                 <span aria-hidden className="text-xl">🔊</span>
-                <span className="text-[11px] font-bold">बोलो</span>
+                <span className="text-[11px] font-bold">{ui.speak}</span>
               </button>
             </div>
 
             <div className="px-2 pb-3">
               <div className="mb-2 grid grid-cols-3 gap-2">
-                {CORE.map((c) => (
+                {demo.core.map((c) => (
                   <div key={c.id} ref={(el) => void (targets.current[c.id] = el)}>
-                    <BigTile tile={c} primary="hi" secondary="en" labels="both" size="xs" onTap={userTap} pressed={pressed === c.id} />
+                    <BigTile tile={c} primary={lang} secondary={isEn ? undefined : "en"} labels={isEn ? "primary" : "both"} size="xs" onTap={userTap} pressed={pressed === c.id} />
                   </div>
                 ))}
               </div>
-              <div className="mb-1.5 text-xs font-bold text-[var(--muted)]">✨ शायद अब यह कहना है · Maybe next</div>
+              <div className="mb-1.5 text-xs font-bold text-[var(--muted)]">
+                ✨ {ui.maybeNext}
+                {!isEn && <span lang="en"> · {UI.en.maybeNext}</span>}
+              </div>
               <div className="grid grid-cols-3 gap-2">
-                {NEXT.map((c) => (
+                {demo.next.map((c) => (
                   <div key={c.id} ref={(el) => void (targets.current[c.id] = el)}>
-                    <BigTile tile={c} primary="hi" secondary="en" labels="both" size="s" onTap={userTap} pressed={pressed === c.id} />
+                    <BigTile tile={c} primary={lang} secondary={isEn ? undefined : "en"} labels={isEn ? "primary" : "both"} size="s" onTap={userTap} pressed={pressed === c.id} />
                   </div>
                 ))}
               </div>
@@ -259,17 +370,26 @@ export function HeroDemo() {
               style={{ transform: `translate(${hand.x}px, ${hand.y}px)`, opacity: hand.show ? 1 : 0 }}
             >
               {hand.tap > 0 && <span key={hand.tap} className="absolute left-0 top-0 h-14 w-14 rounded-full border-4 border-white/90 [animation:tapRing_.5s_ease-out_both]" />}
-              <span key={`h${hand.tap}`} className="absolute -left-[18px] -top-[4px] block text-5xl drop-shadow-[0_8px_8px_rgb(0_0_0/0.35)] [animation:kidPop_.25s_ease]">👆🏽</span>
+              <span key={`h${hand.tap}`} className="absolute -left-[18px] -top-[4px] block text-5xl drop-shadow-[0_8px_8px_rgb(0_0_0/0.35)] [animation:kidPop_.25s_ease]">
+                {demo.hand}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col items-center gap-2">
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <div role="group" aria-label="Choose a demo child and language" className="flex flex-wrap justify-center gap-1.5">
+          {SETS.map((s) => (
+            <button key={s.key} type="button" onClick={() => chooseSet(s.key)} aria-pressed={s.key === setKey} className="chip px-3 py-1.5 text-sm font-bold">
+              {s.name} · <span lang={s.lang}>{LANGUAGES[s.lang].native}</span>
+            </button>
+          ))}
+        </div>
         <button type="button" onClick={toggleSound} className={`btn ${soundOn ? "btn-accent" : ""}`} aria-pressed={soundOn}>
           {soundOn ? "🔊 Sound on" : "🔇 Turn on sound to hear it"}
         </button>
-        <p className="text-xs text-[var(--muted)]">Aarav, 9, Delhi · a fictional demo child</p>
+        <p className="text-xs text-[var(--muted)]">{demo.caption} · a fictional demo child</p>
       </div>
     </div>
   );
