@@ -61,6 +61,7 @@ export default function GeneratePage() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
+        let finished = false;
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -75,11 +76,17 @@ export default function GeneratePage() {
             else if (ev.type === "trace") setCalls((c) => c + 1);
             else if (ev.type === "board") {
               saveBoard(ev.board);
+              finished = true;
               setDone(true);
               setTimeout(() => router.replace(`/board?id=${ev.board.id}`), 700);
-            } else if (ev.type === "error") setError(ev.message);
+            } else if (ev.type === "error") {
+              finished = true;
+              setError(ev.message);
+            }
           }
         }
+        // The server can close the stream (time limit, dropped connection) without a board: say so instead of spinning.
+        if (!finished) throw new Error("The connection closed before the board was ready. Please try again.");
       } catch (err) {
         setError((err as Error).message);
       }

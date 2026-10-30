@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Baloo_2, Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
+import { LockGuard } from "@/components/LockGuard";
 import "./globals.css";
 
 const latin = Noto_Sans({ variable: "--font-latin", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700", "800"] });
@@ -30,7 +31,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${latin.variable} ${deva.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <header className="no-print glass sticky top-0 z-40 border-b border-[var(--line)]/70">
+        <LockGuard />
+        <header className="site-chrome no-print glass sticky top-0 z-40 border-b border-[var(--line)]/70">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
             <Link href="/" className="group flex items-center gap-2.5">
               <Logo />
@@ -45,7 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="flex-1">{children}</main>
-        <footer className="no-print border-t border-[var(--line)] bg-[var(--surface-2)] text-xs text-[var(--muted)]">
+        <footer className="site-chrome no-print border-t border-[var(--line)] bg-[var(--surface-2)] text-xs text-[var(--muted)]">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 leading-relaxed sm:flex-row sm:items-start">
             <Link href="/" className="flex shrink-0 items-center gap-2 text-[var(--ink)]">
               <Logo />

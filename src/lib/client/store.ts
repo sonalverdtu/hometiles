@@ -86,8 +86,11 @@ export function isKidLocked(): boolean {
   return safe(() => localStorage.getItem("ht:kidlock") === "1", false);
 }
 
+export const KIDLOCK_EVENT = "ht:kidlock";
+
 export function setKidLocked(on: boolean) {
   safe(() => (on ? localStorage.setItem("ht:kidlock", "1") : localStorage.removeItem("ht:kidlock")), undefined);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(KIDLOCK_EVENT));
 }
 
 export interface SaidEntry {

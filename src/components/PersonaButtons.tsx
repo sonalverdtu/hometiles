@@ -4,15 +4,17 @@ import { useRouter } from "next/navigation";
 import { PERSONAS } from "@/lib/personas";
 import { setPendingProfile } from "@/lib/client/store";
 
+// English (Leo) first: it's the default. Aarav and Sofía show the same board in Hindi and Spanish.
 const CARDS = [
-  { key: "aarav", face: "👦🏽", name: "Aarav", sub: "9 · Rajouri Garden, Delhi", langs: "हिंदी + English", loves: ["📺 Chhota Bheem", "🎮 Minecraft", "🎵 Arijit Singh", "🍪 Parle-G"], tint: "var(--brand-soft)" },
-  { key: "sofia", face: "👧🏽", name: "Sofía", sub: "12 · Boyle Heights, LA", langs: "Español + English", loves: ["🎬 Encanto", "🎤 Karol G", "🎮 Roblox", "🌶️ Takis"], tint: "var(--grape-soft)" },
+  { key: "leo", face: "👦", name: "Leo", sub: "8 · Camden, London", langs: "English", loves: ["📺 Bluey", "🎮 Minecraft", "🧸 Paddington", "🍫 Cadbury"], tint: "var(--accent-soft)" },
+  { key: "aarav", face: "👦🏽", name: "Aarav", sub: "9 · Rajouri Garden, Delhi", langs: "हिंदी (Hindi) + English", loves: ["📺 Chhota Bheem", "🎮 Minecraft", "🎵 Arijit Singh", "🍪 Parle-G"], tint: "var(--brand-soft)" },
+  { key: "sofia", face: "👧🏽", name: "Sofía", sub: "12 · Boyle Heights, LA", langs: "Español (Spanish) + English", loves: ["🎬 Encanto", "🎤 Karol G", "🎮 Roblox", "🌶️ Takis"], tint: "var(--grape-soft)" },
 ] as const;
 
 export function PersonaButtons() {
   const router = useRouter();
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {CARDS.map((c) => (
         <button
           key={c.key}
@@ -31,7 +33,11 @@ export function PersonaButtons() {
             <span>
               <span className="font-display block text-2xl font-extrabold leading-none">Try {c.name}</span>
               <span className="mt-1 block text-sm text-[var(--muted)]">{c.sub}</span>
-              <span className="block text-sm font-semibold">{c.langs}</span>
+              <span className="block text-sm font-semibold">
+                <span aria-hidden>🗣️ </span>
+                <span className="sr-only">Speaks </span>
+                {c.langs}
+              </span>
             </span>
           </span>
           <span className="relative mt-4 flex flex-wrap gap-1.5">

@@ -89,6 +89,8 @@ export default function BoardPage() {
       setSettingsState(getSettings(b.id));
       refreshStats(b);
     }
+    // A lock with no board left to show would trap the device on an empty page.
+    if (isKidLocked() && !b) setKidLocked(false);
     setLocked(isKidLocked() && !!b);
     setLoaded(true);
     window.speechSynthesis?.getVoices();

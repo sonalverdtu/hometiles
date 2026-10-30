@@ -26,16 +26,133 @@ function Row({ i, children }: { i: number; children: ReactNode }) {
   );
 }
 
+// Leo's board (a fictional demo child), in English and, for the one language-support step, in Hindi.
+type BoardLang = "en" | "hi";
+const BOARD: Record<
+  BoardLang,
+  { bar: [string, string, Cat][]; core: [string, string][]; help: string; maybeNext: string; next: { e: string; l: string; c: Cat; sub?: string }[]; said?: [string, string] }
+> = {
+  en: {
+    bar: [
+      ["🙋", "I", "core"],
+      ["🤲", "want", "core"],
+      ["🍫", "Cadbury Buttons", "food"],
+    ],
+    core: [
+      ["🙋", "I"],
+      ["🤲", "want"],
+      ["➕", "more"],
+      ["✋", "stop"],
+      ["✅", "yes"],
+      ["❌", "no"],
+      ["🚶", "go"],
+    ],
+    help: "help",
+    maybeNext: "Maybe next",
+    next: [
+      { e: "🍫", l: "Cadbury Buttons", c: "food" },
+      { e: "🐟", l: "Fish fingers", c: "food" },
+      { e: "📺", l: "Bluey", c: "favourites" },
+      { e: "🛝", l: "Regent's Park", c: "places", sub: "10 min" },
+      { e: "🎵", l: "Beatles songs", c: "together", sub: "with Grandma" },
+      { e: "😂", l: "Bluey wins!", c: "fun" },
+    ],
+  },
+  hi: {
+    bar: [
+      ["🙋", "मैं", "core"],
+      ["🤲", "चाहिए", "core"],
+      ["🍫", "कैडबरी बटन्स", "food"],
+    ],
+    core: [
+      ["🙋", "मैं"],
+      ["🤲", "चाहिए"],
+      ["➕", "और"],
+      ["✋", "रुको"],
+      ["✅", "हाँ"],
+      ["❌", "नहीं"],
+      ["🚶", "चलो"],
+    ],
+    help: "मदद",
+    maybeNext: "शायद अब यह कहना है · Maybe next",
+    next: [
+      { e: "🍫", l: "कैडबरी बटन्स", c: "food", sub: "Cadbury Buttons" },
+      { e: "🐟", l: "फ़िश फ़िंगर्स", c: "food", sub: "Fish fingers" },
+      { e: "📺", l: "ब्लूई", c: "favourites", sub: "Bluey" },
+      { e: "🛝", l: "रीजेंट्स पार्क", c: "places", sub: "Regent's Park" },
+      { e: "🎵", l: "बीटल्स के गाने", c: "together", sub: "Beatles songs" },
+      { e: "😂", l: "ब्लूई जीतेगा!", c: "fun", sub: "Bluey wins!" },
+    ],
+    said: ["मुझे कैडबरी बटन्स चाहिए", "I want Cadbury Buttons"],
+  },
+};
+
+function BoardScreen({ lang }: { lang: BoardLang }) {
+  const b = BOARD[lang];
+  const o = lang === "en" ? 0 : 1;
+  return (
+    <div className="p-3" lang={lang}>
+      {lang !== "en" && (
+        <Row i={0}>
+          <p lang="en" className="mb-2 flex items-center justify-center gap-1.5 rounded-full bg-[var(--grape-soft)] px-3 py-1 text-[11px] font-extrabold text-[var(--grape)]">
+            🌍 Same board, in <span lang={lang}>हिंदी</span> (Hindi)
+          </p>
+        </Row>
+      )}
+      <Row i={o}>
+        <div className="mb-2 flex items-center gap-1 rounded-2xl border-2 border-[var(--line)] bg-white p-1.5">
+          {b.bar.map(([e, l, c]) => (
+            <span key={l} className="font-display rounded-lg border-2 px-1.5 text-xs font-bold" style={{ background: `var(--c-${c})`, borderColor: `var(--b-${c})` }}>
+              {e} {l}
+            </span>
+          ))}
+          <span className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--go)] text-white shadow-[0_3px_0_#0e5e2c]">🔊</span>
+        </div>
+        {b.said && (
+          <p className="-mt-1 mb-2 text-center text-[11px] leading-snug">
+            <strong className="font-display text-xs">🗣️ “{b.said[0]}”</strong>
+            <span lang="en" className="block text-[var(--muted)]">
+              {b.said[1]}
+            </span>
+          </p>
+        )}
+      </Row>
+      <Row i={o + 1}>
+        <div className="mb-2 grid grid-cols-4 gap-1.5">
+          {b.core.map(([e, l]) => (
+            <div key={l} className="kid-tile min-h-[3.4rem] p-1" style={{ background: "var(--c-core)", ["--edge" as string]: "var(--b-core)" }}>
+              <span className="text-lg leading-none">{e}</span>
+              <span className="font-display text-[11px] font-bold">{l}</span>
+            </div>
+          ))}
+          <div className="kid-tile min-h-[3.4rem] p-1" style={{ background: "var(--c-safety)", ["--edge" as string]: "var(--b-safety)" }}>
+            <span className="text-lg leading-none">🆘</span>
+            <span className="font-display text-[11px] font-bold">{b.help}</span>
+          </div>
+        </div>
+      </Row>
+      <Row i={o + 2}>
+        <p className="mb-1.5 text-[11px] font-bold text-[var(--muted)]">✨ {b.maybeNext}</p>
+        <div className="grid grid-cols-3 gap-2">
+          {b.next.map((t) => (
+            <Mini key={t.l} e={t.e} l={t.l} c={t.c} sub={t.sub} />
+          ))}
+        </div>
+      </Row>
+    </div>
+  );
+}
+
 const STEPS: { icon: string; title: string; text: string; screen: () => ReactNode }[] = [
   {
     icon: "👋",
     title: "Tell us about your child",
-    text: "First name, neighbourhood, home language and 3–5 things they love. Each favourite is checked against Qloo as you type.",
+    text: "First name, neighbourhood, language and 3–5 things they love. Each favourite is checked against Qloo as you type.",
     screen: () => (
       <div className="space-y-3 p-4">
         <Row i={0}>
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Step 2 of 3</p>
-          <p className="font-display text-lg font-extrabold">What does Aarav love?</p>
+          <p className="font-display text-lg font-extrabold">What does Leo love?</p>
         </Row>
         <Row i={1}>
           <div className="flex flex-wrap gap-1.5">
@@ -48,20 +165,34 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
         </Row>
         <Row i={2}>
           <div className="input flex items-center justify-between py-2 text-sm">
-            Parle<span className="animate-pulse">|</span>
+            Cadb<span className="animate-pulse">|</span>
             <span className="ml-auto rounded-md bg-[var(--accent-soft)] px-1.5 text-[11px] font-bold text-[var(--accent)]">✓ in Qloo</span>
           </div>
         </Row>
         <Row i={3}>
           <div className="grid grid-cols-2 gap-2">
-            <Mini e="📺" l="Chhota Bheem" c="favourites" sub="✓ Qloo" />
+            <Mini e="📺" l="Bluey" c="favourites" sub="✓ Qloo" />
             <Mini e="🎮" l="Minecraft" c="favourites" sub="✓ Qloo" />
-            <Mini e="🎵" l="Arijit Singh" c="together" sub="✓ Qloo" />
-            <Mini e="🍪" l="Parle-G" c="food" sub="✓ Qloo" style={{ animation: "popIn .5s .6s both" }} />
+            <Mini e="🧸" l="Paddington" c="favourites" sub="✓ Qloo" />
+            <Mini e="🍫" l="Cadbury" c="food" sub="✓ Qloo" style={{ animation: "popIn .5s .6s both" }} />
           </div>
         </Row>
         <Row i={4}>
-          <div className="btn btn-primary w-full">✨ Build Aarav&apos;s board</div>
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="font-bold text-[var(--muted)]">Language</span>
+            <span className="chip px-2 py-0.5 text-xs" aria-pressed>
+              English
+            </span>
+            <span className="chip px-2 py-0.5 text-xs" lang="hi">
+              हिंदी
+            </span>
+            <span className="chip px-2 py-0.5 text-xs" lang="es">
+              Español
+            </span>
+          </div>
+        </Row>
+        <Row i={5}>
+          <div className="btn btn-primary w-full">✨ Build Leo&apos;s board</div>
         </Row>
       </div>
     ),
@@ -73,7 +204,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
     screen: () => (
       <div className="space-y-2 p-4">
         <Row i={0}>
-          <p className="font-display text-lg font-extrabold">Building Aarav&apos;s board…</p>
+          <p className="font-display text-lg font-extrabold">Building Leo&apos;s board…</p>
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--line)]">
             <div className="h-full rounded-full bg-[var(--brand)] [animation:grow_4s_ease-out_both]" style={{ width: "100%" }} />
           </div>
@@ -81,9 +212,9 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
         {[
           ["🔍", "Found 4 favourites in Qloo"],
           ["🌟", "Shows and games he'd love next"],
-          ["🍪", "Snacks popular in West Delhi"],
+          ["🍫", "Snacks popular in Camden"],
           ["📍", "Taste hot-spots near home"],
-          ["🤝", "Songs Aarav and Dadu both love"],
+          ["🤝", "Songs Leo and Grandma both love"],
           ["📈", "What's rising at school"],
         ].map(([e, l], k) => (
           <Row key={l} i={k + 1}>
@@ -103,58 +234,14 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   {
     icon: "🗣️",
     title: "A board in their own words",
-    text: "Core words never move. Below them, “For me” puts the snacks, shows and places they’re likely to want next. Every tap speaks in both languages.",
-    screen: () => (
-      <div className="p-3">
-        <Row i={0}>
-          <div className="mb-2 flex items-center gap-1 rounded-2xl border-2 border-[var(--line)] bg-white p-1.5">
-            {[
-              ["🙋", "मैं", "core"],
-              ["🤲", "चाहिए", "core"],
-              ["🍪", "पारले-जी", "food"],
-            ].map(([e, l, c]) => (
-              <span key={l} className="font-display rounded-lg border-2 px-1.5 text-xs font-bold" style={{ background: `var(--c-${c})`, borderColor: `var(--b-${c})` }}>
-                {e} {l}
-              </span>
-            ))}
-            <span className="ml-auto grid h-9 w-9 place-items-center rounded-xl bg-[var(--go)] text-white shadow-[0_3px_0_#0e5e2c]">🔊</span>
-          </div>
-        </Row>
-        <Row i={1}>
-          <div className="mb-2 grid grid-cols-4 gap-1.5">
-            {[
-              ["🙋", "मैं"],
-              ["🤲", "चाहिए"],
-              ["➕", "और"],
-              ["✋", "रुको"],
-              ["✅", "हाँ"],
-              ["❌", "नहीं"],
-              ["🚶", "चलो"],
-            ].map(([e, l]) => (
-              <div key={l} className="kid-tile min-h-[3.4rem] p-1" style={{ background: "var(--c-core)", ["--edge" as string]: "var(--b-core)" }}>
-                <span className="text-lg leading-none">{e}</span>
-                <span className="font-display text-[11px] font-bold">{l}</span>
-              </div>
-            ))}
-            <div className="kid-tile min-h-[3.4rem] p-1" style={{ background: "var(--c-safety)", ["--edge" as string]: "var(--b-safety)" }}>
-              <span className="text-lg leading-none">🆘</span>
-              <span className="font-display text-[11px] font-bold">मदद</span>
-            </div>
-          </div>
-        </Row>
-        <Row i={2}>
-          <p className="mb-1.5 text-[11px] font-bold text-[var(--muted)]">✨ शायद अब यह कहना है</p>
-          <div className="grid grid-cols-3 gap-2">
-            <Mini e="🍪" l="पारले-जी" c="food" sub="Parle-G" />
-            <Mini e="🧃" l="फ्रूटी" c="food" sub="Frooti" />
-            <Mini e="📺" l="छोटा भीम" c="favourites" sub="Chhota Bheem" />
-            <Mini e="🥟" l="शर्मा जी चाट" c="places" sub="300 m" />
-            <Mini e="🎵" l="रफ़ी के गाने" c="together" sub="with Dadu" />
-            <Mini e="😂" l="भीम जीतेगा!" c="fun" sub="Bheem wins!" />
-          </div>
-        </Row>
-      </div>
-    ),
+    text: "Core words never move. Below them, “Maybe next” shows the snacks, shows and places they’re likely to want. Every tap says the word out loud.",
+    screen: () => <BoardScreen lang="en" />,
+  },
+  {
+    icon: "🌍",
+    title: "In your family’s language",
+    text: "English is the default. Pick Hindi or Spanish and every label, sentence and voice switches, with English underneath. Here is Leo’s same board in Hindi.",
+    screen: () => <BoardScreen lang="hi" />,
   },
   {
     icon: "❓",
@@ -164,7 +251,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
       <div className="relative p-4">
         <Row i={0}>
           <div className="mx-auto w-32">
-            <Mini e="🥟" l="शर्मा जी चाट" c="places" sub="Sharma Ji Chaat" badge />
+            <Mini e="🛝" l="Regent's Park" c="places" sub="playground" badge />
           </div>
         </Row>
         <Row i={1}>
@@ -173,10 +260,10 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
             <p className="font-display text-base font-extrabold">Why is this tile here?</p>
             <div className="mt-2 space-y-2">
               {[
-                ["📍", "Near home", "300 m from home", "var(--c-places)"],
+                ["📍", "Near home", "10 minutes' walk from home", "var(--c-places)"],
                 ["📍", "Near home", "Inside a taste hot-spot on Qloo's heatmap", "var(--c-places)"],
-                ["💜", "Matches what they love", "Popular around Rajouri Garden (local affinity 0.91)", "var(--grape-soft)"],
-                ["👥", "Who enjoys it", "Great with cousins and friends", "var(--c-people)"],
+                ["💜", "Matches what they love", "Popular around Camden (local affinity 0.91)", "var(--grape-soft)"],
+                ["👥", "Who enjoys it", "Great with friends and Dad", "var(--c-people)"],
               ].map(([e, h, d, bg], k) => (
                 <div key={d} className="fade-up flex gap-2" style={{ animationDelay: `${300 + k * 120}ms` }}>
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-base" style={{ background: bg }}>
@@ -202,12 +289,12 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
       <div className="space-y-2 p-4">
         <Row i={0}>
           <p className="font-display text-lg font-extrabold">Weekly refresh</p>
-          <p className="text-xs text-[var(--muted)]">Aarav tapped Parle-G 14×, Chhota Bheem 9×</p>
+          <p className="text-xs text-[var(--muted)]">Leo tapped Cadbury Buttons 14×, Bluey 9×</p>
         </Row>
         {[
-          ["➕", "Add", "Motu Patlu", "📈 rising at school"],
-          ["🔁", "Replace", "Mystery Rooms → KidZania", "💜 fits his taste"],
-          ["↖️", "Move to front", "Parle-G", "👆 tapped most"],
+          ["➕", "Add", "Pokémon", "📈 rising at school"],
+          ["🔁", "Replace", "Soft play → London Zoo", "💜 fits his taste"],
+          ["↖️", "Move to front", "Cadbury Buttons", "👆 tapped most"],
         ].map(([e, a, l, why], k) => (
           <Row key={l} i={k + 1}>
             <label className="flex items-center gap-2 rounded-xl border border-[var(--line)] bg-white p-2.5 text-[13px]">
@@ -233,7 +320,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   {
     icon: "🔒",
     title: "Hand it over, safely",
-    text: "“Give to Aarav” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds.",
+    text: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds.",
     screen: () => (
       <div className="grid h-full place-items-center p-6 text-center">
         <Row i={0}>

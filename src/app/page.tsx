@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { PersonaButtons } from "@/components/PersonaButtons";
 import { HeroDemo } from "@/components/landing/HeroDemo";
 import { Journey } from "@/components/landing/Journey";
+import { LANGUAGES, type Lang } from "@/lib/i18n";
 
 const GENERIC = [
   { e: "🍪", l: "cookie" },
@@ -12,30 +13,39 @@ const GENERIC = [
   { e: "👩", l: "mom" },
   { e: "⚽", l: "ball" },
 ];
+// Leo, 8, Camden (a fictional demo child).
 const HOME = [
-  { e: "🍪", l: "Parle-G", c: "food" },
-  { e: "🥟", l: "Sharma Ji Chaat", s: "300 m from home", c: "places" },
-  { e: "📺", l: "Chhota Bheem", c: "favourites" },
-  { e: "🧃", l: "Frooti", c: "food" },
-  { e: "👴", l: "Dadu", c: "people" },
-  { e: "🎵", l: "Rafi songs", s: "with Dadu", c: "together" },
+  { e: "🍫", l: "Cadbury Buttons", c: "food" },
+  { e: "🛝", l: "Regent's Park playground", s: "10 min from home", c: "places" },
+  { e: "📺", l: "Bluey", c: "favourites" },
+  { e: "🧸", l: "Paddington", c: "favourites" },
+  { e: "👵", l: "Grandma", c: "people" },
+  { e: "🎵", l: "Beatles songs", s: "with Grandma", c: "together" },
 ];
 
-// Words from many children's worlds, scrolling under the hero.
-const WORLD = [
-  ["🍪", "Parle-G", "food"],
-  ["🌶️", "Takis", "food"],
-  ["📺", "Chhota Bheem", "favourites"],
-  ["🎬", "Encanto", "favourites"],
-  ["🎤", "Karol G", "together"],
-  ["🧃", "Frooti", "food"],
-  ["👴", "Dadu", "people"],
-  ["👵", "Abuela", "people"],
-  ["🥟", "Golgappe", "places"],
-  ["🎮", "Roblox", "favourites"],
-  ["🎵", "Arijit Singh", "together"],
-  ["🌮", "Taquería", "places"],
-] as const;
+// The same idea for other demo children, in their family's language.
+const ELSEWHERE: { who: string; lang: Lang; words: [string, string][] }[] = [
+  { who: "Aarav in Delhi", lang: "hi", words: [["🍪", "पारले-जी"], ["👴", "दादू"]] },
+  { who: "Sofía in Los Angeles", lang: "es", words: [["🌶️", "Takis"], ["👵", "Abuela"]] },
+];
+
+// Words from many children's worlds, scrolling under the hero. Mostly English; a few show other languages.
+const WORLD: readonly (readonly [string, string, string, Lang?])[] = [
+  ["🍫", "Cadbury Buttons", "food"],
+  ["📺", "Bluey", "favourites"],
+  ["🛝", "Regent's Park", "places"],
+  ["👵", "Grandma", "people"],
+  ["🍪", "Parle-G", "food", "hi"],
+  ["🎮", "Minecraft", "favourites"],
+  ["🧸", "Paddington", "favourites"],
+  ["🎬", "Encanto", "favourites", "es"],
+  ["🎵", "Beatles songs", "together"],
+  ["🐟", "Fish fingers", "food"],
+  ["👵", "Abuela", "people", "es"],
+  ["🚌", "Big red bus", "fun"],
+  ["🥟", "Golgappe", "places", "hi"],
+  ["🌶️", "Takis", "food", "es"],
+];
 
 const tileStyle = (c: string): CSSProperties => ({ background: `var(--c-${c})`, ["--edge" as string]: `var(--b-${c})` });
 
@@ -71,7 +81,7 @@ export default function Home() {
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#3c3a48]">
               Children who can&apos;t speak (yet) talk by tapping pictures. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>. HomeTiles builds one in about a minute with the{" "}
-              <strong>snacks, shows, places and family a child actually knows</strong>, in their home language.
+              <strong>snacks, shows, places and family a child actually knows</strong>. It speaks English, Hindi and Spanish, so it works in your family&apos;s language.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/create" className="btn btn-primary btn-lg">
@@ -83,7 +93,7 @@ export default function Home() {
             </div>
             <ul className="mt-8 grid max-w-lg grid-cols-2 gap-2 text-sm font-semibold">
               {[
-                ["🗣️", "Speaks Hindi, Spanish, English"],
+                ["🗣️", "English, Hindi, Spanish"],
                 ["🔒", "Child lock"],
                 ["📴", "Taps stay on the device"],
                 ["✅", "Parents approve changes"],
@@ -105,10 +115,15 @@ export default function Home() {
       <section aria-label="Words from children's own worlds" className="border-y border-[var(--line)] bg-white/60 py-5">
         <div className="relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
           <div className="marquee gap-3">
-            {[...WORLD, ...WORLD].map(([e, l, c], k) => (
-              <div key={k} aria-hidden={k >= WORLD.length} className="kid-tile h-[4.5rem] w-28 shrink-0 text-sm font-bold" style={tileStyle(c)}>
+            {[...WORLD, ...WORLD].map(([e, l, c, lang], k) => (
+              <div key={k} aria-hidden={k >= WORLD.length} className="kid-tile relative h-[4.5rem] w-28 shrink-0 text-sm font-bold" style={tileStyle(c)}>
+                {lang && (
+                  <span lang={lang} className="absolute right-1.5 top-1 rounded-full bg-white/80 px-1.5 text-[9px] font-extrabold leading-4">
+                    {LANGUAGES[lang].native}
+                  </span>
+                )}
                 <span className="text-2xl leading-none">{e}</span>
-                <span className="font-display">{l}</span>
+                <span className="font-display leading-tight">{l}</span>
               </div>
             ))}
           </div>
@@ -140,7 +155,7 @@ export default function Home() {
           </div>
           <div className="relative rounded-[2rem] border-2 border-[var(--accent)] bg-gradient-to-br from-[#f1fbf8] to-white p-6 shadow-[0_8px_0_var(--accent)]">
             <div className="mb-4 flex items-center gap-2 font-bold text-[var(--accent)]">
-              <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs text-white">After</span> HomeTiles, built for Aarav
+              <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs text-white">After</span> HomeTiles, built for Leo in London
             </div>
             <div className="grid grid-cols-3 gap-3">
               {HOME.map((g, k) => (
@@ -151,7 +166,22 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 font-semibold">His snack, his chaat stall, his cartoon, his grandfather&apos;s songs.</p>
+            <p className="mt-4 font-semibold">His snack, his playground, his cartoon, his grandma&apos;s songs.</p>
+            <ul className="mt-3 space-y-1.5 border-t border-[var(--line)] pt-3 text-sm text-[var(--muted)]" aria-label="Other demo children, in their family's language">
+              {ELSEWHERE.map((x) => (
+                <li key={x.who} className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-semibold">
+                    In {LANGUAGES[x.lang].english}, for {x.who}:
+                  </span>
+                  {x.words.map(([e, w]) => (
+                    <span key={w} lang={x.lang} className="rounded-full bg-white px-2 py-0.5 font-display text-xs font-bold text-[var(--ink)] shadow-sm">
+                      <span aria-hidden>{e} </span>
+                      {w}
+                    </span>
+                  ))}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </Section>
@@ -187,7 +217,7 @@ export default function Home() {
             {
               e: "🔒",
               t: "A child lock",
-              d: "“Give to Aarav” goes full-screen and hides every menu. The back button is blocked. Parents exit by holding the lock for 2 seconds.",
+              d: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. Parents exit by holding the lock for 2 seconds.",
               bg: "var(--accent-soft)",
               edge: "#9ed6ca",
             },
@@ -206,7 +236,7 @@ export default function Home() {
         className="bg-white/60"
         eyebrow="Why Qloo"
         title="What an AI alone gets wrong, and Qloo gets right"
-        sub="A chatbot can guess “Indian kids like samosa”. It can't know the chaat stall 300 m from this child's home, or which songs he and his grandfather would both love."
+        sub="A chatbot can guess “kids like chocolate”. It can't know the playground 10 minutes from this child's home, or which songs he and his grandma would both love."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="card p-5 lg:col-span-2">
@@ -224,10 +254,10 @@ export default function Home() {
               <span className="absolute left-4 top-3 h-20 w-20 rounded-full bg-[var(--brand)]/30" />
               <span className="absolute left-14 top-3 h-20 w-20 rounded-full bg-[var(--grape)]/30" />
               <span className="absolute left-[3.4rem] top-10 text-xl">🎵</span>
-              <span className="absolute left-6 top-9 text-lg">👦🏽</span>
-              <span className="absolute left-24 top-9 text-lg">👴🏽</span>
+              <span className="absolute left-6 top-9 text-lg">👦</span>
+              <span className="absolute left-24 top-9 text-lg">👵</span>
             </div>
-            <h3 className="text-xl font-extrabold">🤝 Shared with Dadu</h3>
+            <h3 className="text-xl font-extrabold">🤝 Shared with grandparents</h3>
             <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Comparing the child&apos;s tastes with a grandparent&apos;s finds songs and films they&apos;d both enjoy.</p>
           </div>
           <div className="card p-5">
@@ -262,8 +292,8 @@ export default function Home() {
       </section>
 
       {/* TRY */}
-      <Section id="try" eyebrow="Try it now" title="Build a board in about a minute" sub="Watch the agent research a demo child live, or make one for your own child.">
-        <div className="mx-auto max-w-4xl">
+      <Section id="try" eyebrow="Try it now" title="Build a board in about a minute" sub="Watch the agent research a demo child live, in English, Hindi or Spanish. Or make one for your own child.">
+        <div className="mx-auto max-w-5xl">
           <PersonaButtons />
           <Link
             href="/create"

@@ -29,7 +29,7 @@ export const SAFETY: VocabWord[] = [
   { key: "help", label: { en: "help", hi: "मदद", es: "ayuda" }, speak: { en: "I need help", hi: "मुझे मदद चाहिए", es: "Necesito ayuda" }, emoji: "🆘", arasaac: "help" },
   { key: "pain", label: { en: "it hurts", hi: "दर्द", es: "me duele" }, speak: { en: "It hurts", hi: "मुझे दर्द हो रहा है", es: "Me duele" }, emoji: "🤕", arasaac: "pain" },
   { key: "toilet", label: { en: "toilet", hi: "टॉयलेट", es: "baño" }, speak: { en: "I need the toilet", hi: "मुझे टॉयलेट जाना है", es: "Necesito ir al baño" }, emoji: "🚽", arasaac: "toilet" },
-  { key: "tired", label: { en: "tired", hi: "थक गया", es: "cansado" }, speak: { en: "I am tired", hi: "मैं थक गया हूँ", es: "Estoy cansado" }, emoji: "😴", arasaac: "tired" },
+  { key: "tired", label: { en: "tired", hi: "थकान", es: "descansar" }, speak: { en: "I am tired", hi: "मुझे थकान लग रही है", es: "Necesito descansar" }, emoji: "😴", arasaac: "tired" },
   { key: "scared", label: { en: "scared", hi: "डर", es: "miedo" }, speak: { en: "I am scared", hi: "मुझे डर लग रहा है", es: "Tengo miedo" }, emoji: "😨", arasaac: "fear" },
   { key: "unwell", label: { en: "not well", hi: "तबीयत ठीक नहीं", es: "me siento mal" }, speak: { en: "I don't feel well", hi: "मेरी तबीयत ठीक नहीं है", es: "Me siento mal" }, emoji: "🤒", arasaac: "sick" },
 ];
@@ -84,16 +84,16 @@ export function togetherPhrase(type: string): Tpl {
 }
 
 export const BANTER: Tpl[] = [
-  { en: (n) => `Bet ${n} would beat you!`, hi: (n) => `${n} तुम्हें हरा देगा!`, es: (n) => `¡${n} te ganaría!` },
+  { en: (n) => `Bet ${n} would beat you!`, hi: (n) => `${n} से कोई नहीं जीत सकता!`, es: (n) => `¡Nadie le gana a ${n}!` },
   { en: (n) => `Guess what happened in ${n}!`, hi: (n) => `अंदाज़ा लगाओ ${n} में क्या हुआ!`, es: (n) => `¡Adivina qué pasó en ${n}!` },
-  { en: (n) => `You're so ${n}! 😂`, hi: (n) => `तुम तो बिल्कुल ${n} हो! 😂`, es: (n) => `¡Eres tan ${n}! 😂` },
+  { en: (n) => `${n} is the best!`, hi: (n) => `मुझे ${n} बहुत पसंद है!`, es: (n) => `¡Me encanta ${n}!` },
 ];
 
 export const REACTIONS: { label: Localized; emoji: string }[] = [
   { label: { en: "No way!", hi: "क्या बात है!", es: "¡No puede ser!" }, emoji: "😲" },
   { label: { en: "That's so funny!", hi: "बहुत मज़ेदार!", es: "¡Qué chistoso!" }, emoji: "🤣" },
   { label: { en: "Gross!", hi: "छी!", es: "¡Qué asco!" }, emoji: "🤢" },
-  { label: { en: "I'm the best!", hi: "मैं सबसे अच्छा हूँ!", es: "¡Soy el mejor!" }, emoji: "😎" },
+  { label: { en: "I win!", hi: "मेरी जीत!", es: "¡Gané!" }, emoji: "😎" },
 ];
 
 export const TYPE_EMOJI: Record<string, string> = {

@@ -1,5 +1,5 @@
 "use client";
-// Web Speech API text-to-speech (FR-302). Falls back to English if no voice exists for the language.
+// Web Speech API text-to-speech (FR-302). With no voice for the language it says the English text instead.
 
 import { LANGUAGES, type Lang } from "../i18n";
 
@@ -14,12 +14,21 @@ function voiceFor(lang: Lang): SpeechSynthesisVoice | undefined {
   return undefined;
 }
 
-export function speak(text: string, lang: Lang) {
+const EMOJI = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu;
+
+/** The text with emoji removed, so a voice never reads "face with tears of joy". */
+export const speakable = (text: string) => text.replace(EMOJI, "").replace(/\s+/g, " ").trim();
+
+/** `english` is said instead when the device has no voice for `lang` (an English voice can't read Devanagari). */
+export function speak(text: string, lang: Lang, english?: string) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const synth = window.speechSynthesis;
   synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  const v = voiceFor(lang) ?? (lang !== "en" ? voiceFor("en") : undefined);
+  const own = voiceFor(lang);
+  const words = speakable(!own && lang !== "en" && english ? english : text);
+  if (!words) return;
+  const u = new SpeechSynthesisUtterance(words);
+  const v = own ?? (lang !== "en" ? voiceFor("en") : undefined);
   if (v) {
     u.voice = v;
     u.lang = v.lang;
