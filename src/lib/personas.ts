@@ -4,6 +4,34 @@
 import type { Profile } from "./board/types";
 
 export const PERSONAS: Record<string, Profile> = {
+  // English is the default language; Leo is the first demo child.
+  leo: {
+    id: "persona-leo",
+    displayName: "Leo",
+    ageBand: "24_and_younger",
+    isChild: true,
+    city: "Camden, London",
+    home: { lat: 51.539, lon: -0.1426 },
+    primaryLang: "en",
+    loves: [
+      { name: "Bluey", type: "urn:entity:tv_show" },
+      { name: "Minecraft", type: "urn:entity:videogame" },
+      { name: "Paddington", type: "urn:entity:movie" },
+      { name: "Cadbury", type: "urn:entity:brand" },
+    ],
+    family: [
+      { name: "Mum", relation: "mother", loves: [] },
+      { name: "Dad", relation: "father", loves: [] },
+      {
+        name: "Grandma",
+        relation: "grandmother",
+        loves: [
+          { name: "The Beatles", type: "urn:entity:artist" },
+          { name: "Mary Poppins", type: "urn:entity:movie" },
+        ],
+      },
+    ],
+  },
   aarav: {
     id: "persona-aarav",
     displayName: "Aarav",

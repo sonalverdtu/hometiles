@@ -3,7 +3,8 @@
 import type { AgeBand, QlooType } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
 
-export type Lang = "en" | "hi" | "es";
+import type { Lang } from "../i18n";
+export type { Lang };
 export type Localized = Partial<Record<Lang, string>> & { en: string };
 
 export type Category = "core" | "safety" | "people" | "food" | "places" | "favourites" | "fun" | "together" | "new";

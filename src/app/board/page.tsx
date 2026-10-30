@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { applySuggestions } from "@/lib/board/engine";
 import { toObf } from "@/lib/board/obf";
 import type { Board, Category, Suggestion, TapEvent, Tile } from "@/lib/board/types";
+import { LANGUAGES, type Lang } from "@/lib/i18n";
 import { pick } from "@/lib/board/vocab";
 import {
   addSaid,
@@ -30,7 +31,7 @@ import { RefreshDialog } from "@/components/RefreshDialog";
 import { HeatMap } from "@/components/HeatMap";
 
 const ROTATING: Category[] = ["food", "places", "favourites", "fun", "together", "new"];
-const LANG_NAME = { en: "English", hi: "Hindi", es: "Spanish" } as const;
+const LANG_NAME = Object.fromEntries(Object.entries(LANGUAGES).map(([k, v]) => [k, v.english])) as Record<Lang, string>;
 
 function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: { v: T; t: string }[]; onChange: (v: T) => void; label: string }) {
   return (

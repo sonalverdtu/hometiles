@@ -3,6 +3,7 @@
 
 import type { QEntity } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
+import { LANG_CODES } from "../i18n";
 import type { Board, Category, Folder, Lang, Localized, Partner, Profile, Reason, Suggestion, Tile } from "./types";
 import { BANTER, CORE, FOLDER_META, newPhrase, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
 
@@ -32,7 +33,7 @@ export interface TileText {
   speak?: Localized;
 }
 
-const LANGS: Lang[] = ["en", "hi", "es"];
+const LANGS: Lang[] = LANG_CODES;
 
 export function scoreCandidate(c: Candidate): number {
   const local = c.local ?? 0.5;

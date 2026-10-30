@@ -4,7 +4,7 @@
 import type { QlooType } from "./types";
 
 export type Audience = "kids" | "teens" | "adults" | "elders" | "all";
-export type Culture = "in" | "latam" | "global";
+export type Culture = "in" | "latam" | "uk" | "global";
 
 export interface MockItem {
   id: string;
@@ -17,7 +17,7 @@ export interface MockItem {
   culture: Culture;
   popularity: number;
   rising?: boolean;
-  city?: "delhi" | "la";
+  city?: CityId;
   lat?: number;
   lon?: number;
   address?: string;
@@ -51,9 +51,19 @@ const PLACE = "urn:entity:place" as const;
 
 export const DELHI_CENTER = { lat: 28.6492, lon: 77.122 };
 export const LA_CENTER = { lat: 34.0333, lon: -118.205 };
+export const LONDON_CENTER = { lat: 51.539, lon: -0.1426 };
+
+/** The mock's demo cities. A location query or point is matched to the nearest one. */
+export const CITIES = {
+  delhi: { center: DELHI_CENTER, culture: "in" as Culture, match: /delhi|rajouri|india|noida|gurgaon/ },
+  la: { center: LA_CENTER, culture: "latam" as Culture, match: /los angeles|la|boyle|california/ },
+  london: { center: LONDON_CENTER, culture: "uk" as Culture, match: /london|camden|england|uk|britain/ },
+};
+export type CityId = keyof typeof CITIES;
 
 const d = (dLat: number, dLon: number) => ({ lat: DELHI_CENTER.lat + dLat, lon: DELHI_CENTER.lon + dLon, city: "delhi" as const });
 const l = (dLat: number, dLon: number) => ({ lat: LA_CENTER.lat + dLat, lon: LA_CENTER.lon + dLon, city: "la" as const });
+const uk = (dLat: number, dLon: number) => ({ lat: LONDON_CENTER.lat + dLat, lon: LONDON_CENTER.lon + dLon, city: "london" as const });
 
 export const CATALOGUE: MockItem[] = [
   // ---- India: TV / film ----
@@ -134,5 +144,29 @@ export const CATALOGUE: MockItem[] = [
   item(PLACE, "Abuela's Pupusería", ["family-dinner", "street-food"], "all", "latam", 0.64, { es: "Pupusería de la Abuela", ...l(-0.0026, 0.0058), address: "Whittier Blvd (demo)" }),
   item(PLACE, "Plaza Music Corner", ["music-film", "ranchera", "classic-songs"], "elders", "latam", 0.55, { es: "Rincón Musical de la Plaza", ...l(0.0011, -0.0052), address: "Boyle Ave (demo)" }),
 ];
+
+// ---- UK / London (names are public; places are FICTIONAL) ----
+CATALOGUE.push(
+  item(TV, "Peppa Pig", ["kids-animation", "family-comedy", "toddler"], "kids", "uk", 0.92),
+  item(TV, "Hey Duggee", ["kids-animation", "learning", "comedy"], "kids", "uk", 0.84, { rising: true }),
+  item(TV, "Thomas & Friends", ["kids-animation", "adventure", "trains"], "kids", "uk", 0.8),
+  item(MOVIE, "Paddington", ["family-film", "adventure", "comedy"], "all", "uk", 0.9),
+  item(MOVIE, "Paddington 2", ["family-film", "adventure", "comedy"], "all", "uk", 0.88),
+  item(MOVIE, "Mary Poppins", ["family-film", "music-film", "classic-film"], "elders", "uk", 0.86),
+  item(MOVIE, "Wallace & Gromit: The Curse of the Were-Rabbit", ["animation", "comedy", "family-film"], "all", "uk", 0.82),
+  item(ARTIST, "The Beatles", ["classic-songs", "pop", "family-songs"], "elders", "uk", 0.95),
+  item(ARTIST, "Ed Sheeran", ["pop", "family-songs"], "all", "uk", 0.9),
+  item(ARTIST, "Little Mix", ["pop", "dance"], "teens", "uk", 0.84),
+  item(BRAND, "Walkers", ["snacks", "crisps"], "all", "uk", 0.88),
+  item(BRAND, "Ribena", ["drinks", "fruit"], "kids", "uk", 0.8),
+  item(BRAND, "Jaffa Cakes", ["biscuits", "snacks", "sweets"], "all", "uk", 0.86),
+  item(BRAND, "Haribo", ["sweets", "candy"], "kids", "global", 0.85),
+  item(PLACE, "Camden Ice Cream Parlour", ["sweets", "ice-cream"], "kids", "uk", 0.66, { ...uk(0.0015, 0.0012), address: "Parkway (demo)" }),
+  item(PLACE, "Regent's Park Playground", ["parks", "play", "family-outing"], "kids", "uk", 0.7, { ...uk(-0.0042, -0.0031), address: "Regent's Park (demo)" }),
+  item(PLACE, "Primrose Hill Bakery Corner", ["bakery", "sweets"], "all", "uk", 0.62, { ...uk(0.0025, -0.0044), address: "Regent's Park Rd (demo)" }),
+  item(PLACE, "Chalk Farm Fish & Chips", ["family-dinner", "street-food"], "all", "uk", 0.6, { ...uk(0.0038, 0.0021), address: "Chalk Farm Rd (demo)" }),
+  item(PLACE, "Camden Library Story Corner", ["learning", "books", "play"], "kids", "uk", 0.5, { ...uk(-0.0022, 0.0035), address: "Crowndale Rd (demo)" }),
+  item(PLACE, "Hampstead Heath Kite Hill", ["parks", "family-outing"], "all", "uk", 0.58, { ...uk(0.0068, -0.0052), address: "Hampstead Heath (demo)" }),
+);
 
 export const BY_ID = new Map(CATALOGUE.map((c) => [c.id, c]));

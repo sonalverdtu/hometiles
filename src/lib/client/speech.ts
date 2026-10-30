@@ -1,9 +1,9 @@
 "use client";
 // Web Speech API text-to-speech (FR-302). Falls back to English if no voice exists for the language.
 
-import type { Lang } from "../board/types";
+import { LANGUAGES, type Lang } from "../i18n";
 
-const BCP47: Record<Lang, string[]> = { hi: ["hi-IN"], en: ["en-IN", "en-US", "en-GB"], es: ["es-MX", "es-US", "es-ES"] };
+const BCP47 = Object.fromEntries(Object.entries(LANGUAGES).map(([k, v]) => [k, [...v.speech]])) as Record<Lang, string[]>;
 
 function voiceFor(lang: Lang): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis?.getVoices() ?? [];

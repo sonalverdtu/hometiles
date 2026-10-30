@@ -3,16 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { EntityRef, Lang, Profile } from "@/lib/board/types";
+import { DEFAULT_LANG, LANG_CODES, langLabel } from "@/lib/i18n";
 import type { AgeBand, QlooType } from "@/lib/qloo/types";
 import { setPendingProfile } from "@/lib/client/store";
 
 const TYPES: { id: QlooType; label: string; emoji: string; example: string; cat: string }[] = [
-  { id: "urn:entity:tv_show", label: "Cartoon / show", emoji: "📺", example: "e.g. Chhota Bheem", cat: "favourites" },
+  { id: "urn:entity:tv_show", label: "Cartoon / show", emoji: "📺", example: "e.g. Bluey", cat: "favourites" },
   { id: "urn:entity:videogame", label: "Game", emoji: "🎮", example: "e.g. Minecraft", cat: "favourites" },
-  { id: "urn:entity:brand", label: "Snack / drink", emoji: "🍪", example: "e.g. Parle-G", cat: "food" },
-  { id: "urn:entity:artist", label: "Singer / music", emoji: "🎵", example: "e.g. Arijit Singh", cat: "together" },
+  { id: "urn:entity:brand", label: "Snack / drink", emoji: "🍪", example: "e.g. Oreo", cat: "food" },
+  { id: "urn:entity:artist", label: "Singer / music", emoji: "🎵", example: "e.g. Taylor Swift", cat: "together" },
   { id: "urn:entity:movie", label: "Movie", emoji: "🎬", example: "e.g. Encanto", cat: "favourites" },
-  { id: "urn:entity:place", label: "Place to eat", emoji: "📍", example: "e.g. their favourite chaat stall", cat: "places" },
+  { id: "urn:entity:place", label: "Place to eat", emoji: "📍", example: "e.g. their favourite ice-cream shop", cat: "places" },
 ];
 
 const AGES: { id: AgeBand; label: string; child?: boolean }[] = [
@@ -26,11 +27,8 @@ const AGES: { id: AgeBand; label: string; child?: boolean }[] = [
   { id: "55_and_older", label: "55+" },
 ];
 
-const LANGS: { id: Lang; label: string }[] = [
-  { id: "hi", label: "हिंदी Hindi" },
-  { id: "es", label: "Español" },
-  { id: "en", label: "English" },
-];
+// From the language registry: English first (the default), then every other supported language.
+const LANGS: { id: Lang; label: string }[] = LANG_CODES.map((id) => ({ id, label: langLabel(id) }));
 
 const CORE_PREVIEW: Record<Lang, [string, string][]> = {
   hi: [["🙋", "मैं"], ["🤲", "चाहिए"], ["🚶", "चलो"], ["🆘", "मदद"]],
@@ -139,8 +137,8 @@ export default function CreatePage() {
   const [ageIdx, setAgeIdx] = useState(0);
   const [city, setCity] = useState("");
   const [home, setHome] = useState<{ lat: number; lon: number } | undefined>();
-  const [primary, setPrimary] = useState<Lang>("hi");
-  const [secondary, setSecondary] = useState<Lang | "">("en");
+  const [primary, setPrimary] = useState<Lang>(DEFAULT_LANG);
+  const [secondary, setSecondary] = useState<Lang | "">("");
   const [type, setType] = useState(TYPES[0]);
   const [favs, setFavs] = useState<Fav[]>([]);
   const [family, setFamily] = useState<{ name: string; relation: string; singers: string }[]>([{ name: "", relation: "mother", singers: "" }]);
@@ -227,14 +225,14 @@ export default function CreatePage() {
                 <div className="grid gap-5">
                   <label className="grid gap-1.5 text-sm font-bold">
                     Their first name
-                    <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Aarav" autoFocus />
+                    <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Leo" autoFocus />
                     <span className="text-xs font-normal text-[var(--muted)]">🔒 Stays on this device.</span>
                   </label>
                   <ChipGroup label="Age" value={ageIdx} onChange={setAgeIdx} options={AGES.map((a, i) => ({ v: i, t: a.label }))} />
                   <div className="grid gap-2">
                     <label className="grid gap-1.5 text-sm font-bold">
                       Neighbourhood and city
-                      <input className="input" placeholder="e.g. Rajouri Garden, New Delhi" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} />
+                      <input className="input" placeholder="e.g. Camden, London" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} />
                     </label>
                     <button
                       type="button"
@@ -307,7 +305,7 @@ export default function CreatePage() {
                   <div className="space-y-3">
                     {family.map((f, i) => (
                       <div key={i} className="pop-in grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3 sm:grid-cols-[1fr_1fr_auto]">
-                        <input aria-label="Name" placeholder="Name, e.g. Dadu" className="input" value={f.name} onChange={(e) => setFamily((fs) => fs.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+                        <input aria-label="Name" placeholder="Name, e.g. Grandma" className="input" value={f.name} onChange={(e) => setFamily((fs) => fs.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
                         <select aria-label="Relation" className="input" value={f.relation} onChange={(e) => setFamily((fs) => fs.map((x, j) => (j === i ? { ...x, relation: e.target.value } : x)))}>
                           {RELATIONS.map((r) => (
                             <option key={r} value={r}>
@@ -320,7 +318,7 @@ export default function CreatePage() {
                         </button>
                         <input
                           aria-label="Their favourite singers"
-                          placeholder="🎵 Their favourite singers (optional), e.g. Mohammed Rafi"
+                          placeholder="🎵 Their favourite singers (optional), e.g. The Beatles"
                           className="input sm:col-span-3"
                           value={f.singers}
                           onChange={(e) => setFamily((fs) => fs.map((x, j) => (j === i ? { ...x, singers: e.target.value } : x)))}
