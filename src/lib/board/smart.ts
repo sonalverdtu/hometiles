@@ -1,7 +1,9 @@
 // Smart board predictions, computed on the device from the tap log (nothing leaves the browser).
 // Signals: what usually comes next after the last word (learned word pairs), what this child uses at
-// this time of day, what they use most this week, and simple word→category hints for a cold start.
+// this time of day, what they use most this week, the topic of their last few utterances (topic.ts),
+// and simple word→category hints for a cold start.
 
+import type { Topic } from "./topic";
 import type { Board, Category, TapEvent, Tile } from "./types";
 
 export interface Prediction {
@@ -62,7 +64,7 @@ function timeOfDayCategories(hour: number): { cats: Category[]; label: string } 
 
 const sameHourBand = (a: number, b: number) => Math.abs(a - b) <= 1 || Math.abs(a - b) >= 23;
 
-export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12): Prediction[] {
+export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12, topic?: Topic): Prediction[] {
   // "help" already sits next to the core words, so it never needs predicting.
   const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help");
   const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
@@ -92,6 +94,8 @@ export function predict(board: Board, lastTileId: string | null, taps: TapEvent[
     else if (tod.cats.includes(tile.category)) parts.push({ v: 0.35, why: `good for the ${tod.label}` });
     const f = freq.get(tile.id) ?? 0;
     if (f > 0) parts.push({ v: 1.0 * (f / maxFreq), why: `a favourite this week` });
+    const b = topic?.boosts.get(tile.id) ?? 0;
+    if (b > 0) parts.push({ v: 1.4 * b, why: topic?.label?.why ?? "fits what they're talking about" });
     // Prior: the child's own taste matters most on a cold start; safety words only surface from real use.
     const prior = tile.kind === "rotating" ? (tile.score ?? 0.5) * 0.8 : tile.kind === "people" ? 0.25 : 0.05;
     parts.push({ v: prior, why: tile.kind === "rotating" ? "matches their taste" : "always handy" });
@@ -119,4 +123,31 @@ export function predict(board: Board, lastTileId: string | null, taps: TapEvent[
     perCat.set(p.tile.category, (perCat.get(p.tile.category) ?? 0) + 1);
   }
   return picked;
+}
+
+/**
+ * Keeps the "Maybe next" row steady so the child can find things again: a tile keeps its slot while it is
+ * still among the top `take` predictions, and at most `maxChanges` slots change per update (the best
+ * newcomers take the places of tiles that dropped out).
+ */
+export function stabilize(prevIds: readonly string[], ranked: Prediction[], take: number, maxChanges = 3): Prediction[] {
+  const top = ranked.slice(0, take);
+  if (!prevIds.length) return top;
+  const byId = new Map(ranked.map((p, i) => [p.tile.id, { p, rank: i }]));
+  const slots: (Prediction | null)[] = prevIds.slice(0, take).map((id) => byId.get(id)?.p ?? null);
+  while (slots.length < take) slots.push(null);
+  const shown = new Set(slots.filter(Boolean).map((p) => p!.tile.id));
+  const newcomers = top.filter((p) => !shown.has(p.tile.id));
+  // Empty slots fill freely; tiles that left the top are swapped out worst-first, up to maxChanges.
+  const open = slots.map((p, i) => ({ i, rank: p ? byId.get(p.tile.id)!.rank : Infinity, empty: !p }));
+  const stale = open.filter((o) => o.empty || o.rank >= take).sort((a, b) => Number(b.empty) - Number(a.empty) || b.rank - a.rank);
+  let changes = 0;
+  for (const o of stale) {
+    const next = newcomers.shift();
+    if (!next) break;
+    if (!o.empty && changes >= maxChanges) break;
+    if (!o.empty) changes++;
+    slots[o.i] = next;
+  }
+  return slots.filter((p): p is Prediction => !!p);
 }

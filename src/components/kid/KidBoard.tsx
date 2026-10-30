@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { FOLDER_META, pick } from "@/lib/board/vocab";
 import { UI } from "@/lib/i18n";
-import { predict } from "@/lib/board/smart";
+import { predict, stabilize, type Prediction } from "@/lib/board/smart";
+import { NO_TOPIC, topicOf, type Topic } from "@/lib/board/topic";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { addSaid, getSaid, getTaps, logTap, type KidSettings, type SaidEntry } from "@/lib/client/store";
 import { speak } from "@/lib/client/speech";
@@ -16,6 +17,8 @@ type Drawer = "need" | "words" | null;
 
 // The first 8 core slots, identical on both boards (motor planning). "All words" adds its extra core words after these.
 const CORE_SLOTS = ["core-i", "core-want", "core-more", "core-stop", "core-yes", "core-no", "core-go", "safety-help"];
+// An utterance is over after this long without a tap; then the topic moves on.
+const QUIET_MS = 30_000;
 
 export function KidBoard({
   board,
@@ -41,13 +44,24 @@ export function KidBoard({
   const [sentence, setSentence] = useState<Tile[]>([]);
   const [taps, setTapsState] = useState<TapEvent[]>([]);
   const [said, setSaid] = useState<SaidEntry[]>([]);
-  const [pulse, setPulse] = useState(0);
   const [drawer, setDrawer] = useState<Drawer>(null);
+  const [topic, setTopic] = useState<Topic>(NO_TOPIC);
+  const [row, setRow] = useState<{ from: Prediction[] | null; shown: Prediction[] }>({ from: null, shown: [] });
 
   useEffect(() => {
-    setTapsState(getTaps(board.id));
+    const t = getTaps(board.id);
+    setTapsState(t);
     setSaid(getSaid(board.id));
-  }, [board.id, board.version]);
+    setTopic(topicOf(board, t));
+  }, [board]);
+
+  // The topic follows whole utterances (spoken, cleared, or a quiet pause), never single taps, so the row
+  // drifts towards what the child is talking about instead of jumping around mid-sentence.
+  useEffect(() => {
+    if (!taps.length) return;
+    const t = setTimeout(() => setTopic(topicOf(board, taps)), QUIET_MS);
+    return () => clearTimeout(t);
+  }, [board, taps]);
 
   useEffect(() => {
     if (settings.boards === "classic") setView("classic");
@@ -55,7 +69,14 @@ export function KidBoard({
   }, [settings.boards]);
 
   const last = sentence[sentence.length - 1]?.id ?? null;
-  const predictions = useMemo(() => predict(board, last, taps, new Date(), compact ? 8 : 12), [board, last, taps, compact]);
+  const take = compact ? 8 : 12;
+  const ranked = useMemo(() => predict(board, last, taps, new Date(), take + 8, topic), [board, last, taps, take, topic]);
+  // Steady row: tiles keep their slots, and at most 3 slots change per tap (stabilize in smart.ts).
+  let predictions = row.shown;
+  if (row.from !== ranked) {
+    predictions = stabilize(row.shown.map((p) => p.tile.id), ranked, take);
+    setRow({ from: ranked, shown: predictions });
+  }
   // The smart board keeps the 8 most-used core words so predictions fit on one phone screen; "All words" shows every core word.
   const slotCore = CORE_SLOTS.map((id) => board.tiles[id]).filter(Boolean);
   const extraCore = board.coreIds.filter((id) => !CORE_SLOTS.includes(id)).map((id) => board.tiles[id]).filter(Boolean);
@@ -71,7 +92,6 @@ export function KidBoard({
       // Only the child's own taps (child mode) teach the predictions; a parent trying the preview doesn't.
       if (locked) logTap(board.id, t.id);
       setTapsState((x) => [...x, { tileId: t.id, ts: Date.now() }]);
-      setPulse((p) => p + 1);
     },
     [board.id, lang, locked, settings.speakOnTap],
   );
@@ -81,8 +101,14 @@ export function KidBoard({
     if (!text) return;
     speak(text, lang, composeSentence(sentence, "en"));
     const entry = { text, tileIds: sentence.map((t) => t.id), ts: Date.now() };
-    addSaid(board.id, entry);
+    if (locked) addSaid(board.id, entry); // like taps: a parent's preview sentences aren't the child's history
     setSaid((s) => [entry, ...s.filter((x) => x.text !== text)].slice(0, 20));
+    setTopic(topicOf(board, taps));
+  };
+
+  const clear = () => {
+    setSentence([]);
+    setTopic(topicOf(board, taps));
   };
 
   const grid = { gridTemplateColumns: `repeat(auto-fill, minmax(${tileMin(size)}, 1fr))` };
@@ -114,7 +140,7 @@ export function KidBoard({
         <button type="button" onClick={() => setSentence((s) => s.slice(0, -1))} className="kid-action bg-white" aria-label="Delete last word">
           <span className="text-2xl" aria-hidden>⌫</span>
         </button>
-        <button type="button" onClick={() => setSentence([])} className="kid-action bg-white" aria-label="Clear">
+        <button type="button" onClick={clear} className="kid-action bg-white" aria-label="Clear">
           <span className="text-2xl" aria-hidden>🧹</span>
         </button>
         {locked && onUnlock && (
@@ -188,11 +214,17 @@ export function KidBoard({
                 ))}
               </div>
             )}
-            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--muted)]">
               <span aria-hidden>✨</span>
               {UI[lang].maybeNext}
+              {topic.label && (
+                <span className="kid-fade ml-auto flex items-center gap-1 rounded-full border border-[var(--line)] bg-white px-2.5 py-0.5 text-[var(--ink)]" title={topic.label.why}>
+                  💬 {UI[lang].talkingAbout} <span aria-hidden>{topic.label.emoji}</span> {pick(topic.label.text, lang)}
+                </span>
+              )}
             </div>
-            <div className="grid gap-2" style={grid} key={pulse}>
+            {/* Keyed per tile, not per tap: tiles that keep their slot stay still; only newcomers fade in. */}
+            <div className="grid gap-2" style={grid}>
               {predictions.map((p, i) => (
                 <div key={p.tile.id} className="kid-fade" style={{ animationDelay: `${i * 25}ms` }}>
                   <BigTile tile={p.tile} primary={primary} secondary={secondary} labels={settings.labels} size={size} onTap={tap} onInfo={onInfo} />

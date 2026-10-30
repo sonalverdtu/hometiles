@@ -24,6 +24,8 @@ export interface Candidate {
   local?: number;
   ageFit?: number;
   partner?: Partner;
+  /** Family members this was found to share with (shared_with_family), so a talk about them can surface it. */
+  sharedWith?: string[];
   trend?: number[];
   reasons: Reason[];
 }
@@ -90,6 +92,7 @@ export function candidateToTile(c: Candidate, text?: TileText): Tile {
     },
     locked: false,
     partner: c.partner,
+    sharedWith: c.sharedWith,
     reasons: c.reasons,
     score: scoreCandidate(c),
     trend: c.trend,
