@@ -55,6 +55,15 @@ const ADULT_KINDS = new Set(["pub", "bar", "night_club", "nightlife", "lounge", 
 const LODGING = new Set(["hotel", "inn", "bed_breakfast", "guest_house", "serviced_accommodation", "hostel", "motel"]);
 const kindTags = (e: QEntity) => e.tags.filter((t) => /:(category|genre|product_category):/.test(t.id)).flatMap((t) => t.id.split(":"));
 const isAdultKind = (e: QEntity) => kindTags(e).some((s) => ADULT_KINDS.has(s));
+// Under-13 shows and films need a kids or family genre marker (an exact tag segment). TV-PG alone let adult
+// romances and dramas through on live Qloo ("What's Wrong with Secretary Kim", "The Baker and the Beauty");
+// real kids' titles all carry one of these, while the dramas only have near-misses like "family_drama".
+const KID_GENRES = new Set(["family", "children", "children_s", "kids", "animation", "animated", "preschool", "educational", "cartoon"]);
+function hasKidGenre(e: QEntity): boolean {
+  const genre = e.tags.filter((t) => /:(genre|subgenre):/.test(t.id));
+  // The mock catalogue (and some sparse live entries) carry no genre tags: nothing to judge, so let it through.
+  return !genre.length || genre.some((t) => t.id.split(":").some((s) => KID_GENRES.has(s)));
+}
 /** Hotels near home are never a useful place tile, for anyone. */
 const isLodging = (e: QEntity) => kindTags(e).some((s) => LODGING.has(s));
 const YOUNG_TAGS = /mumble_rap|soundcloud_rap|style:qloo:trap|horrorcore|drill/;
@@ -65,6 +74,7 @@ function ageSafe(ctx: AgentCtx, e: QEntity): boolean {
   if (ADULT_WORDS.test(e.name) || isAdultKind(e)) return false;
   if (g !== "teen" && e.tags.some((t) => YOUNG_TAGS.test(t.id))) return false;
   const kind = e.type === "urn:entity:videogame" ? "game" : e.type === "urn:entity:tv_show" || e.type === "urn:entity:movie" ? "screen" : null;
+  if (kind === "screen" && g !== "teen" && !hasKidGenre(e)) return false;
   return !kind || ratingOk(g, e.contentRating, kind);
 }
 const minor = (ctx: AgentCtx) => isMinor(ageGroupOf(ctx.profile));
@@ -307,8 +317,9 @@ async function verifiedLocalSnacks(ctx: AgentCtx, have: Set<string>): Promise<QE
   const found = await Promise.all(names.slice(0, 8).map((n) => ctx.qloo.resolve(n, "urn:entity:brand").catch(() => null)));
   // Must carry a Qloo food tag: name search alone matched "Real" (a juice) to Real Madrid CF.
   const isFood = (e: QEntity) => e.tags.some((t) => /food_and_beverage/.test(t.id));
-  const kept = found.filter((e): e is QEntity => !!e && isFood(e) && !have.has(e.id) && ageSafe(ctx, e));
-  ctx.notes.push(`Local snacks: the AI suggested ${names.length}, Qloo confirmed ${kept.length} (${names.filter((n, i) => !found[i] || !kept.includes(found[i]!)).join(", ") || "none"} dropped).`);
+  const confirmed = found.map((e) => (e && isFood(e) && ageSafe(ctx, e) ? e : null));
+  const kept = confirmed.filter((e): e is QEntity => !!e && !have.has(e.id));
+  ctx.notes.push(`Local snacks: the AI suggested ${names.length}, Qloo confirmed ${confirmed.filter(Boolean).length} (not found in Qloo: ${names.filter((_, i) => !confirmed[i]).join(", ") || "none"}).`);
   return [...new Map(kept.map((e) => [e.id, e])).values()];
 }
 
