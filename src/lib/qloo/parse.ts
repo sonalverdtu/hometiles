@@ -82,6 +82,7 @@ export function parseEntity(rawIn: unknown, fallbackType?: QlooType): QEntity | 
     distanceM: num(get(raw, "query.distance")) ?? num(raw.distance),
     explain: parseExplain(raw),
     nameLocal,
+    contentRating: str(props.content_rating),
   };
 }
 

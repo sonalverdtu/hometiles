@@ -1,5 +1,6 @@
-// Weekly refresh (FR-402): tap counts in → suggestions out. Only entity IDs and counts arrive here,
-// never sentences or raw tap logs (NFR-06). Changes apply only after parent approval (client side).
+// Weekly refresh (FR-402): tap counts in → suggestions out. Only tile names, entity IDs, counts and an
+// anonymous profile (favourites, city, age, language; no names or family) arrive here, never sentences or
+// raw tap logs (NFR-06). Changes apply only after parent approval (client side).
 
 import { z } from "zod";
 import { refreshCandidates } from "@/lib/agent/run";
@@ -7,6 +8,7 @@ import { planRefresh } from "@/lib/board/engine";
 import type { Board, Category, Tile } from "@/lib/board/types";
 import { ProfileSchema, readJson } from "@/lib/http";
 import type { TraceEntry } from "@/lib/qloo/trace";
+import { QLOO_TYPES } from "@/lib/qloo/types";
 
 export const maxDuration = 60;
 
@@ -18,6 +20,7 @@ const Body = z.object({
         id: z.string().max(160),
         folder: z.enum(["food", "places", "favourites", "fun", "together", "new"]),
         qlooId: z.string().max(120).optional(),
+        type: z.enum(QLOO_TYPES).optional(),
         label: z.string().max(160),
         moved: z.boolean().optional(),
         locked: z.boolean(),
@@ -28,15 +31,17 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
-  const body = await readJson(req, Body);
+  const body = await readJson(req, Body, { bucket: "refresh", limit: 6 });
   if (!body.ok) return body.res;
   const { profile, tiles, counts } = body.data;
+  // No taps yet means no evidence: suggesting swaps would just be guessing.
+  if (!Object.values(counts).some((n) => n > 0)) return Response.json({ suggestions: [], trace: [], seededBy: [] });
 
   const top = tiles
     .filter((t) => t.qlooId && t.folder !== "fun" && (counts[t.id] ?? 0) > 0)
     .sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0))
     .slice(0, 4)
-    .map((t) => ({ id: t.qlooId!, name: t.label }));
+    .map((t) => ({ id: t.qlooId!, name: t.label, type: t.type }));
 
   const trace: TraceEntry[] = [];
   const { candidates } = await refreshCandidates(profile, top, { step: () => {}, trace: (e) => trace.push(e) });
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
       locked: t.locked,
       moved: t.moved,
       reasons: [],
-      entity: t.qlooId ? { qlooId: t.qlooId, name: t.label, type: "urn:entity:brand" } : undefined,
+      entity: t.qlooId ? { qlooId: t.qlooId, name: t.label, type: t.type ?? "urn:entity:brand" } : undefined,
     };
   }
   const view = {

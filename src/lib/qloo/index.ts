@@ -177,8 +177,7 @@ export class Qloo {
    * The hackathon dataset's trend history can end before today, so an empty window retries the last known one.
    */
   async trending(entityId: string, type: QlooType, start: string, end: string, tool = "whats_rising"): Promise<QTrendPoint[] | null> {
-    // The hackathon dataset's trend history currently ends around Sep 2025: try that window first when live.
-    const windows: [string, string][] = this.mode === "live" ? [["2025-06-01", "2025-09-30"]] : [[start, end]];
+    const windows: [string, string][] = this.mode === "live" ? [getConfig().trendWindow] : [[start, end]];
     for (const [s0, e0] of windows) {
       const params: Params = { "filter.type": type, "signal.interests.entities": entityId, "filter.start_date": s0, "filter.end_date": e0 };
       try {

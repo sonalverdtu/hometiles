@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { EntityRef, Lang, Profile } from "@/lib/board/types";
 import { DEFAULT_LANG, LANG_CODES, langLabel } from "@/lib/i18n";
 import type { AgeBand, QlooType } from "@/lib/qloo/types";
+import type { AgeGroup } from "@/lib/board/age";
 import { setPendingProfile } from "@/lib/client/store";
 
 const TYPES: { id: QlooType; label: string; emoji: string; example: string; cat: string }[] = [
@@ -16,15 +17,17 @@ const TYPES: { id: QlooType; label: string; emoji: string; example: string; cat:
   { id: "urn:entity:place", label: "Place to eat", emoji: "📍", example: "e.g. their favourite ice-cream shop", cat: "places" },
 ];
 
-const AGES: { id: AgeBand; label: string; child?: boolean }[] = [
-  { id: "24_and_younger", label: "Child (under 13)", child: true },
-  { id: "24_and_younger", label: "Teen (13–19)" },
-  { id: "24_and_younger", label: "20–24" },
-  { id: "25_to_29", label: "25–29" },
-  { id: "30_to_34", label: "30–34" },
-  { id: "35_to_44", label: "35–44" },
-  { id: "45_to_54", label: "45–54" },
-  { id: "55_and_older", label: "55+" },
+// Qloo's youngest age band covers everyone under 25, so the group (what each age may see) is kept separately.
+const AGES: { id: AgeBand; label: string; group: AgeGroup }[] = [
+  { id: "24_and_younger", label: "Under 8", group: "young" },
+  { id: "24_and_younger", label: "8–12", group: "child" },
+  { id: "24_and_younger", label: "Teen (13–17)", group: "teen" },
+  { id: "24_and_younger", label: "18–24", group: "adult" },
+  { id: "25_to_29", label: "25–29", group: "adult" },
+  { id: "30_to_34", label: "30–34", group: "adult" },
+  { id: "35_to_44", label: "35–44", group: "adult" },
+  { id: "45_to_54", label: "45–54", group: "adult" },
+  { id: "55_and_older", label: "55+", group: "adult" },
 ];
 
 // From the language registry: English first (the default), then every other supported language.
@@ -134,7 +137,7 @@ export default function CreatePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
-  const [ageIdx, setAgeIdx] = useState(0);
+  const [ageIdx, setAgeIdx] = useState(1);
   const [city, setCity] = useState("");
   const [home, setHome] = useState<{ lat: number; lon: number } | undefined>();
   const [primary, setPrimary] = useState<Lang>(DEFAULT_LANG);
@@ -162,7 +165,8 @@ export default function CreatePage() {
       id: `p-${Date.now().toString(36)}`,
       displayName: name.trim(),
       ageBand: age.id,
-      isChild: !!age.child,
+      isChild: age.group === "young" || age.group === "child",
+      ageGroup: age.group,
       city: city.trim(),
       home,
       primaryLang: primary,
@@ -226,7 +230,7 @@ export default function CreatePage() {
                   <label className="grid gap-1.5 text-sm font-bold">
                     Their first name
                     <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Leo" autoFocus />
-                    <span className="text-xs font-normal text-[var(--muted)]">🔒 Stays on this device.</span>
+                    <span className="text-xs font-normal text-[var(--muted)]">🔒 Never sent to the AI, never stored on a server.</span>
                   </label>
                   <ChipGroup label="Age" value={ageIdx} onChange={setAgeIdx} options={AGES.map((a, i) => ({ v: i, t: a.label }))} />
                   <div className="grid gap-2">

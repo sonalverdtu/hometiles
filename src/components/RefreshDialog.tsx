@@ -52,7 +52,7 @@ export function RefreshDialog({
             {!top.length && <li className="text-sm text-[var(--muted)]">No taps logged yet.</li>}
           </ol>
           <p className="mt-3 text-xs text-[var(--muted)]">
-            Taps stay on this device. Only anonymous Qloo entity IDs and counts were sent to find new tiles. Core, safety and family tiles are never changed.
+            Taps stay on this device. To find new tiles, only tile names, Qloo IDs, tap counts, city, age group and favourites were sent: no names, sentences or tap history. Core, safety and family tiles are never changed.
           </p>
         </section>
         <section>

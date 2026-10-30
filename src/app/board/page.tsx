@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { applySuggestions } from "@/lib/board/engine";
 import { toObf } from "@/lib/board/obf";
-import type { Board, Category, Suggestion, TapEvent, Tile } from "@/lib/board/types";
+import type { Board, Category, Profile, Suggestion, TapEvent, Tile } from "@/lib/board/types";
 import { LANGUAGES, type Lang } from "@/lib/i18n";
 import { pick } from "@/lib/board/vocab";
 import {
@@ -54,6 +54,9 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
     </div>
   );
 }
+
+/** The refresh needs taste, place and age, never who the child or their family is. */
+const anonymous = (p: Profile): Profile => ({ ...p, id: "anon", displayName: "Child", family: [] });
 
 export default function BoardPage() {
   const [board, setBoard] = useState<Board | null>(null);
@@ -149,12 +152,12 @@ export default function BoardPage() {
         f.tileIds
           .map((id) => board.tiles[id])
           .filter((t): t is Tile => !!t && t.kind === "rotating")
-          .map((t) => ({ id: t.id, folder: f.id, qlooId: t.entity?.qlooId, label: t.label.en.slice(0, 150), moved: t.moved, locked: t.locked })),
+          .map((t) => ({ id: t.id, folder: f.id, qlooId: t.entity?.qlooId, type: t.entity?.type, label: t.label.en.slice(0, 150), moved: t.moved, locked: t.locked })),
       )
       .slice(0, 80);
     const relevant = Object.fromEntries(Object.entries(counts).filter(([id]) => tiles.some((t) => t.id === id)));
     try {
-      const res = await fetch("/api/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile: board.profile, tiles, counts: relevant }) });
+      const res = await fetch("/api/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile: anonymous(board.profile), tiles, counts: relevant }) });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Refresh failed");
       setRefresh({ loading: false, suggestions: j.suggestions, counts, seededBy: j.seededBy ?? [] });
