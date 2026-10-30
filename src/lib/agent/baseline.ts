@@ -3,6 +3,7 @@
 import { getConfig } from "../config";
 import { baselineTilesLLM } from "../llm";
 import type { Profile } from "../board/types";
+import { CITIES } from "../qloo/mock-data";
 
 export interface BaselineTile {
   category: "food" | "places" | "favourites";
@@ -38,6 +39,8 @@ export async function baselineTiles(profile: Profile): Promise<{ tiles: Baseline
       // fall through to the mock list
     }
   }
-  const region = profile.primaryLang === "hi" ? "in" : profile.primaryLang === "es" ? "latam" : "other";
+  // Region from where the family lives (a Spanish-speaking family in London is still in London).
+  const culture = Object.values(CITIES).find((c) => c.match.test(profile.city.toLowerCase()))?.culture;
+  const region = culture === "in" || culture === "latam" ? culture : "other";
   return { tiles: GENERIC[region], source: "mock" };
 }
