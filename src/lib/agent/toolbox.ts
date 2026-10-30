@@ -7,7 +7,7 @@ import type { AgeBand, QDemographics, QEntity, QHeatCell, QlooType } from "../ql
 import type { Candidate } from "../board/engine";
 import type { EntityRef, Partner, Profile, Reason } from "../board/types";
 import { ageGroupOf, isMinor, ratingOk, screenRatings } from "../board/age";
-import { TEMPERAMENT, temperamentTags } from "../board/temperament";
+import { describeChild, temperamentTags } from "../board/temperament";
 import { getConfig } from "../config";
 import { proposeLocalSnacks } from "../llm";
 
@@ -189,8 +189,8 @@ export async function matchTemperament(ctx: AgentCtx, take = 6) {
   const ts = ctx.profile.temperament ?? [];
   if (!ts.length) return "No temperament given.";
   ctx.ran.add("match_temperament");
-  const label = ts.map((t) => TEMPERAMENT[t].label.toLowerCase()).join(" and ");
-  ctx.emit(`Finding shows and films for a ${label} child…`, "match_temperament");
+  const child = describeChild(ts);
+  ctx.emit(`Finding shows and films for ${child}…`, "match_temperament");
   const tags = temperamentTags(ts);
   const types: QlooType[] = ["urn:entity:tv_show", "urn:entity:movie"];
   const lists = await Promise.all(
@@ -214,7 +214,7 @@ export async function matchTemperament(ctx: AgentCtx, take = 6) {
       reasons: [
         {
           kind: "temperament",
-          text: matched.length ? `For a ${label} child: Qloo tags it ${[...new Set(matched)].slice(0, 3).join(", ")}` : `For a ${label} child (Qloo descriptor tags)`,
+          text: matched.length ? `For ${child}: Qloo tags it ${[...new Set(matched)].slice(0, 3).join(", ")}` : `For ${child} (from Qloo's descriptor tags)`,
           value: e.affinity,
         },
       ],

@@ -304,7 +304,7 @@ export default function Home() {
             </span>
             <span>
               <span className="font-display block text-2xl font-extrabold">Make a board for your own child</span>
-              <span className="text-sm text-[var(--muted)]">Three quick steps. Names stay on this device; only Qloo IDs and the city go to Qloo.</span>
+              <span className="text-sm text-[var(--muted)]">Three quick steps. Names never go to the AI or to Qloo; only favourites, the city and age do.</span>
             </span>
             <span aria-hidden className="ml-auto hidden text-2xl transition-transform group-hover:translate-x-1 sm:block">
               →

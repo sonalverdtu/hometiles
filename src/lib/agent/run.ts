@@ -153,7 +153,7 @@ function shortlist(cands: Candidate[]): Candidate[] {
 
 async function tileText(profile: Profile, picks: Candidate[], hooks: RunHooks): Promise<Record<string, TileText> | undefined> {
   if (getConfig().llmMode !== "live" || !picks.length) return undefined;
-  hooks.step("Writing tile words in both languages…", "labels");
+  hooks.step(profile.secondaryLang ? "Writing tile words in both languages…" : "Writing tile words and what each tile says…", "labels");
   try {
     const { parsed, primary, secondary } = await writeTileText(
       profile,
