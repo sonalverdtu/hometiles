@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { CSSProperties, ReactNode } from "react";
 import { PersonaButtons } from "@/components/PersonaButtons";
 import { HeroDemo } from "@/components/landing/HeroDemo";
+import { Journey } from "@/components/landing/Journey";
 
 const GENERIC = [
   { e: "🍪", l: "cookie" },
@@ -12,175 +14,275 @@ const GENERIC = [
 ];
 const HOME = [
   { e: "🍪", l: "Parle-G", c: "food" },
-  { e: "🥟", l: "Sharma Ji Chaat · 300 m", c: "places" },
+  { e: "🥟", l: "Sharma Ji Chaat", s: "300 m from home", c: "places" },
   { e: "📺", l: "Chhota Bheem", c: "favourites" },
   { e: "🧃", l: "Frooti", c: "food" },
   { e: "👴", l: "Dadu", c: "people" },
-  { e: "🎵", l: "Rafi songs with Dadu", c: "together" },
+  { e: "🎵", l: "Rafi songs", s: "with Dadu", c: "together" },
 ];
 
-const QLOO = [
-  { e: "📍", t: "Places near home", d: "A taste heatmap finds where this child's kind of taste clusters near home, then the real places inside those hot-spots." },
-  { e: "🤝", t: "Things to share with Dadu", d: "Comparing the child's tastes with a grandparent's finds songs and films they'd both enjoy. Conversation, not just requests." },
-  { e: "👥", t: "Who loves this?", d: "Audience data sorts tiles into talking with cousins and friends versus talking with grandparents." },
-  { e: "📈", t: "What's new", d: "Trending data adds the rising show everyone at school is talking about, so the child can join in." },
-];
+// Words from many children's worlds, scrolling under the hero.
+const WORLD = [
+  ["🍪", "Parle-G", "food"],
+  ["🌶️", "Takis", "food"],
+  ["📺", "Chhota Bheem", "favourites"],
+  ["🎬", "Encanto", "favourites"],
+  ["🎤", "Karol G", "together"],
+  ["🧃", "Frooti", "food"],
+  ["👴", "Dadu", "people"],
+  ["👵", "Abuela", "people"],
+  ["🥟", "Golgappe", "places"],
+  ["🎮", "Roblox", "favourites"],
+  ["🎵", "Arijit Singh", "together"],
+  ["🌮", "Taquería", "places"],
+] as const;
+
+const tileStyle = (c: string): CSSProperties => ({ background: `var(--c-${c})`, ["--edge" as string]: `var(--b-${c})` });
+
+function Section({ id, eyebrow, title, sub, children, className = "" }: { id?: string; eyebrow: string; title: string; sub?: string; children: ReactNode; className?: string }) {
+  return (
+    <section id={id} className={`scroll-mt-20 px-4 py-16 sm:py-20 ${className}`}>
+      <div className="reveal mx-auto max-w-6xl">
+        <p className="text-center text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--brand)]">{eyebrow}</p>
+        <h2 className="mx-auto mt-2 max-w-3xl text-center text-3xl font-extrabold leading-tight sm:text-5xl">{title}</h2>
+        {sub && <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-[var(--muted)]">{sub}</p>}
+        <div className="mt-10">{children}</div>
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   return (
-    <div>
+    <div className="overflow-x-clip">
       {/* HERO */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-14 pt-10 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-        <div>
-          <p className="inline-block rounded-full bg-[#ffe7dc] px-3 py-1 text-sm font-bold text-[var(--brand)]">For children who can&apos;t speak (yet)</p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-[1.1] sm:text-6xl">
-            A talking picture board that <span className="text-[var(--brand)]">sounds like home.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-[#3c4249]">
-            Non-speaking children talk by tapping pictures. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>.
-            HomeTiles builds one in a minute with the <strong>snacks, shows, places and family a child actually knows</strong>.
-            It learns what they say and puts the next word right where they need it.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#try" className="btn btn-primary px-6 py-3 text-lg">▶ See a demo board</a>
-            <Link href="/create" className="btn px-6 py-3 text-lg">Make one for my child</Link>
+      <section className="relative">
+        <div aria-hidden className="blob -left-24 top-10 h-72 w-72 bg-[#ffb48f]" />
+        <div aria-hidden className="blob right-0 top-40 h-80 w-80 bg-[#c9b8ff]" />
+        <div aria-hidden className="blob bottom-0 left-1/3 h-64 w-64 bg-[#a8e6d9]" />
+        <div className="relative mx-auto grid max-w-6xl gap-16 px-4 pb-16 pt-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:pt-16">
+          <div className="fade-up">
+            <p className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-3 py-1.5 text-sm font-bold shadow-sm">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--grape)] text-[10px] text-white">✦</span>
+              An AI agent + Qloo&apos;s taste graph
+            </p>
+            <h1 className="mt-5 text-5xl font-extrabold leading-[1.02] sm:text-7xl">
+              A talking picture board that <span className="text-gradient">sounds like home.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#3c3a48]">
+              Children who can&apos;t speak (yet) talk by tapping pictures. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>. HomeTiles builds one in about a minute with the{" "}
+              <strong>snacks, shows, places and family a child actually knows</strong>, in their home language.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/create" className="btn btn-primary btn-lg">
+                ＋ Make a board for my child
+              </Link>
+              <a href="#try" className="btn btn-lg">
+                ▶ Try a demo child
+              </a>
+            </div>
+            <ul className="mt-8 grid max-w-lg grid-cols-2 gap-2 text-sm font-semibold">
+              {[
+                ["🗣️", "Speaks Hindi, Spanish, English"],
+                ["🔒", "Child lock"],
+                ["📴", "Taps stay on the device"],
+                ["✅", "Parents approve changes"],
+              ].map(([e, l]) => (
+                <li key={l} className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2">
+                  <span aria-hidden>{e}</span>
+                  {l}
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-[var(--muted)]">
-            <li>🗣️ Speaks Hindi, Spanish and English</li>
-            <li>🔒 Child lock</li>
-            <li>📴 Taps stay on the device</li>
-            <li>✅ Parents approve changes</li>
-          </ul>
+          <div className="pt-16 lg:pt-0">
+            <HeroDemo />
+          </div>
         </div>
-        <HeroDemo />
+      </section>
+
+      {/* WORLD MARQUEE */}
+      <section aria-label="Words from children's own worlds" className="border-y border-[var(--line)] bg-white/60 py-5">
+        <div className="relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+          <div className="marquee gap-3">
+            {[...WORLD, ...WORLD].map(([e, l, c], k) => (
+              <div key={k} aria-hidden={k >= WORLD.length} className="kid-tile h-[4.5rem] w-28 shrink-0 text-sm font-bold" style={tileStyle(c)}>
+                <span className="text-2xl leading-none">{e}</span>
+                <span className="font-display">{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* PROBLEM */}
-      <section className="bg-white py-14">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-extrabold">Same child. Two very different boards.</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-center text-[var(--muted)]">
-            Speech therapists have been asking for boards with culture-specific words since at least 2022 (<a className="underline" href="https://github.com/cboard-org/cboard/issues/1267" target="_blank" rel="noreferrer">Cboard #1267</a>).
-            Today parents add them by hand, one picture at a time.
-          </p>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="rounded-3xl border-2 border-dashed border-[#d6d0c4] p-5">
-              <div className="mb-3 font-bold text-[var(--muted)]">A generic board</div>
-              <div className="grid grid-cols-3 gap-2">
-                {GENERIC.map((g) => (
-                  <div key={g.l} className="kid-tile min-h-24 border-[#d9d9d9] bg-[#f2f2f2] grayscale">
-                    <span className="text-4xl">{g.e}</span>
-                    <span className="font-bold">{g.l}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-sm text-[var(--muted)]">He can ask for <em>a</em> cookie. He can&apos;t ask for <em>his</em>.</p>
+      <Section
+        eyebrow="The problem"
+        title="Same child. Two very different boards."
+        sub="Speech therapists have asked for culture-specific words since at least 2022. Today parents add them by hand, one picture at a time."
+      >
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-[2rem] border-2 border-dashed border-[#d6d0c4] bg-white/40 p-6">
+            <div className="mb-4 flex items-center gap-2 font-bold text-[var(--muted)]">
+              <span className="rounded-full bg-[#ececec] px-2.5 py-1 text-xs">Before</span> A generic board
             </div>
-            <div className="rounded-3xl border-2 border-[var(--accent)] bg-[#f3fbf9] p-5">
-              <div className="mb-3 font-bold text-[var(--accent)]">HomeTiles, built for Aarav</div>
-              <div className="grid grid-cols-3 gap-2">
-                {HOME.map((g) => (
-                  <div key={g.l} className="kid-tile min-h-24" style={{ background: `var(--c-${g.c})`, borderColor: `var(--b-${g.c})` }}>
-                    <span className="text-4xl">{g.e}</span>
-                    <span className="text-sm font-bold leading-tight">{g.l}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-3 text-sm">His snack, his chaat stall, his cartoon, his grandfather&apos;s songs.</p>
+            <div className="grid grid-cols-3 gap-3">
+              {GENERIC.map((g) => (
+                <div key={g.l} className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-[#dcdcdc] bg-[#f2f2f2] grayscale">
+                  <span className="text-4xl">{g.e}</span>
+                  <span className="font-bold text-[#6b6b6b]">{g.l}</span>
+                </div>
+              ))}
             </div>
+            <p className="mt-4 text-[var(--muted)]">
+              He can ask for <em>a</em> cookie. He can&apos;t ask for <em>his</em>.
+            </p>
+          </div>
+          <div className="relative rounded-[2rem] border-2 border-[var(--accent)] bg-gradient-to-br from-[#f1fbf8] to-white p-6 shadow-[0_8px_0_var(--accent)]">
+            <div className="mb-4 flex items-center gap-2 font-bold text-[var(--accent)]">
+              <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs text-white">After</span> HomeTiles, built for Aarav
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {HOME.map((g, k) => (
+                <div key={g.l} className="kid-tile pop-in min-h-24" style={{ ...tileStyle(g.c), animationDelay: `${k * 80}ms` }}>
+                  <span className="text-4xl leading-none">{g.e}</span>
+                  <span className="font-display text-sm font-bold leading-tight">{g.l}</span>
+                  {g.s && <span className="text-[10px] font-semibold opacity-70">{g.s}</span>}
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 font-semibold">His snack, his chaat stall, his cartoon, his grandfather&apos;s songs.</p>
           </div>
         </div>
-      </section>
+      </Section>
+
+      {/* JOURNEY */}
+      <Section
+        className="bg-gradient-to-b from-white/70 to-transparent"
+        eyebrow="See every screen"
+        title="From a few questions to a board that talks"
+        sub="This is exactly what you'll see, step by step. Tap a step to look closer."
+      >
+        <Journey />
+      </Section>
 
       {/* TWO BOARDS */}
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-center text-3xl font-extrabold">Two boards, one child</h2>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-[var(--muted)]">Core words like &ldquo;I&rdquo;, &ldquo;want&rdquo; and &ldquo;stop&rdquo; stay in the same place on both, so muscle memory works.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl bg-[#fff1ea] p-6">
-            <div className="text-4xl">⭐</div>
-            <h3 className="mt-2 text-xl font-extrabold">For me: the smart board</h3>
-            <p className="mt-2 leading-relaxed">
-              Learns on the device what the child says and when. After &ldquo;I want&rdquo; it shows their snacks and shows. In the evening it brings up their cartoons.
-              <strong> No digging through folders.</strong> &ldquo;Said before&rdquo; repeats a whole sentence in one tap.
-            </p>
-          </div>
-          <div className="rounded-3xl bg-[#eef3ff] p-6">
-            <div className="text-4xl">📁</div>
-            <h3 className="mt-2 text-xl font-extrabold">All words: the classic board</h3>
-            <p className="mt-2 leading-relaxed">
-              Every word lives in a fixed folder: food, places, favourites, family, fun, &ldquo;I need&rdquo;. Nothing moves, which is what many therapists prefer while a child is learning.
-            </p>
-          </div>
-          <div className="rounded-3xl bg-[#f1f7ee] p-6">
-            <div className="text-4xl">🔒</div>
-            <h3 className="mt-2 text-xl font-extrabold">A child lock</h3>
-            <p className="mt-2 leading-relaxed">
-              &ldquo;Give to Aarav&rdquo; goes full-screen and hides every menu. The back button is blocked. Parents exit by holding the lock for 2 seconds, which a quick tap can&apos;t do.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW */}
-      <section className="bg-white py-14">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="text-center text-3xl font-extrabold">Ready in about a minute</h2>
-          <ol className="mt-8 grid gap-4 md:grid-cols-3">
-            {[
-              ["1", "Tell us a little", "Neighbourhood, home language, and 3–5 things they love: a cartoon, a game, a snack, a singer."],
-              ["2", "The AI agent does the research", "It asks Qloo's taste graph for related favourites, real places near home, local snacks, and things to share with grandparents. Every tile shows why it's there."],
-              ["3", "Tap, talk, grow", "The board speaks both languages. Each week it suggests new tiles from what was actually tapped. You approve every change."],
-            ].map(([n, t, d]) => (
-              <li key={n} className="rounded-3xl border border-[var(--line)] p-6">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand)] text-lg font-extrabold text-white">{n}</div>
-                <h3 className="mt-3 text-lg font-extrabold">{t}</h3>
-                <p className="mt-1 leading-relaxed text-[var(--muted)]">{d}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* QLOO */}
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-center text-3xl font-extrabold">What an AI alone gets wrong, and Qloo gets right</h2>
-        <p className="mx-auto mt-2 max-w-2xl text-center text-[var(--muted)]">
-          A chatbot can guess &ldquo;Indian kids like samosa&rdquo;. It can&apos;t know the chaat stall 300 m from this child&apos;s home, or which songs he and his grandfather would both love.
-        </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {QLOO.map((q) => (
-            <div key={q.t} className="rounded-3xl border border-[var(--line)] bg-white p-5">
-              <div className="text-3xl">{q.e}</div>
-              <h3 className="mt-2 font-extrabold">{q.t}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{q.d}</p>
+      <Section eyebrow="Built for how children learn" title="Two boards, one child" sub="Core words like “I”, “want” and “stop” stay in the same place on both, so muscle memory works.">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              e: "⭐",
+              t: "For me: the smart board",
+              d: "Learns on the device what the child says and when. After “I want” it shows their snacks and shows; in the evening, their cartoons. “Said before” repeats a whole sentence in one tap.",
+              bg: "var(--brand-soft)",
+              edge: "#f3b49c",
+            },
+            {
+              e: "📁",
+              t: "All words: the classic board",
+              d: "Every word lives in a fixed folder: food, places, favourites, family, fun, “I need”. Nothing moves, which many therapists prefer while a child is learning.",
+              bg: "#eaf1ff",
+              edge: "#b8cbf2",
+            },
+            {
+              e: "🔒",
+              t: "A child lock",
+              d: "“Give to Aarav” goes full-screen and hides every menu. The back button is blocked. Parents exit by holding the lock for 2 seconds.",
+              bg: "var(--accent-soft)",
+              edge: "#9ed6ca",
+            },
+          ].map((c) => (
+            <div key={c.t} className="rounded-[2rem] border-2 p-6 transition-transform duration-300 hover:-translate-y-1" style={{ background: c.bg, borderColor: c.edge, boxShadow: `0 6px 0 ${c.edge}` }}>
+              <div className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-white/70 text-3xl shadow-[0_4px_0_rgb(0_0_0/0.08)]">{c.e}</div>
+              <h3 className="mt-4 text-2xl font-extrabold leading-tight">{c.t}</h3>
+              <p className="mt-2 leading-relaxed text-[#3c3a48]">{c.d}</p>
             </div>
           ))}
         </div>
-      </section>
+      </Section>
+
+      {/* QLOO */}
+      <Section
+        className="bg-white/60"
+        eyebrow="Why Qloo"
+        title="What an AI alone gets wrong, and Qloo gets right"
+        sub="A chatbot can guess “Indian kids like samosa”. It can't know the chaat stall 300 m from this child's home, or which songs he and his grandfather would both love."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="card p-5 lg:col-span-2">
+            <div aria-hidden className="mb-4 grid h-28 grid-cols-8 gap-1 rounded-2xl bg-[var(--surface-2)] p-2">
+              {Array.from({ length: 24 }, (_, k) => {
+                const v = [0.1, 0.2, 0.15, 0.4, 0.25, 0.1, 0.05, 0.1, 0.2, 0.6, 0.85, 0.5, 0.3, 0.15, 0.1, 0.2, 0.1, 0.35, 0.7, 1, 0.55, 0.2, 0.1, 0.05][k];
+                return <span key={k} className="relative rounded-md" style={{ background: `rgb(226 87 43 / ${v})` }}>{k === 19 && <span className="absolute inset-0 grid place-items-center text-sm">🏠</span>}</span>;
+              })}
+            </div>
+            <h3 className="text-xl font-extrabold">📍 Places near home</h3>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">A taste heatmap finds where this child&apos;s kind of taste clusters near home, then the real places inside those hot-spots.</p>
+          </div>
+          <div className="card p-5">
+            <div aria-hidden className="relative mb-4 h-28">
+              <span className="absolute left-4 top-3 h-20 w-20 rounded-full bg-[var(--brand)]/30" />
+              <span className="absolute left-14 top-3 h-20 w-20 rounded-full bg-[var(--grape)]/30" />
+              <span className="absolute left-[3.4rem] top-10 text-xl">🎵</span>
+              <span className="absolute left-6 top-9 text-lg">👦🏽</span>
+              <span className="absolute left-24 top-9 text-lg">👴🏽</span>
+            </div>
+            <h3 className="text-xl font-extrabold">🤝 Shared with Dadu</h3>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Comparing the child&apos;s tastes with a grandparent&apos;s finds songs and films they&apos;d both enjoy.</p>
+          </div>
+          <div className="card p-5">
+            <div aria-hidden className="mb-4 flex h-28 items-end gap-2 rounded-2xl bg-[var(--surface-2)] p-3">
+              {[30, 52, 41, 68, 88].map((h, k) => (
+                <span key={k} className="flex-1 rounded-t-lg bg-[var(--accent)]" style={{ height: `${h}%`, opacity: 0.4 + k * 0.15 }} />
+              ))}
+            </div>
+            <h3 className="text-xl font-extrabold">📈 What&apos;s new</h3>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Trending data adds the rising show everyone at school is talking about, so the child can join in.</p>
+          </div>
+        </div>
+      </Section>
 
       {/* WHY */}
-      <section className="bg-[#1f2328] py-14 text-white">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <p className="text-3xl font-extrabold leading-snug sm:text-4xl">&ldquo;There&apos;s more to life than cookies.&rdquo;</p>
-          <p className="mt-2 text-sm opacity-70">A mother, quoted by AAC researchers Light &amp; McNaughton (2014)</p>
-          <div className="mt-8 grid gap-4 text-left sm:grid-cols-3">
-            <p className="rounded-2xl bg-white/10 p-4 text-sm leading-relaxed">Families give up on AAC when <strong>it doesn&apos;t fit their life</strong> and there&apos;s little support (Johnson 2006; Moorcroft 2020).</p>
-            <p className="rounded-2xl bg-white/10 p-4 text-sm leading-relaxed">&ldquo;Doesn&apos;t fit and doesn&apos;t work for us&rdquo;: <strong>cultural and language mismatch</strong> came up in 8 of 11 parent studies (Gardiner 2025).</p>
-            <p className="rounded-2xl bg-white/10 p-4 text-sm leading-relaxed">Users say humour helps people <strong>&ldquo;see that I am a person&rdquo;</strong>. HomeTiles adds jokes and banter about their favourites (CHI 2025).</p>
+      <section className="bg-[#1d1b26] px-4 py-20 text-white">
+        <div className="reveal mx-auto max-w-4xl text-center">
+          <p className="font-display text-4xl font-extrabold leading-tight sm:text-5xl">&ldquo;There&apos;s more to life than cookies.&rdquo;</p>
+          <p className="mt-3 text-sm opacity-70">A mother, quoted by AAC researchers Light &amp; McNaughton (2014)</p>
+          <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+            <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-relaxed">
+              Families give up on AAC when <strong>it doesn&apos;t fit their life</strong> and there&apos;s little support (Johnson 2006; Moorcroft 2020).
+            </p>
+            <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-relaxed">
+              &ldquo;Doesn&apos;t fit and doesn&apos;t work for us&rdquo;: <strong>cultural and language mismatch</strong> came up in 8 of 11 parent studies (Gardiner 2025).
+            </p>
+            <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-relaxed">
+              Users say humour helps people <strong>&ldquo;see that I am a person&rdquo;</strong>. HomeTiles adds jokes and banter about their favourites (CHI 2025).
+            </p>
           </div>
         </div>
       </section>
 
       {/* TRY */}
-      <section id="try" className="mx-auto max-w-4xl scroll-mt-6 px-4 py-14">
-        <h2 className="text-center text-3xl font-extrabold">Try it with a demo child</h2>
-        <p className="mt-2 text-center text-[var(--muted)]">The agent builds the board live. Then press &ldquo;Give to …&rdquo; to see child mode.</p>
-        <div className="mt-6">
+      <Section id="try" eyebrow="Try it now" title="Build a board in about a minute" sub="Watch the agent research a demo child live, or make one for your own child.">
+        <div className="mx-auto max-w-4xl">
           <PersonaButtons />
+          <Link
+            href="/create"
+            className="group mt-4 flex items-center gap-4 rounded-[2rem] border-2 border-dashed border-[var(--brand)] bg-white/60 p-5 transition-colors hover:bg-[var(--brand-soft)]"
+          >
+            <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] text-3xl text-white shadow-[0_4px_0_var(--brand-edge)] transition-transform group-hover:rotate-90">
+              ＋
+            </span>
+            <span>
+              <span className="font-display block text-2xl font-extrabold">Make a board for your own child</span>
+              <span className="text-sm text-[var(--muted)]">Three quick steps. Names stay on this device; only Qloo IDs and the city go to Qloo.</span>
+            </span>
+            <span aria-hidden className="ml-auto hidden text-2xl transition-transform group-hover:translate-x-1 sm:block">
+              →
+            </span>
+          </Link>
+          <p className="mt-4 text-center text-xs text-[var(--muted)]">Demo children are fictional. HomeTiles supports speech-language therapists; it doesn&apos;t replace them.</p>
         </div>
-        <p className="mt-3 text-center text-xs text-[var(--muted)]">Demo children are fictional. HomeTiles supports speech-language therapists; it doesn&apos;t replace them.</p>
-      </section>
+      </Section>
     </div>
   );
 }

@@ -8,9 +8,9 @@ export type TileSize = "xs" | "s" | "m" | "l" | "xl";
 export type LabelMode = "primary" | "secondary" | "both";
 
 const SIZE: Record<TileSize, { min: string; icon: string; text: string; img: string }> = {
-  xs: { min: "4.1rem", icon: "text-2xl", text: "text-[13px]", img: "h-8 w-8" },
-  s: { min: "5.2rem", icon: "text-3xl", text: "text-[13px]", img: "h-10 w-10" },
-  m: { min: "6.5rem", icon: "text-4xl", text: "text-[15px]", img: "h-12 w-12" },
+  xs: { min: "4.1rem", icon: "text-2xl", text: "text-[14px]", img: "h-8 w-8" },
+  s: { min: "5.2rem", icon: "text-3xl", text: "text-[14px]", img: "h-10 w-10" },
+  m: { min: "6.5rem", icon: "text-4xl", text: "text-base", img: "h-12 w-12" },
   l: { min: "8rem", icon: "text-5xl", text: "text-lg", img: "h-16 w-16" },
   xl: { min: "10rem", icon: "text-6xl", text: "text-xl", img: "h-20 w-20" },
 };
@@ -28,6 +28,7 @@ export function BigTile({
   onTap,
   onInfo,
   highlight,
+  pressed,
 }: {
   tile: Tile;
   primary: Lang;
@@ -37,6 +38,8 @@ export function BigTile({
   onTap: (t: Tile) => void;
   onInfo?: (t: Tile) => void;
   highlight?: boolean;
+  /** Shows the pushed-down state without a real tap (the landing page demo hand). */
+  pressed?: boolean;
 }) {
   const s = SIZE[size];
   const [broken, setBroken] = useState(false);
@@ -49,27 +52,28 @@ export function BigTile({
         type="button"
         onClick={() => onTap(tile)}
         aria-label={pick(tile.speak, mainLang)}
-        className={`kid-tile w-full ${highlight ? "kid-tile-pop" : ""}`}
-        style={{ minHeight: s.min, background: `var(--c-${tile.category})`, borderColor: `var(--b-${tile.category})` }}
+        className={`kid-tile w-full ${highlight ? "kid-tile-pop" : ""} ${pressed ? "is-pressed" : ""}`}
+        style={{ minHeight: s.min, background: `var(--c-${tile.category})`, ["--edge" as string]: `var(--b-${tile.category})` }}
       >
+        {/* Emoji and pictures share one box size, so tiles in a row line up. */}
         {tile.image && !broken ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={tile.image.url} alt="" className={`${s.img} rounded-xl bg-white/80 object-contain`} loading="lazy" draggable={false} onError={() => setBroken(true)} />
         ) : (
-          <span aria-hidden className={`${s.icon} leading-none`}>{tile.emoji}</span>
+          <span aria-hidden className={`${s.img} ${s.icon} grid place-items-center leading-none`}>{tile.emoji}</span>
         )}
-        <span className={`line-clamp-2 font-bold leading-tight ${s.text}`}>{main}</span>
+        <span className={`font-display line-clamp-2 font-bold leading-tight ${s.text}`}>{main}</span>
         {sub && sub !== main && <span className="line-clamp-1 text-xs font-medium opacity-70">{sub}</span>}
       </button>
       {onInfo && tile.kind === "rotating" && (
         <button
           type="button"
           onClick={() => onInfo(tile)}
-          className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-xs font-bold shadow-sm hover:bg-white"
+          className="absolute -right-1.5 -top-1.5 z-10 grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[var(--grape)] text-sm font-extrabold text-white shadow-[0_3px_0_#4a33a8] transition-transform hover:scale-110 active:translate-y-0.5"
           aria-label={`Why this tile: ${tile.label.en}`}
           title="Why this tile?"
         >
-          i
+          ?
         </button>
       )}
     </div>

@@ -35,8 +35,8 @@ const LANG_NAME = { en: "English", hi: "Hindi", es: "Spanish" } as const;
 function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: { v: T; t: string }[]; onChange: (v: T) => void; label: string }) {
   return (
     <div>
-      <div className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">{label}</div>
-      <div className="grid gap-1 rounded-xl bg-[#f4efe7] p-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup" aria-label={label}>
+      <div className="mb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">{label}</div>
+      <div className="grid gap-1 rounded-2xl bg-[var(--surface-2)] p-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup" aria-label={label}>
         {options.map((o) => (
           <button
             key={o.v}
@@ -44,7 +44,7 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
             role="radio"
             aria-checked={value === o.v}
             onClick={() => onChange(o.v)}
-            className={`rounded-lg px-2 py-1.5 text-sm font-semibold ${value === o.v ? "bg-white shadow-sm" : "text-[var(--muted)]"}`}
+            className={`rounded-xl px-2 py-2 text-sm font-bold transition-all ${value === o.v ? "bg-white shadow-[0_3px_0_var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
           >
             {o.t}
           </button>
@@ -212,11 +212,13 @@ export default function BoardPage() {
   if (!loaded) return <div className="p-10 text-center text-[var(--muted)]">Loading…</div>;
   if (!board || !settings)
     return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <p className="text-lg">No board on this device yet.</p>
-        <div className="mt-4 flex justify-center gap-2">
-          <Link href="/#try" className="btn btn-primary">Try a demo child</Link>
-          <Link href="/create" className="btn">Create a board</Link>
+      <div className="mx-auto max-w-xl px-4 py-20 text-center">
+        <p className="text-6xl">🧩</p>
+        <p className="font-display mt-3 text-2xl font-extrabold">No board on this device yet</p>
+        <p className="mt-1 text-[var(--muted)]">Make one for your child, or watch the agent build one for a demo child.</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href="/create" className="btn btn-primary btn-lg">＋ Make a board</Link>
+          <Link href="/#try" className="btn btn-lg">▶ Try a demo child</Link>
         </div>
       </div>
     );
@@ -232,44 +234,60 @@ export default function BoardPage() {
   const primary = p.primaryLang;
 
   return (
-    <div className="mx-auto max-w-7xl px-3 py-5 sm:px-4">
+    <div className="relative mx-auto max-w-7xl px-3 py-6 sm:px-4">
       {board.mode.qloo === "mock" && (
-        <div className="no-print mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm">
+        <div className="no-print mb-4 rounded-2xl border-2 border-amber-300 bg-amber-50 px-4 py-2.5 text-sm">
           <strong>Demo data.</strong> No Qloo key yet, so tiles come from a synthetic catalogue shaped exactly like Qloo&apos;s API. Add <code>QLOO_API_KEY</code> for live data.
         </div>
       )}
 
-      <div className="no-print mb-4 flex flex-wrap items-center gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Parent view</p>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">{p.displayName}&apos;s board</h1>
-          <p className="text-sm text-[var(--muted)]">
-            {p.city} · {LANG_NAME[p.primaryLang]}
-            {p.secondaryLang ? ` + ${LANG_NAME[p.secondaryLang]}` : ""} · loves {p.loves.map((l) => l.name).join(", ")}
-          </p>
+      <div className="no-print card mb-6 flex flex-wrap items-center gap-4 p-4 sm:p-5">
+        <span aria-hidden className="font-display grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#ec6233] to-[#6d4fe0] text-3xl font-extrabold text-white shadow-[0_4px_0_#4a33a8]">
+          {p.displayName[0]?.toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--accent)]">Parent view</p>
+          <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">{p.displayName}&apos;s board</h1>
+          <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs font-semibold">
+            <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1">📍 {p.city}</span>
+            <span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1">
+              🗣️ {LANG_NAME[p.primaryLang]}
+              {p.secondaryLang ? ` + ${LANG_NAME[p.secondaryLang]}` : ""}
+            </span>
+            {p.loves.slice(0, 4).map((l) => (
+              <span key={l.name} className="rounded-full bg-[var(--grape-soft)] px-2.5 py-1">💜 {l.name}</span>
+            ))}
+          </div>
         </div>
-        <button type="button" onClick={startKidMode} className="btn btn-primary ml-auto px-5 py-3 text-lg">
-          ▶ Give to {p.displayName}
-          <span className="text-xs font-normal opacity-90">(locks the screen)</span>
+        <button type="button" onClick={startKidMode} className="btn btn-primary btn-lg w-full flex-col gap-0 sm:w-auto">
+          <span className="font-display text-xl">▶ Give to {p.displayName}</span>
+          <span className="text-xs font-semibold opacity-90">full screen · locks the menus</span>
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.45fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
         {/* Live preview of exactly what the child sees */}
         <section className="no-print">
-          <div className="mb-2 flex items-center gap-2 text-sm">
-            <span className="font-bold">What {p.displayName} sees</span>
-            <span className="text-[var(--muted)]">· live preview: tap to try it · ⓘ shows why a tile is there</span>
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-display text-lg font-extrabold">What {p.displayName} sees</span>
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[var(--muted)] shadow-sm">👆 tap to try it</span>
+            <span className="rounded-full bg-[var(--grape-soft)] px-2.5 py-1 text-xs font-semibold">
+              <span className="font-extrabold text-[var(--grape)]">?</span> shows why a tile is there
+            </span>
           </div>
-          <div className="h-[72vh] min-h-[540px] overflow-hidden rounded-[2rem] border-[10px] border-[#2b2b2b] bg-[var(--kid-bg)] shadow-xl">
-            <KidBoard key={previewKey} board={board} settings={settings} locked={false} onInfo={setWhy} compact />
+          <div className="phone">
+            <div className="phone-screen h-[72vh] min-h-[540px]">
+              <KidBoard key={previewKey} board={board} settings={settings} locked={false} onInfo={setWhy} compact />
+            </div>
           </div>
         </section>
 
         {/* Parent tools */}
         <aside className="no-print space-y-4">
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <h2 className="mb-3 font-bold">Child mode</h2>
+          <div className="card p-5">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
+              <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--brand-soft)] text-lg">🧒</span> Child mode
+            </h2>
             <div className="space-y-3">
               <Seg
                 label="Which board"
@@ -311,21 +329,23 @@ export default function BoardPage() {
                 <input type="checkbox" className="h-5 w-5" checked={settings.speakOnTap} onChange={(e) => changeSettings({ ...settings, speakOnTap: e.target.checked })} />
                 Speak each tile when tapped
               </label>
-              <p className="rounded-xl bg-[#f4efe7] px-3 py-2 text-xs">
+              <p className="rounded-2xl bg-[var(--surface-2)] px-3 py-2.5 text-xs">
                 🔒 In child mode the menus are hidden and the back button is blocked. To exit, <strong>press and hold the lock for 2 seconds</strong>.
               </p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <div className="mb-2 flex items-center">
-              <h2 className="font-bold">This week</h2>
+          <div className="card p-5">
+            <div className="mb-3 flex items-center">
+              <h2 className="flex items-center gap-2 text-xl font-extrabold">
+                <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--c-fun)] text-lg">📊</span> This week
+              </h2>
               <span className="ml-auto text-sm text-[var(--muted)]">{stats.taps} taps · board v{board.version}</span>
             </div>
             {stats.top.length ? (
               <ol className="mb-3 space-y-1">
                 {stats.top.map(([id, n]) => (
-                  <li key={id} className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm" style={{ background: `var(--c-${board.tiles[id].category})` }}>
+                  <li key={id} className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold" style={{ background: `var(--c-${board.tiles[id].category})` }}>
                     {board.tiles[id].emoji} {pick(board.tiles[id].label, primary)}
                     <span className="ml-auto font-mono text-xs">{n}×</span>
                   </li>
@@ -349,8 +369,10 @@ export default function BoardPage() {
             <p className="mt-2 text-xs text-[var(--muted)]">Taps never leave this device. The refresh sends only anonymous Qloo IDs and counts, and you approve every change.</p>
           </div>
 
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <h2 className="mb-2 font-bold">How Qloo built it</h2>
+          <div className="card p-5">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
+              <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--grape-soft)] text-lg">🔎</span> How Qloo built it
+            </h2>
             <div className="flex flex-wrap gap-2">
               <button type="button" className="btn" onClick={() => setShowCompare(true)}>⚖️ With vs without Qloo</button>
               <button type="button" className="btn" onClick={() => setShowTrace(true)}>🔎 Every Qloo call ({board.trace.length})</button>
@@ -372,12 +394,14 @@ export default function BoardPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <h2 className="mb-2 font-bold">Take it anywhere</h2>
+          <div className="card p-5">
+            <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
+              <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent-soft)] text-lg">🎒</span> Take it anywhere
+            </h2>
             <div className="flex flex-wrap gap-2">
               <button type="button" className="btn" onClick={exportObf}>⬇️ Export for Cboard (.obf)</button>
               <button type="button" className="btn" onClick={() => window.print()}>🖨️ Print paper board</button>
-              <Link href="/create" className="btn">＋ New board</Link>
+              <Link href="/create" className="btn btn-primary">＋ Board for another child</Link>
             </div>
           </div>
         </aside>
@@ -435,7 +459,7 @@ export default function BoardPage() {
         />
       )}
       {toast && (
-        <div role="status" className="no-print fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[var(--ink)] px-4 py-2 text-sm text-white shadow-lg">
+        <div role="status" className="fade-up no-print fixed bottom-5 left-1/2 z-50 max-w-[92vw] -translate-x-1/2 rounded-2xl bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-lg)]">
           {toast}
         </div>
       )}
