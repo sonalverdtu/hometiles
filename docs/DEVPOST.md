@@ -59,7 +59,7 @@ An LLM alone can guess "Indian kids like samosa". Only the taste graph knows the
 
 ## How we built it
 - **Next.js 16 (App Router)** + TypeScript + Tailwind on Vercel.
-- **The agent:** a **Claude (Opus 5.5) tool-runner agent** chooses which Qloo tools to call. A deterministic planner is the fallback. Claude structured output writes the bilingual labels.
+- **The agent:** a **LLM agent** (Gemini 3.5 Flash function calling; Claude Opus 5.5 tool runner also supported) chooses which Qloo tools to call. A deterministic planner fills any gaps. The same LLM writes the bilingual labels as structured output.
 - **The Qloo facade:** live and mock modes, a server-side cache, a per-call trace, and a fallback for every endpoint.
 - **The board engine:** ranking, category quotas, safety rules and OBF export.
 - **On-device prediction:** word pairs, time of day and weekly frequency, mixed across categories.
@@ -81,4 +81,4 @@ Personalising AAC is less about clever AI and more about taste: the right snack,
 - Offline-first mode for low-connectivity homes.
 
 ## Built with
-nextjs · typescript · tailwindcss · qloo · claude · anthropic · web-speech-api · arasaac · open-board-format · vercel
+nextjs · typescript · tailwindcss · qloo · gemini · claude · web-speech-api · arasaac · open-board-format · vercel

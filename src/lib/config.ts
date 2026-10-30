@@ -32,7 +32,7 @@ export function getConfig() {
     agentMode,
     llmProvider,
     geminiKey,
-    geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+    geminiModel: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
     llmModel: process.env.LLM_MODEL ?? "claude-opus-5-5",
     pictograms: (process.env.PICTOGRAMS ?? "on").toLowerCase() !== "off",
   };
