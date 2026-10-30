@@ -1,5 +1,7 @@
 // Normalised Qloo shapes shared by the live and mock clients.
 
+import type { LocalNames } from "../i18n";
+
 export const QLOO_TYPES = [
   "urn:entity:artist",
   "urn:entity:book",
@@ -45,7 +47,7 @@ export interface QEntity {
   /** Explainability: which input signals drove this result (0–1). */
   explain?: { entityId: string; score: number }[];
   /** Localised display name when known (e.g. Devanagari). */
-  nameLocal?: Partial<Record<"hi" | "es", string>>;
+  nameLocal?: LocalNames;
   /** ESRB (games) or MPAA/TV rating when Qloo has one, e.g. "E10+", "TV-PG". */
   contentRating?: string;
 }

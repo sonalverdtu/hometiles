@@ -3,7 +3,7 @@
 import type { AgeBand, QlooType } from "../qloo/types";
 import type { TraceEntry } from "../qloo/trace";
 
-import type { Lang } from "../i18n";
+import type { Lang, LocalNames } from "../i18n";
 import type { AgeGroup } from "./age";
 import type { Temperament } from "./temperament";
 export type { Lang };
@@ -18,7 +18,7 @@ export interface EntityRef {
   name: string;
   type: QlooType;
   image?: string;
-  nameLocal?: Partial<Record<"hi" | "es", string>>;
+  nameLocal?: LocalNames;
 }
 
 export interface FamilyMember {

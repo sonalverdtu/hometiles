@@ -116,7 +116,7 @@ export default function BoardPage() {
 
   const update = useCallback(
     (b: Board) => {
-      saveBoard(b);
+      if (!saveBoard(b)) setToast("This browser wouldn't save the change (storage full or blocked).");
       setBoard(b);
       refreshStats(b);
     },

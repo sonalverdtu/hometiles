@@ -12,6 +12,10 @@ export type Lang = keyof typeof LANGUAGES;
 export const LANG_CODES = Object.keys(LANGUAGES) as Lang[];
 export const DEFAULT_LANG: Lang = "en";
 
+/** Names in other scripts or spellings (Qloo "akas"), keyed by every non-English language. */
+export type LocalNames = Partial<Record<Exclude<Lang, "en">, string>>;
+export const LOCAL_LANGS = LANG_CODES.filter((l): l is Exclude<Lang, "en"> => l !== "en");
+
 /** "Español (Spanish)" for the picker, or just "English". */
 export function langLabel(l: Lang): string {
   const x = LANGUAGES[l];

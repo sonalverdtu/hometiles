@@ -76,8 +76,11 @@ export default function GeneratePage() {
             if (ev.type === "step") setSteps((s) => [...s, { text: tidy(ev.text), tool: ev.tool }]);
             else if (ev.type === "trace") setCalls((c) => c + 1);
             else if (ev.type === "board") {
-              saveBoard(ev.board);
               finished = true;
+              if (!saveBoard(ev.board)) {
+                setError("The board is ready, but this browser wouldn't store it (storage full or private mode). Free some space and try again.");
+                continue;
+              }
               setDone(true);
               setTimeout(() => router.replace(`/board?id=${ev.board.id}`), 700);
             } else if (ev.type === "error") {

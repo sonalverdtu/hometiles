@@ -3,6 +3,7 @@
 
 import type { AgeBand, QDemographics, QEntity, QHeatCell, QlooType, QTag, QTrendPoint } from "./types";
 import { QLOO_TYPES } from "./types";
+import { LOCAL_LANGS } from "../i18n";
 
 type J = Record<string, unknown>;
 
@@ -66,7 +67,7 @@ export function parseEntity(rawIn: unknown, fallbackType?: QlooType): QEntity | 
     if (!isObj(aka)) continue;
     const value = str(aka.value)?.replace(/^["'“”«»]+|["'“”«»]+$/g, "").trim();
     const langs = arr(aka.languages).filter((l): l is string => typeof l === "string");
-    for (const l of ["hi", "es"] as const) {
+    for (const l of LOCAL_LANGS) {
       if (value && langs.includes(l) && !nameLocal?.[l]) nameLocal = { ...nameLocal, [l]: value };
     }
   }
