@@ -3,7 +3,7 @@
 **Name:** HomeTiles
 **Tagline:** A talking picture board that sounds like home. An agent builds AAC boards for non-speaking children from their own foods, places, favourite shows and family, using Qloo's taste graph.
 
-**Demo URL:** _(Vercel URL)_ · **Repo:** _(GitHub URL)_ · **License:** MIT
+**Demo URL:** https://hometiles.vercel.app · **Repo:** https://github.com/sosodtu/hometiles · **License:** MIT
 
 ---
 
