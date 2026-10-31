@@ -1,18 +1,22 @@
 # Devpost submission draft: HomeTiles
 
 **Name:** HomeTiles
-**Tagline:** A talking picture board that sounds like home. An agent builds AAC boards for non-speaking children from their own foods, places, favourite shows and family, using Qloo's taste graph.
+**Tagline (elevator pitch, 181/200):** Help non-speaking children speak in their own words. An AI agent uses Qloo's taste graph to build a talking picture board from the snacks, shows, places and family each child loves.
 
 **Demo URL:** https://hometiles.vercel.app · **Repo:** https://github.com/sosodtu/hometiles · **License:** MIT
 
 ---
 
 ## Inspiration
-*"There's more to life than cookies."* A mother said this about her child's communication board, and AAC researchers Light & McNaughton quoted her in 2014.
+When we were little, my younger cousin couldn't speak. She talked to us by tapping pictures on a communication board.
 
-Non-speaking children (autistic kids, children with cerebral palsy and many others) talk by tapping pictures on an AAC board. Most boards are generic and Western-designed. A boy in Delhi can say "cookie", but not *Parle-G*, not *Chhota Bheem*, and not the chaat stall outside his building.
+The board had the basics: *eat*, *drink*, *cookie*, *park*. What it didn't have was **her**. Not the snack she actually wanted, not the cartoon she watched every day, not the places we went or the people she loved. The things she wanted to tell us about, day to day, simply weren't on it. So she pointed, we guessed, and too often we guessed wrong.
 
-The research is consistent:
+Adding her words wasn't easy either. Every new tile meant finding the right picture, making the tile and fitting it onto the board, and the things she loved kept changing faster than anyone could keep up. Her board stayed generic while her world didn't.
+
+I built HomeTiles for children like her: a board that knows what *this* child loves, finds the picture for every tile by itself, and keeps up when what they love changes.
+
+It turns out our family wasn't unusual. Non-speaking children (autistic kids, children with cerebral palsy and many others) talk by tapping pictures on an AAC board, and most boards are generic. *"There's more to life than cookies,"* one mother said about her child's board, quoted by AAC researchers Light & McNaughton in 2014. The research is consistent:
 - Families give up on AAC when it doesn't fit their life and support is thin.
 - Parents struggle to keep vocabulary up to date by hand.
 - In a 2025 review, "doesn't fit and doesn't work for us" (cultural and language mismatch) came up in 8 of 11 parent studies.
