@@ -643,11 +643,11 @@ html[data-kidlock] .site-chrome {
 /* Architecture walkthrough: stages switch on as they scroll in; the spine fills to the reached stage. */
 .arch-fill {
   height: calc(var(--fill, 1) * 100%);
-  transition: height 0.15s linear;
+  transition: height 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .arch-armed .arch-stage {
   opacity: 0.18;
-  transform: translateY(36px) scale(0.97);
+  transform: translateY(24px) scale(0.98);
   filter: saturate(0.3);
   transition:
     opacity 0.6s ease,
@@ -704,4 +704,61 @@ html[data-kidlock] .site-chrome {
 }
 .arch-head {
   animation: headGlow 1.4s ease-in-out infinite;
+}
+
+/* ---------- Playful cursor ---------- */
+/* A chunky 3D arrow in the brand orange; over anything you can press it turns purple with a sparkle.
+   Mouse and trackpad only: touch screens have no cursor. Text fields keep the normal text cursor. */
+@media (pointer: fine) {
+  html {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M5 4.5v21l5.6-5.2 3.9 8.3 4.3-2-3.8-8.1h7.8z' fill='%239a3112' stroke='%231d1b26' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M3.5 3v21l5.6-5.2 3.9 8.3 4.3-2-3.8-8.1h7.8z' fill='%23ec6233' stroke='%231d1b26' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M6 7.5v8' stroke='%23fff' stroke-opacity='.75' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+        4 3,
+      auto;
+  }
+  a,
+  button,
+  select,
+  summary,
+  label,
+  [role="button"],
+  [role="radio"],
+  [role="tab"],
+  .btn,
+  .chip,
+  .kid-tile {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M5 4.5v21l5.6-5.2 3.9 8.3 4.3-2-3.8-8.1h7.8z' fill='%234a33a8' stroke='%231d1b26' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M3.5 3v21l5.6-5.2 3.9 8.3 4.3-2-3.8-8.1h7.8z' fill='%236d4fe0' stroke='%231d1b26' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M6 7.5v8' stroke='%23fff' stroke-opacity='.75' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M24 1.5c.6 2.6 1.9 3.9 4.5 4.5-2.6.6-3.9 1.9-4.5 4.5-.6-2.6-1.9-3.9-4.5-4.5 2.6-.6 3.9-1.9 4.5-4.5z' fill='%23ffc93c' stroke='%231d1b26' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E")
+        4 3,
+      pointer;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea {
+    cursor: text;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+/* ---------- Confetti (landing demo's Speak button only; the child's board stays calm) ---------- */
+@keyframes confetti {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.6);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(calc(var(--rot) * 0.6)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx) * 1.15), calc(-50% + var(--dy) + 140px)) rotate(var(--rot)) scale(0.9);
+  }
+}
+.confetti-piece {
+  position: absolute;
+  pointer-events: none;
+  animation: confetti var(--dur, 1.3s) cubic-bezier(0.2, 0.7, 0.3, 1) var(--delay, 0s) both;
 }
