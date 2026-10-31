@@ -51,6 +51,10 @@ That gap is about taste and culture, so it's a job for Qloo.
 - **Take it anywhere:** export to Open Board Format (`.obf`) for open AAC apps like Cboard, or print a paper board.
 
 ## How we use Qloo
+![How the agent uses Qloo for one child: each favourite is resolved, then insights, temperament tags, heatmap, brands, compare, demographics and trending fill the board's folders, and an age screen checks everything](https://raw.githubusercontent.com/sosodtu/hometiles/main/docs/diagrams/qloo-flow.png)
+
+*One child, end to end: from three favourites to a full board. Orange boxes are Qloo calls, green boxes are the board's folders.*
+
 | Need | Qloo |
 |---|---|
 | Resolve favourites | `/search` |
@@ -75,6 +79,10 @@ We asked an LLM on its own (Gemini 3.5 Flash-Lite) to plan boards for 4 children
 What we take from this: **the LLM proposes, Qloo verifies and localizes.** That's how HomeTiles is built. The LLM suggests local snack brands and only the ones Qloo finds, with a food tag, become tiles. On live Qloo, Haldiram's was kept in Delhi and Ribena in London; Bikanervala, Amul, Fruit Shoot and Freddo weren't found and were dropped. Every place, show and song on the board is a real Qloo entity.
 
 ## How we built it
+![HomeTiles architecture: the parent wizard sends a profile without names to /api/board; the Gemini agent picks Qloo tools; the board engine builds the board; taps stay on the device and only tap counts go to the weekly refresh, which the parent approves](https://raw.githubusercontent.com/sosodtu/hometiles/main/docs/diagrams/architecture.png)
+
+*Green runs on the family's device, orange on our server (Next.js API routes on Vercel), purple is an outside service.*
+
 - **Next.js 16 (App Router)** + TypeScript + Tailwind on Vercel.
 - **The agent:** an **LLM agent** (Gemini 3.5 Flash function calling; Claude Opus 5.5 tool runner also supported) chooses which of 7 Qloo tools to call. A deterministic planner fills any gaps. The same LLM writes the tile words as structured output.
 - **The Qloo facade:** live and mock modes, a server-side cache, a per-call trace, and a fallback for every endpoint.
