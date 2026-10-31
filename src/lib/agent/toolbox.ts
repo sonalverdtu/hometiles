@@ -334,7 +334,7 @@ export async function findLocalBrands(ctx: AgentCtx, take = 12) {
 // finds toy brands, ranked by how well they fit the child's favourites (Bluey → LEGO, Toca Boca, Playmobil…).
 const TOY_TAGS = ["urn:tag:competitor_brand:qloo:mattel", "urn:tag:competitor_brand:qloo:hasbro", "urn:tag:competitor_brand:qloo:lego"];
 // Parent companies and toy shops read badly on a tile a child taps ("I want Hasbro").
-const NOT_A_TOY = /^(hasbro|mattel|spin master|fao schwarz|jada toys|moose toys|wowwee)$/i;
+const NOT_A_TOY = /^(hasbro|mattel|spin master|fao schwarz|jada toys|jazwares|moose toys|wowwee)$/i;
 
 export async function findToys(ctx: AgentCtx, take = 12) {
   ctx.ran.add("find_toys");

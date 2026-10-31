@@ -52,11 +52,34 @@ const AFTER_CORE: Record<string, Category[]> = {
   "core-play": ["favourites", "things"],
   "core-like": ["favourites", "food", "together"],
   "core-more": ["food", "favourites"],
-  "core-i": ["food", "places", "favourites"],
+  "core-i": ["feelings", "food", "places"],
   "basic-drink": ["food"],
-  "basic-watch": ["favourites", "new"],
+  "basic-watch": ["favourites"],
   "basic-listen": ["together", "favourites"],
 };
+
+// What a child usually needs to say next, beyond wanting something. These words are the point of an AAC board,
+// so they outrank any taste match: after "it hurts", where and who (not snacks); after "no", what they don't want.
+const FOLLOW_UPS: Record<string, string[]> = {
+  "safety-pain": ["basic-tummy", "basic-head", "basic-mouth", "basic-ear", "basic-leg", "basic-hand", "basic-doctor", "basic-sad"],
+  "safety-unwell": ["basic-tummy", "basic-head", "basic-doctor", "basic-sad", "basic-home"],
+  "safety-scared": ["basic-sad", "basic-where", "basic-home", "basic-calm"],
+  "safety-tired": ["basic-home", "basic-calm", "basic-bored"],
+  "safety-help": ["basic-where", "basic-what", "basic-dontknow"],
+  "core-no": ["basic-dontlike", "basic-turnoff", "basic-angry", "basic-bored"],
+  "core-stop": ["basic-turnoff", "basic-dontlike", "basic-angry", "basic-home"],
+  "core-i": ["basic-happy", "basic-sad", "basic-dontknow"],
+  "basic-sad": ["basic-dontknow", "basic-home"],
+};
+// Someone on the board: greet them, say how you feel about them.
+const PERSON_FOLLOW_UPS = ["basic-love", "basic-hello", "basic-bye", "basic-where"];
+
+// The smart row's balance, checked at every position: communication words (feelings, needs, questions, people)
+// get at least a quarter of it, and things to watch, play or listen to at most a third.
+const COMMUNICATION = new Set<Category>(["feelings", "chat", "body", "people", "safety"]);
+const ENTERTAINMENT = new Set<Category>(["favourites", "fun", "together", "new", "things"]);
+const minCommunication = (n: number) => Math.floor(n / 4);
+const maxEntertainment = (n: number) => Math.ceil(n / 3);
 
 // Action words that usually go with what was just tapped: a snack → eat/drink, a show → watch, a place → go.
 const DEFAULT_ACTIONS = ["core-eat", "basic-drink", "core-play", "basic-watch", "basic-sleep", "basic-listen", "basic-look", "basic-wash"];
@@ -85,17 +108,22 @@ export function nextActions(board: Board, lastTileId: string | null, take = 6, s
 }
 
 function timeOfDayCategories(hour: number): { cats: Category[]; label: string } {
-  if (hour >= 6 && hour < 10) return { cats: ["food", "people"], label: "morning" };
-  if (hour >= 10 && hour < 16) return { cats: ["favourites", "places", "fun"], label: "daytime" };
-  if (hour >= 16 && hour < 21) return { cats: ["favourites", "together", "places", "food"], label: "evening" };
-  return { cats: ["people", "favourites"], label: "night" };
+  if (hour >= 6 && hour < 10) return { cats: ["food", "people", "chat"], label: "morning" };
+  if (hour >= 10 && hour < 16) return { cats: ["places", "chat", "favourites"], label: "daytime" };
+  if (hour >= 16 && hour < 21) return { cats: ["food", "feelings", "together", "places"], label: "evening" };
+  return { cats: ["people", "feelings", "body"], label: "night" };
 }
 
 const sameHourBand = (a: number, b: number) => Math.abs(a - b) <= 1 || Math.abs(a - b) >= 23;
 
 export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12, topic?: Topic): Prediction[] {
   // "help" already sits next to the core words, and verbs have their own row, so neither needs predicting.
-  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help" && t.category !== "actions");
+  // "What's new" (trending picks) stays in its folder: a new show is never what a child most needs to say next.
+  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help" && t.category !== "actions" && t.category !== "new");
+  // Within a folder, earlier words are the more common ones (happy before angry, tummy before teeth).
+  const folderPos = new Map(board.folders.flatMap((f) => f.tileIds.map((id, i) => [id, i] as const)));
+  const last = lastTileId ? board.tiles[lastTileId] : undefined;
+  const follow = [...(lastTileId ? (FOLLOW_UPS[lastTileId] ?? []) : []), ...(last?.kind === "people" ? PERSON_FOLLOW_UPS : [])];
   const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
   const nextTotal = next ? [...next.values()].reduce((s, n) => s + n, 0) : 0;
   const weekAgo = now.getTime() - 7 * 86400000;
@@ -125,8 +153,15 @@ export function predict(board: Board, lastTileId: string | null, taps: TapEvent[
     if (f > 0) parts.push({ v: 1.0 * (f / maxFreq), why: `a favourite this week` });
     const b = topic?.boosts.get(tile.id) ?? 0;
     if (b > 0) parts.push({ v: 1.4 * b, why: topic?.label?.why ?? "fits what they're talking about" });
-    // Prior: the child's own taste matters most on a cold start; safety words only surface from real use.
-    const prior = tile.kind === "rotating" ? (tile.score ?? 0.5) * 0.8 : tile.kind === "people" ? 0.25 : 0.05;
+    const fi = follow.indexOf(tile.id);
+    if (fi >= 0) parts.push({ v: 3 - fi * 0.15, why: `what usually comes after "${lastName}"` });
+    // Prior: the child's own taste matters on a cold start, but feelings, people and questions stay in reach too.
+    const prior =
+      tile.kind === "rotating" ? (tile.score ?? 0.5) * 0.8
+      : tile.kind === "people" ? 0.4
+      : tile.kind === "basic" && COMMUNICATION.has(tile.category) ? 0.35 - (folderPos.get(tile.id) ?? 0) * 0.004
+      : tile.kind === "basic" ? 0.15 - (folderPos.get(tile.id) ?? 0) * 0.004
+      : 0.05;
     parts.push({ v: prior, why: tile.kind === "rotating" ? "matches their taste" : "always handy" });
     if (tile.id === lastTileId) parts.push({ v: -5, why: "" });
     const score = parts.reduce((s, p) => s + p.v, 0);
@@ -137,19 +172,31 @@ export function predict(board: Board, lastTileId: string | null, taps: TapEvent[
   const remaining = scored.sort((a, b) => b.score - a.score || a.tile.id.localeCompare(b.tile.id));
   const picked: Prediction[] = [];
   const perCat = new Map<string, number>();
+  let comm = 0;
+  let ent = 0;
   while (picked.length < take && remaining.length) {
-    let best = 0;
+    // Balance holds for every prefix of the row, so any number of shown tiles keeps the same mix.
+    const n = picked.length + 1;
+    const needComm = comm < minCommunication(n) && remaining.some((p) => COMMUNICATION.has(p.tile.category));
+    const entFull = ent >= maxEntertainment(n);
+    let best = -1;
     let bestVal = -Infinity;
     remaining.forEach((p, i) => {
-      const v = p.score - 0.35 * (perCat.get(p.tile.category) ?? 0);
+      const c = p.tile.category;
+      if (needComm && !COMMUNICATION.has(c)) return;
+      if (entFull && ENTERTAINMENT.has(c)) return;
+      const v = p.score - 0.35 * (perCat.get(c) ?? 0);
       if (v > bestVal) {
         bestVal = v;
         best = i;
       }
     });
+    if (best < 0) break;
     const [p] = remaining.splice(best, 1);
     picked.push(p);
     perCat.set(p.tile.category, (perCat.get(p.tile.category) ?? 0) + 1);
+    if (COMMUNICATION.has(p.tile.category)) comm++;
+    if (ENTERTAINMENT.has(p.tile.category)) ent++;
   }
   return picked;
 }
