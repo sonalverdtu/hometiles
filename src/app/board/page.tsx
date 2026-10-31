@@ -356,7 +356,7 @@ export default function BoardPage() {
                 options={[
                   { v: "smart", t: "⭐ For me" },
                   { v: "classic", t: "📁 All words" },
-                  { v: "both", t: "Both, with a switch" },
+                  { v: "both", t: "Both" },
                 ]}
                 info={
                   <ul className="space-y-1.5">
@@ -367,7 +367,7 @@ export default function BoardPage() {
                       <strong>📁 All words</strong> has every word in fixed folders (food, places, favourites, people…). Nothing ever moves.
                     </li>
                     <li>
-                      <strong>Both, with a switch</strong>: still the same two boards. {p.displayName} gets a switch at the top to move between them.
+                      <strong>Both</strong>: still the same two boards. {p.displayName} gets a switch at the top to move between them.
                     </li>
                     <li>Core words like “I”, “want” and “stop” sit in the same place on both.</li>
                   </ul>
