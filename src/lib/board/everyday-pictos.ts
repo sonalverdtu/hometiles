@@ -99,5 +99,7 @@ export const EVERYDAY_PICTOS: Record<string, number> = {
   "where": 7764,
   "who": 9853,
   "again": 37163,
-  "dontknow": 7180
+  "dontknow": 7180,
+  "dontlike": 37825,
+  "turnoff": 11739
 };

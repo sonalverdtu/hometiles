@@ -145,6 +145,9 @@ export const EVERYDAY: EverydayWord[] = [
   w("chat", "who", "🧑", "who?", "कौन?", "¿quién?", "who"),
   w("chat", "again", "🔁", "again", "फिर से", "otra vez"),
   w("chat", "dontknow", "🤷", "I don't know", "पता नहीं", "no sé", "I don't know"),
+  // Saying no to something needs more than "no": what the child doesn't want, and asking for it to stop.
+  w("chat", "dontlike", "👎", "I don't like it", "मुझे पसंद नहीं", "no me gusta", "dislike"),
+  w("chat", "turnoff", "📴", "turn it off", "बंद करो", "apágalo", "turn off"),
 ];
 
 export function everydayFor(lang: Lang): EverydayWord[] {

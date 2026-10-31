@@ -44,7 +44,9 @@ function anchorFor(board: Board, t: Tile): { key: string; a: Omit<Anchor, "weigh
   const rel = (ids: string[], s = 1) => new Map(ids.map((id) => [id, s]));
   if (t.kind === "people") {
     const name = t.label.en;
-    return { key: `person:${t.id}`, a: { related: new Map([...rel(sharedWith(board, name)), [t.id, 0.5]]), emoji: t.emoji, text: t.label, why: `talking about ${name}` } };
+    // The person, how the child feels about them, and only then the things they share.
+    const social = rel(["basic-love", "basic-hello", "basic-where"].filter((id) => board.tiles[id]), 0.8);
+    return { key: `person:${t.id}`, a: { related: new Map([...rel(sharedWith(board, name)), ...social, [t.id, 0.5]]), emoji: t.emoji, text: t.label, why: `talking about ${name}` } };
   }
   if (t.id === "core-go" || t.category === "places")
     return { key: "places", a: { related: rel(folderTiles(board, "places")), emoji: FOLDER_META.places.emoji, text: FOLDER_META.places.title, why: "talking about going out" } };

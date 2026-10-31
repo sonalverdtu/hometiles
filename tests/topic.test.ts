@@ -34,7 +34,9 @@ describe("live topic", () => {
     const without = predict(board, null, [], new Date(NOW), 12).map((p) => p.tile.id);
     const withTopic = predict(board, null, [], new Date(NOW), 12, topic).map((p) => p.tile.id);
     expect(withTopic.indexOf("t-oldsongs")).toBeLessThan(without.indexOf("t-oldsongs"));
-    expect(withTopic[0]).toBe("t-oldsongs");
+    // Social words for the person come first ("hello", "love"), then what they share.
+    expect(withTopic.slice(0, 3)).toContain("t-oldsongs");
+    expect(withTopic.slice(0, 3).some((id) => ["basic-hello", "basic-love"].includes(id))).toBe(true);
   });
 
   it("'go' makes places the topic, and older utterances fade", () => {
