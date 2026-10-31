@@ -5,7 +5,8 @@ import { generateBoard } from "@/lib/agent/run";
 import { ProfileSchema, readJson } from "@/lib/http";
 import type { StreamEvent } from "@/lib/board/types";
 
-export const maxDuration = 120;
+// A board usually takes about a minute; the rest is headroom for a slow Qloo or LLM (Vercel's plan maximum).
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const body = await readJson(req, z.object({ profile: ProfileSchema }), { bucket: "board", limit: 4 });
