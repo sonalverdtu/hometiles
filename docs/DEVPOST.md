@@ -90,6 +90,13 @@ What we take from this: **the LLM proposes, Qloo verifies and localizes.** That'
 - Making sure the AI can never remove a safety word or change the board without a parent.
 - Keeping a child's board age-appropriate when the taste graph isn't. The first screen also dropped every family restaurant in London, because they all carry wine and coffee "offering" tags. Now we judge a place by what it is (its category and genre tags), not by what it serves.
 
+## Accomplishments that we're proud of
+- **It's real and it's live.** A parent can build a full board for their child at https://hometiles.vercel.app in about a minute, against live Qloo (often 60+ Qloo calls per board), in English, Hindi or Spanish.
+- **Every tile is grounded.** On our demo child Leo's board, 24 of 24 favourite, food and place tiles are backed by Qloo evidence, and the 6 places are real, on average about 1 km from home (London Zoo, The Regent's Park). Every tile can show *why* it's there.
+- **The child stays safe and the parent stays in control.** Safety words are always one tap away, nothing changes without a parent's approval, and our own age screen catches what Qloo's filters miss.
+- **We measured instead of assuming** (see "AI alone vs Qloo" above), and built what we found into the product.
+- **Open and tested:** MIT-licensed, over 30 automated tests, and boards export to the Open Board Format used by open AAC apps.
+
 ## What we learned
 Personalising AAC is less about clever AI and more about taste: the right snack, the right place, the right song to share with grandpa. An LLM knows a city's snacks but makes up its streets. A taste graph knows the real places and what goes with what. Used together, with a parent approving each change, they make a board that fits one child.
 
