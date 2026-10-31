@@ -63,19 +63,43 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <main className="flex-1">{children}</main>
         <footer className="site-chrome no-print border-t border-[var(--line)] bg-[var(--surface-2)] text-xs text-[var(--muted)]">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-6 leading-relaxed sm:flex-row sm:items-start">
-            <Link href="/" className="flex shrink-0 items-center gap-2 text-[var(--ink)]">
-              <Logo />
-              <span className="font-display text-base font-extrabold">HomeTiles</span>
-            </Link>
-            <p className="sm:ml-6">
-              Powered by the <strong>Qloo</strong> taste graph · Pictograms by Sergio Palao, from{" "}
-              <a className="underline" href="https://arasaac.org" target="_blank" rel="noreferrer">ARASAAC</a> (Government of Aragón), CC BY-NC-SA 4.0 ·
-              Demo personas are fictional. HomeTiles supports, and doesn&apos;t replace, speech-language therapists. · MIT licensed ·{" "}
-              <a className="inline-flex items-center gap-1 font-semibold text-[var(--ink)] underline" href={REPO} target="_blank" rel="noreferrer">
-                <GitHubMark /> Source code on GitHub
-              </a>
-            </p>
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-5 gap-y-5 px-4 py-8 leading-relaxed md:grid-cols-[1.2fr_repeat(4,1fr)]">
+            <div className="col-span-2 md:col-span-1">
+              <Link href="/" className="flex items-center gap-2 text-[var(--ink)]">
+                <Logo />
+                <span className="font-display text-base font-extrabold">HomeTiles</span>
+              </Link>
+              <p className="mt-2 max-w-[16rem] text-sm text-[var(--ink)]">Made for kids who talk with pictures, and the people who listen.</p>
+            </div>
+            <div>
+              <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">Where the words come from</p>
+              <p>
+                <strong>Qloo</strong>&apos;s taste graph finds the snacks, shows and places. Gemini runs the agent that asks it.
+              </p>
+            </div>
+            <div>
+              <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">Pictures</p>
+              <p>
+                Pictograms by Sergio Palao, from{" "}
+                <a className="underline" href="https://arasaac.org" target="_blank" rel="noreferrer">
+                  ARASAAC
+                </a>{" "}
+                (Government of Aragón), CC BY-NC-SA 4.0.
+              </p>
+            </div>
+            <div>
+              <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">Good to know</p>
+              <p>Leo, Aarav and Sofía are made up. HomeTiles works alongside speech therapists, not instead of them.</p>
+            </div>
+            <div>
+              <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">The code</p>
+              <p>
+                Open source under MIT.{" "}
+                <a className="inline-flex items-center gap-1 font-semibold text-[var(--ink)] underline" href={REPO} target="_blank" rel="noreferrer">
+                  <GitHubMark /> Read it on GitHub
+                </a>
+              </p>
+            </div>
           </div>
         </footer>
       </body>
