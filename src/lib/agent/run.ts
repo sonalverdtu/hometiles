@@ -152,14 +152,20 @@ function shortlist(cands: Candidate[]): Candidate[] {
   });
 }
 
+const LABELS_BUDGET_MS = 20_000;
+
 async function tileText(profile: Profile, picks: Candidate[], hooks: RunHooks): Promise<Record<string, TileText> | undefined> {
   if (getConfig().llmMode !== "live" || !picks.length) return undefined;
   hooks.step(profile.secondaryLang ? "Writing tile words in both languages…" : "Writing tile words and what each tile says…", "labels");
   try {
-    const { parsed, primary, secondary } = await writeTileText(
-      profile,
-      picks.map((c) => ({ id: c.entity.id, category: c.category, name: c.entity.name, type: c.entity.type.split(":")[2] })),
-    );
+    // Nice wording is optional, a finished board isn't: if the LLM is slow (overloaded), keep the templates.
+    const { parsed, primary, secondary } = await Promise.race([
+      writeTileText(
+        profile,
+        picks.map((c) => ({ id: c.entity.id, category: c.category, name: c.entity.name, type: c.entity.type.split(":")[2] })),
+      ),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`no answer in ${LABELS_BUDGET_MS / 1000} s`)), LABELS_BUDGET_MS)),
+    ]);
     if (!parsed) return undefined;
     const out: Record<string, TileText> = {};
     const nameOf = new Map(picks.map((c) => [c.entity.id, c.entity.name]));
