@@ -143,7 +143,8 @@ async function fillGaps(ctx: AgentCtx) {
 function shortlist(cands: Candidate[]): Candidate[] {
   const counts: Record<string, number> = {};
   // Keep extra favourites so the board engine can balance kinds (shows, games, music, films).
-  return rankCandidates(cands).filter((c) => {
+  // The family's own favourites first, so the trim below never drops them.
+  return rankCandidates(cands).sort((a, b) => Number(!!b.own) - Number(!!a.own)).filter((c) => {
     const n = counts[c.category] ?? 0;
     if (n >= QUOTAS[c.category] * (c.category === "favourites" ? 2 : 1)) return false;
     counts[c.category] = n + 1;

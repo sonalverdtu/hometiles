@@ -27,6 +27,19 @@ describe("board pipeline (mock)", () => {
     for (const k of ["help", "pain", "toilet", "tired", "scared", "unwell"]) expect(board.tiles[`safety-${k}`]).toBeTruthy();
   });
 
+  it("puts every favourite the family typed on the board, locked", async () => {
+    const { board } = await build("leo");
+    const names = Object.values(board.tiles).filter((t) => t.locked && t.kind === "rotating").map((t) => t.entity?.name);
+    for (const love of PERSONAS.leo.loves) expect(names).toContain(love.name);
+  });
+
+  it("keeps a favourite Qloo doesn't know, without a Qloo id", async () => {
+    const { board } = await build("leo", { loves: [...PERSONAS.leo.loves, { name: "Grandad's allotment", type: "urn:entity:place" }] });
+    const t = Object.values(board.tiles).find((x) => x.entity?.name === "Grandad's allotment");
+    expect(t?.category).toBe("places");
+    expect(t?.entity?.qlooId).toBeUndefined();
+  });
+
   it("skips the temperament step when none is given", async () => {
     const { tools } = await build("leo", { temperament: undefined });
     expect(tools).not.toContain("match_temperament");

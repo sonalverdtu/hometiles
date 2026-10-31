@@ -26,6 +26,8 @@ export interface Candidate {
   partner?: Partner;
   /** Family members this was found to share with (shared_with_family), so a talk about them can surface it. */
   sharedWith?: string[];
+  /** Something the family typed in themselves: always on the board, first in its folder, and locked. */
+  own?: boolean;
   trend?: number[];
   reasons: Reason[];
 }
@@ -82,7 +84,8 @@ export function candidateToTile(c: Candidate, text?: TileText): Tile {
     emoji: TYPE_EMOJI[c.entity.type] ?? "⭐",
     image: c.entity.image ? { url: c.entity.image, source: "qloo" } : undefined,
     entity: {
-      qlooId: c.entity.id,
+      // A favourite Qloo didn't recognise has a local id, which must never be sent to Qloo as a seed.
+      qlooId: c.entity.id.startsWith("own-") ? undefined : c.entity.id,
       name: c.entity.name,
       type: c.entity.type,
       image: c.entity.image,
@@ -90,7 +93,7 @@ export function candidateToTile(c: Candidate, text?: TileText): Tile {
       affinity: c.entity.affinity,
       distanceM: c.entity.distanceM,
     },
-    locked: false,
+    locked: !!c.own,
     partner: c.partner,
     sharedWith: c.sharedWith,
     reasons: c.reasons,
@@ -192,7 +195,8 @@ export interface AssembleInput {
 }
 
 export function assembleBoard(input: AssembleInput): Board {
-  const ranked = rankCandidates(input.candidates);
+  // The family's own favourites go first, so they always get a slot: a child who loves Bluey can say "Bluey".
+  const ranked = rankCandidates(input.candidates).sort((a, b) => Number(!!b.own) - Number(!!a.own));
   const tiles: Record<string, Tile> = {};
   const folders: Record<Category, string[]> = {
     core: [], safety: [], people: [], food: [], places: [], favourites: [], fun: [], together: [], new: [],
@@ -208,7 +212,7 @@ export function assembleBoard(input: AssembleInput): Board {
     if (n >= QUOTAS[c.category]) continue;
     // Keep favourites varied: at most 4 of any one kind (shows, games, music, films).
     const typeKey = `${c.category}|${c.entity.type}`;
-    if (c.category === "favourites" && (counts[typeKey] ?? 0) >= 4) continue;
+    if (c.category === "favourites" && !c.own && (counts[typeKey] ?? 0) >= 4) continue;
     counts[typeKey] = (counts[typeKey] ?? 0) + 1;
     const tile = candidateToTile(c, input.text?.[c.entity.id]);
     tiles[tile.id] = tile;

@@ -118,6 +118,7 @@ function upsert(ctx: AgentCtx, c: Candidate) {
     personal: Math.max(prev.personal, c.personal),
     local: c.local ?? prev.local,
     partner: c.partner ?? prev.partner,
+    own: prev.own || c.own,
     sharedWith: [...new Set([...(prev.sharedWith ?? []), ...(c.sharedWith ?? [])])],
     trend: c.trend ?? prev.trend,
     entity: { ...prev.entity, distanceM: c.entity.distanceM ?? prev.entity.distanceM, image: prev.entity.image ?? c.entity.image },
@@ -153,6 +154,26 @@ export async function resolveLoves(ctx: AgentCtx) {
   );
   const found = all.filter((l) => l.qlooId).length;
   ctx.notes.push(`Resolved ${found}/${all.length} favourites to Qloo entities.`);
+  addOwnFavourites(ctx);
+}
+
+const OWN_CATEGORY: Partial<Record<QlooType, "food" | "places">> = { "urn:entity:brand": "food", "urn:entity:place": "places" };
+
+/**
+ * What the family typed in becomes tiles itself. Qloo never returns its own inputs, so without this a child
+ * who loves Bluey would get shows like Bluey but no "Bluey" tile. Kept even when Qloo doesn't know the name.
+ */
+function addOwnFavourites(ctx: AgentCtx) {
+  for (const l of ctx.profile.loves) {
+    const id = l.qlooId ?? `own-${l.name.toLowerCase().replace(/[^a-z0-9ऀ-ॿ]+/g, "-").replace(/^-|-$/g, "")}`;
+    upsert(ctx, {
+      entity: { id, name: l.name, type: l.type, image: l.image, nameLocal: l.nameLocal, tags: [], affinity: 1 },
+      category: OWN_CATEGORY[l.type] ?? "favourites",
+      personal: 1,
+      own: true,
+      reasons: [{ kind: "personal", text: l.qlooId ? "The family said they love this (found in Qloo)" : "The family said they love this" }],
+    });
+  }
 }
 
 export async function expandPersonalTaste(ctx: AgentCtx, types: QlooType[] = FAVOURITE_TYPES, take = 10) {

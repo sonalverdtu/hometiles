@@ -2,7 +2,7 @@
 
 > *"There's more to life than cookies."* (a mother, quoted by AAC researchers Light & McNaughton, 2014)
 
-**Live demo:** _add the deployed URL here_ · **Licence:** MIT · Built for the Qloo Agentic Hackathon
+**Live demo:** [hometiles.vercel.app](https://hometiles.vercel.app) · **Licence:** MIT · Built for the Qloo Agentic Hackathon
 
 Non-speaking people (autistic children and adults, people with cerebral palsy, stroke survivors and others) talk by tapping picture tiles on an AAC board. Most boards are generic. A child in London can say "cookie" but not *Cadbury Buttons*, *Bluey*, or the park round the corner. A child in Delhi can't say *Parle-G*.
 
