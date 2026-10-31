@@ -345,17 +345,18 @@ export default function BoardPage() {
         <aside className="no-print space-y-4">
           <div className="card p-5">
             <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
-              <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--brand-soft)] text-lg">🧒</span> Child mode
+              <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--brand-soft)] text-lg">🧒</span> Child mode settings
             </h2>
+            <p className="-mt-2 mb-3 text-xs text-[var(--muted)]">Only you see these. They set up what {p.displayName} gets after you press &ldquo;Give to {p.displayName}&rdquo;.</p>
             <div className="space-y-3">
               <Seg
-                label={`Tabs ${p.displayName} sees`}
+                label={`Which board ${p.displayName} uses`}
                 value={settings.boards}
                 onChange={(v) => changeSettings({ ...settings, boards: v })}
                 options={[
-                  { v: "both", t: "Both tabs" },
-                  { v: "smart", t: "⭐ For me only" },
-                  { v: "classic", t: "📁 All words only" },
+                  { v: "smart", t: "⭐ For me" },
+                  { v: "classic", t: "📁 All words" },
+                  { v: "both", t: "Both, with a switch" },
                 ]}
                 info={
                   <ul className="space-y-1.5">
@@ -366,7 +367,7 @@ export default function BoardPage() {
                       <strong>📁 All words</strong> has every word in fixed folders (food, places, favourites, people…). Nothing ever moves.
                     </li>
                     <li>
-                      <strong>Both tabs</strong>: {p.displayName} sees the two tabs at the top of the board and can switch between them.
+                      <strong>Both, with a switch</strong>: still the same two boards. {p.displayName} gets a switch at the top to move between them.
                     </li>
                     <li>Core words like “I”, “want” and “stop” sit in the same place on both.</li>
                   </ul>
@@ -389,7 +390,7 @@ export default function BoardPage() {
                   </>
                 )}
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className={p.secondaryLang ? "grid grid-cols-2 gap-3" : ""}>
                 <Seg
                   label="Tile size"
                   value={settings.size}
@@ -400,16 +401,19 @@ export default function BoardPage() {
                     { v: "xl", t: "XL" },
                   ]}
                 />
-                <Seg
-                  label="Labels"
-                  value={settings.labels}
-                  onChange={(v) => changeSettings({ ...settings, labels: v })}
-                  options={[
-                    { v: "both", t: "Both" },
-                    { v: "primary", t: LANG_NAME[primary].slice(0, 3) },
-                    ...(p.secondaryLang ? [{ v: "secondary" as const, t: LANG_NAME[p.secondaryLang].slice(0, 3) }] : []),
-                  ]}
-                />
+                {/* Which language the tile words are shown in: only a choice when the board has two languages. */}
+                {p.secondaryLang && (
+                  <Seg
+                    label="Words on tiles"
+                    value={settings.labels}
+                    onChange={(v) => changeSettings({ ...settings, labels: v })}
+                    options={[
+                      { v: "both", t: "Both" },
+                      { v: "primary", t: LANG_NAME[primary].slice(0, 3) },
+                      { v: "secondary", t: LANG_NAME[p.secondaryLang].slice(0, 3) },
+                    ]}
+                  />
+                )}
               </div>
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input type="checkbox" className="h-5 w-5" checked={settings.speakOnTap} onChange={(e) => changeSettings({ ...settings, speakOnTap: e.target.checked })} />
