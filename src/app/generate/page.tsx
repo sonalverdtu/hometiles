@@ -26,7 +26,6 @@ const TOOL: Record<string, { icon: string; label: string; cat: string }> = {
 };
 
 const EXPECTED_MS = 60000;
-const SLOTS = 12;
 
 // Hot-spot lists come through as raw geohashes ("(ttnfg7d, ttnfgm7)"); people don't need those.
 const tidy = (s: string) => s.replace(/\s*\((?:[0-9a-z]{5,9}(?:,\s*)?)+\)/g, "");
@@ -237,7 +236,6 @@ export default function GeneratePage() {
     );
 
   const progress = done ? 100 : Math.min(95, (elapsed / EXPECTED_MS) * 95);
-  const filled = steps.filter((s) => s.tool && TOOL[s.tool]).slice(0, SLOTS);
   const secs = Math.round(elapsed / 1000);
 
   return (
@@ -339,28 +337,6 @@ export default function GeneratePage() {
               <ProfileCard p={profile} />
             </div>
           )}
-          {/* The board assembling as the agent works */}
-          <div aria-hidden className="phone">
-            <div className="phone-screen p-3">
-              <div className="mx-auto mb-3 h-5 w-24 rounded-full bg-[#15141b]" />
-              <div className="mb-3 h-12 rounded-2xl border-2 border-[var(--line)] bg-white" />
-              <div className="grid grid-cols-3 gap-2">
-                {Array.from({ length: SLOTS }, (_, k) => {
-                  const s = filled[k];
-                  const t = s?.tool ? TOOL[s.tool] : undefined;
-                  return t ? (
-                    <div key={k} className="kid-tile pop-in min-h-[5.2rem]" style={{ background: `var(--c-${t.cat})`, ["--edge" as string]: `var(--b-${t.cat})` }}>
-                      <span className="text-3xl leading-none">{t.icon}</span>
-                      <span className="font-display text-[11px] font-bold leading-tight">{t.label}</span>
-                    </div>
-                  ) : (
-                    <div key={k} className="shimmer min-h-[5.2rem] rounded-[1.25rem]" style={{ animationDelay: `${k * 90}ms` }} />
-                  );
-                })}
-              </div>
-              {done && <p className="pop-in font-display mt-3 rounded-xl bg-[var(--go)] py-2 text-center font-extrabold text-white">🎉 Ready!</p>}
-            </div>
-          </div>
         </aside>
       </div>
     </div>
