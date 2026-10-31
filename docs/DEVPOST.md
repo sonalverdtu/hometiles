@@ -23,17 +23,18 @@ That gap is about taste and culture, so it's a job for Qloo.
 ## What it does
 **1. A parent fills in three short steps:** the child's name and age, where they live and the language spoken at home (English by default, or Hindi or Spanish, with an optional second language), 3–5 things the child loves, what the child is like (optional: up to 2 of energetic, calm, shy, curious, sporty, creative, funny), and who's in the family. The child's name never goes to the AI or to Qloo.
 
-**2. An AI agent researches with Qloo** and builds the board:
+**2. An AI agent researches with Qloo** and builds the board in about a minute:
+- **Their own favourites first:** everything the parent typed becomes a tile, locked so no refresh removes it. A child who loves Bluey can always say "Bluey".
 - **Favourites:** shows, games and music the child is likely to love, expanded from their own favourites, with Qloo explainability. If a parent has favourite singers, up to 2 songs that may already be playing at home.
 - **Fits who they are:** shows and films that match what the child is like, from Qloo's descriptor tags ("calm", "energetic", "silly").
-- **My places:** a Qloo **heatmap** finds where this child's kind of taste clusters near home. The agent then searches for real places *inside* those hot-spots, and adds a park or playground near home for younger children.
+- **My places:** a Qloo **heatmap** finds where this child's kind of taste clusters near home. The agent then searches for real places *inside* those hot-spots, and adds a park, playground or zoo near home for children.
 - **Food:** snacks and brands that fit the child's taste and are popular where they live. The LLM also suggests local snack brands, and only the ones Qloo can find are kept.
 - **Talk together:** Qloo **compare** finds songs and films the child and a grandparent would both enjoy. That gives conversation tiles, not just request tiles.
 - **Who loves this?:** Qloo **demographics** decides whether a tile is a topic for cousins or for grandparents.
 - **What's new:** Qloo **trending** adds rising picks, so the child can join the playground conversation.
 
 **3. The child gets a board that talks**, in English, Hindi or Spanish:
-- **⭐ For me (smart board):** learns *on the device* what the child says and when. After "I want" it shows their usual snacks and shows. In the evening it brings up their cartoons. Past sentences repeat with one tap. Two drawers under the core words, **I need** and **More words**, keep every safety word and every core word one tap away.
+- **⭐ For me (smart board):** learns *on the device* what the child says and when. After "I want" it shows their usual snacks and shows. In the evening it brings up their cartoons. It follows the conversation: talk about Grandma and the things they share come up ("💬 Talking about Grandma"); say "go" and places near home come up. At most 3 tiles change at a time, so the child can still find things. Past sentences repeat with one tap. Two drawers under the core words, **I need** and **More words**, keep every safety word and every core word one tap away.
 - **📁 All words (classic board):** fixed folders where nothing moves, which many therapists prefer while a child is learning. Core words stay in the same place on both boards.
 - **Natural speech:** "I + want + Cadbury" says *"I want Cadbury"*, and "I + want + Parle-G" says *"मुझे पारले-जी चाहिए"* in correct Hindi word order, not word by word. If a phone has no Hindi or Spanish voice, it says the English words instead of going silent.
 - **Fun & banter:** jokes about their favourites. AAC users say humour helps others "see that I am a person".
@@ -75,7 +76,7 @@ What we take from this: **the LLM proposes, Qloo verifies and localizes.** That'
 - **The Qloo facade:** live and mock modes, a server-side cache, a per-call trace, and a fallback for every endpoint.
 - **The board engine:** ranking, category quotas, safety rules, the age screen and OBF export.
 - **Languages:** one registry file. English is the default; adding a language means one entry there plus its words.
-- **On-device prediction:** word pairs, time of day and weekly frequency, mixed across categories.
+- **On-device prediction:** word pairs, time of day, weekly frequency and the live topic of the last few sentences, mixed across categories, with a steady row that changes at most 3 tiles per update.
 - **Speech:** the Web Speech API, with emoji removed before speaking. **Pictograms:** ARASAAC for core words.
 - **Privacy:** names never go to Qloo or to the LLM. The agent sees family relations ("grandmother"), not names. Qloo sees the names of favourites and brands to look up, entity IDs, tags, a city or point, and an age band. Taps and sentences stay on the device, and the weekly refresh sends an anonymous profile with tap counts.
 
