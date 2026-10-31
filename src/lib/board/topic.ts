@@ -62,6 +62,8 @@ function anchorFor(board: Board, t: Tile): { key: string; a: Omit<Anchor, "weigh
       if (x.entity!.qlooId && x.entity!.qlooId === t.entity.qlooId) related.set(x.id, 1);
       else if (x.entity!.type === t.entity.type && x.category !== "food" && x.category !== "places") related.set(x.id, 0.6);
     }
+    // Its own words from Qloo's tags (dog, funny) let the child keep talking about it.
+    for (const id of t.talk ?? []) if (board.tiles[id]) related.set(id, 0.9);
     return { key: `entity:${t.entity.qlooId ?? t.id}`, a: { related, emoji: TYPE_EMOJI[t.entity.type] ?? t.emoji, text: t.label, why: `talking about ${t.label.en}` } };
   }
   return null;

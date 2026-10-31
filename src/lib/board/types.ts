@@ -25,7 +25,9 @@ export type Category =
   | "feelings"
   | "describe"
   | "body"
-  | "chat";
+  | "chat"
+  // Words to talk about a tile, from its Qloo tags (talk.ts).
+  | "talk";
 /** basic = an everyday word (water, red, happy…): fixed like core words, but a parent can remove it. */
 export type TileKind = "core" | "safety" | "people" | "rotating" | "basic";
 export type Partner = "friends" | "elders" | "everyone";
@@ -59,6 +61,12 @@ export interface Profile {
   secondaryLang?: Lang;
   loves: EntityRef[];
   family: FamilyMember[];
+  /** How the child communicates today. "new" starts with a smaller board (core, safety, their own words). */
+  communication?: "new" | "pictures" | "words";
+  /** Things to keep off the board (dislikes, fears), as plain words: "dogs", "Peppa Pig". */
+  dislikes?: string[];
+  /** Access needs that change which real places Qloo suggests. */
+  access?: { wheelchair?: boolean; quiet?: boolean };
 }
 
 export interface Reason {
@@ -79,6 +87,8 @@ export interface Tile {
   entity?: EntityRef & { affinity?: number; distanceM?: number };
   locked: boolean;
   partner?: Partner;
+  /** Tile ids of words to talk about this tile (from its Qloo tags): swing, toilet at a park; dog, funny for Bluey. */
+  talk?: string[];
   /** Names of the family members this tile is shared with (Together tiles). */
   sharedWith?: string[];
   reasons: Reason[];

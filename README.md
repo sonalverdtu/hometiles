@@ -36,6 +36,7 @@ Or make a board for your own child with **＋ New board**.
   - **What's new:** `/v2/trending` adds rising picks, with a sparkline.
 - **Safe for children.** Age groups (under 8, 8–12, teen), our own screening of game ratings, adult genres, energy drinks, supplements and nightlife on top of Qloo's filters. Core, safety and family tiles are never changed automatically.
 - **A tap-to-speak board.** English by default, plus Hindi and Spanish; every language comes from one registry (`src/lib/i18n.ts`). It has a sentence bar with grammar, core words in fixed places, an "I need" drawer with every safety word one tap away, jokes and reactions, and a family folder.
+- **Words to talk about it.** Qloo's own tags for each tile become words a child can use to comment and ask: The Regent's Park gives swing, slide, toilet, picnic; Bluey gives dog, friend, kind; Cadbury gives sweet, share. The wizard also asks how the child communicates (a smaller starter board for beginners), access needs (step-free and quiet places, from Qloo's place tags) and dislikes.
 - **Learns on the device.** "Maybe next" uses word pairs, time of day and the live topic (talk about Grandma → the things shared with Grandma), and changes at most 3 slots at a time so the child can still find things.
 - **Why this tile?** Every tile shows its Qloo evidence: affinity, distance from home, audience, trend, temperament tags.
 - **Child lock.** Full-screen. Menus, the back button, typed URLs and long-press menus can't leave the board.
