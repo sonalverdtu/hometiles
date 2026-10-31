@@ -80,8 +80,9 @@ export default function Home() {
               A talking picture board that <span className="text-gradient">sounds like home.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#3c3a48]">
-              Children who can&apos;t speak (yet) talk by tapping pictures. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>. HomeTiles builds one in about a minute with the{" "}
-              <strong>snacks, shows, places and family a child actually knows</strong>. It speaks English, Hindi and Spanish, so it works in your family&apos;s language.
+              HomeTiles helps children who can&apos;t speak talk by tapping pictures, and the board says the words out loud. Not everyone around them knows sign language, but{" "}
+              <strong>everyone understands a voice</strong>. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>. HomeTiles builds one in about a minute with the{" "}
+              <strong>snacks, shows, places and family a child actually knows</strong>, in English, Hindi or Spanish.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/create" className="btn btn-primary btn-lg">
