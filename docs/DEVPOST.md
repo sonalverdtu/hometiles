@@ -50,17 +50,7 @@ That gap is about taste and culture, so it's a job for Qloo.
 - **Transparency:** every tile explains *why it's there* (Qloo affinity, distance from home, temperament tags, audience, trend). A "With vs without Qloo" view and a trace of every Qloo call show exactly what Qloo added.
 - **Take it anywhere:** export to Open Board Format (`.obf`) for open AAC apps like Cboard, or print a paper board.
 
-## How we built it
-- **Next.js 16 (App Router)** + TypeScript + Tailwind on Vercel.
-- **The agent:** an **LLM agent** (Gemini 3.5 Flash function calling; Claude Opus 5.5 tool runner also supported) chooses which of 7 Qloo tools to call. A deterministic planner fills any gaps. The same LLM writes the tile words as structured output.
-- **The Qloo facade:** live and mock modes, a server-side cache, a per-call trace, and a fallback for every endpoint.
-- **The board engine:** ranking, category quotas, safety rules, the age screen and OBF export.
-- **Languages:** one registry file. English is the default; adding a language means one entry there plus its words.
-- **On-device prediction:** word pairs, time of day, weekly frequency and the live topic of the last few sentences, mixed across categories, with a steady row that changes at most 3 tiles per update.
-- **Speech:** the Web Speech API, with emoji removed before speaking. **Pictograms:** ARASAAC for core words.
-- **Privacy:** names never go to Qloo or to the LLM. The agent sees family relations ("grandmother"), not names. Qloo sees the names of favourites and brands to look up, entity IDs, tags, a city or point, and an age band. Taps and sentences stay on the device, and the weekly refresh sends an anonymous profile with tap counts.
-
-### How we use Qloo
+## How we use Qloo
 | Need | Qloo |
 |---|---|
 | Resolve favourites | `/search` |
@@ -75,20 +65,7 @@ That gap is about taste and culture, so it's a job for Qloo.
 
 We also learned where Qloo stops. It has no personality model and no child audiences (we tested), so "what the child is like" uses descriptor tags on content, only for TV and films, because the tags barely moved game or music results. Qloo ignores `filter.content_rating` for video games, so we check game ratings ourselves. And its signal weights only work within one signal group, so a parent's music is blended in the app, capped at 2 lighter picks.
 
-## Challenges we ran into
-- Making the board grammatical in Hindi (word order differs from English).
-- Balancing a board that *adapts* (helpful) with one that *never moves* (motor planning). Our answer is two boards with the same core-word row.
-- Making sure the AI can never remove a safety word or change the board without a parent.
-- Keeping a child's board age-appropriate when the taste graph isn't. The first screen also dropped every family restaurant in London, because they all carry wine and coffee "offering" tags. Now we judge a place by what it is (its category and genre tags), not by what it serves.
-
-## Accomplishments that we're proud of
-- **It's real and it's live.** A parent can build a full board for their child at https://hometiles.vercel.app in about a minute, against live Qloo (often 60+ Qloo calls per board), in English, Hindi or Spanish.
-- **Every tile is grounded.** On our demo child Leo's board, 24 of 24 favourite, food and place tiles are backed by Qloo evidence, and the 6 places are real, on average about 1 km from home (London Zoo, The Regent's Park). Every tile can show *why* it's there.
-- **The child stays safe and the parent stays in control.** Safety words are always one tap away, nothing changes without a parent's approval, and our own age screen catches what Qloo's filters miss.
-- **We measured instead of assuming** (below), and built what we found into the product.
-- **Open and tested:** MIT-licensed, over 30 automated tests, and boards export to the Open Board Format used by open AAC apps.
-
-### AI alone vs Qloo: what we measured
+## AI alone vs Qloo: what we measured
 We asked an LLM on its own (Gemini 3.5 Flash-Lite) to plan boards for 4 children: in Delhi, Boyle Heights (Los Angeles), Camden (London) and Lekki (Lagos). For each, it gave 8 favourites, 6 real kid-friendly places within 2.5 km of home, and 6 snacks. We asked Qloo for the same children, then checked every place the LLM named against Qloo's search.
 
 - **Places: Qloo was far more reliable.** The LLM named 24 places. 10 were real and within 2.5 km. It invented several, such as a "Boyle Heights Branch Library" and "Hanna's Cafe and Playroom" in Lagos, and got distances wrong: it put an Eros cinema 400 m from the Delhi home, but the nearest Eros cinema is 14 km away. Qloo returned 32 of 32 real places with addresses, on average 1.3 km from home.
@@ -97,10 +74,26 @@ We asked an LLM on its own (Gemini 3.5 Flash-Lite) to plan boards for 4 children
 
 What we take from this: **the LLM proposes, Qloo verifies and localizes.** That's how HomeTiles is built. The LLM suggests local snack brands and only the ones Qloo finds, with a food tag, become tiles. On live Qloo, Haldiram's was kept in Delhi and Ribena in London; Bikanervala, Amul, Fruit Shoot and Freddo weren't found and were dropped. Every place, show and song on the board is a real Qloo entity.
 
+## How we built it
+- **Next.js 16 (App Router)** + TypeScript + Tailwind on Vercel.
+- **The agent:** an **LLM agent** (Gemini 3.5 Flash function calling; Claude Opus 5.5 tool runner also supported) chooses which of 7 Qloo tools to call. A deterministic planner fills any gaps. The same LLM writes the tile words as structured output.
+- **The Qloo facade:** live and mock modes, a server-side cache, a per-call trace, and a fallback for every endpoint.
+- **The board engine:** ranking, category quotas, safety rules, the age screen and OBF export.
+- **Languages:** one registry file. English is the default; adding a language means one entry there plus its words.
+- **On-device prediction:** word pairs, time of day, weekly frequency and the live topic of the last few sentences, mixed across categories, with a steady row that changes at most 3 tiles per update.
+- **Speech:** the Web Speech API, with emoji removed before speaking. **Pictograms:** ARASAAC for core words.
+- **Privacy:** names never go to Qloo or to the LLM. The agent sees family relations ("grandmother"), not names. Qloo sees the names of favourites and brands to look up, entity IDs, tags, a city or point, and an age band. Taps and sentences stay on the device, and the weekly refresh sends an anonymous profile with tap counts.
+
+## Challenges
+- Making the board grammatical in Hindi (word order differs from English).
+- Balancing a board that *adapts* (helpful) with one that *never moves* (motor planning). Our answer is two boards with the same core-word row.
+- Making sure the AI can never remove a safety word or change the board without a parent.
+- Keeping a child's board age-appropriate when the taste graph isn't. The first screen also dropped every family restaurant in London, because they all carry wine and coffee "offering" tags. Now we judge a place by what it is (its category and genre tags), not by what it serves.
+
 ## What we learned
 Personalising AAC is less about clever AI and more about taste: the right snack, the right place, the right song to share with grandpa. An LLM knows a city's snacks but makes up its streets. A taste graph knows the real places and what goes with what. Used together, with a parent approving each change, they make a board that fits one child.
 
-## What's next for HomeTiles
+## What's next
 - Pilots with speech therapists in London, Delhi and Los Angeles.
 - A direct Cboard integration (closing cboard#1267).
 - More languages (Tamil, Bengali, Portuguese), each one entry in the language registry plus its words.
