@@ -5,6 +5,7 @@
 // with reduced motion it's a plain tap-to-pick list.
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { PinHead } from "./PinHead";
 import { frameThrottle, useReducedMotion } from "./useReducedMotion";
 
 type Cat = "core" | "safety" | "people" | "food" | "places" | "favourites" | "fun" | "together";
@@ -369,25 +370,29 @@ function StepButton({ k, on, onPick, progress }: { k: number; on: boolean; onPic
       type="button"
       onClick={() => onPick(k)}
       aria-current={on ? "step" : undefined}
-      className={`relative w-56 overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-300 lg:w-full lg:p-3.5 ${on ? "border-[var(--brand)] bg-white shadow-[0_5px_0_var(--brand)]" : "border-transparent bg-white/50 hover:bg-white"}`}
+      className={`relative w-56 overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-300 lg:w-full lg:px-3 lg:py-2 ${on ? "border-[var(--brand)] bg-white shadow-[0_5px_0_var(--brand)]" : "border-transparent bg-white/50 hover:bg-white"}`}
     >
       <div className="flex items-center gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl transition-transform ${on ? "scale-110 bg-[var(--brand-soft)]" : "bg-[var(--surface-2)]"}`}>{s.icon}</span>
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl transition-transform lg:h-8 lg:w-8 lg:text-lg ${on ? "scale-110 bg-[var(--brand-soft)]" : "bg-[var(--surface-2)]"}`}>{s.icon}</span>
         <span>
           <span className="block text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Step {k + 1}</span>
           <span className="font-display block text-base font-extrabold leading-tight">{s.title}</span>
         </span>
       </div>
-      {on && <p className="fade-up mt-2 text-sm leading-relaxed text-[#3c3a48] lg:pl-[3.25rem]">{s.text}</p>}
+      {on && <p className="fade-up mt-1.5 text-sm leading-snug text-[#3c3a48] lg:pl-11">{s.text}</p>}
       {on && progress !== undefined && <span aria-hidden className="absolute bottom-0 left-0 h-1 bg-[var(--brand)] transition-[width] duration-150" style={{ width: `${progress * 100}%` }} />}
     </button>
   );
 }
 
+type Head = { eyebrow: string; title: string; sub?: string };
+
 /** Reduced motion: pick a step by tapping it. Nothing moves on its own. */
-function JourneyClick() {
+function JourneyClick({ head }: { head: Head }) {
   const [i, setI] = useState(0);
   return (
+    <div className="mx-auto max-w-6xl py-14">
+    <PinHead {...head} />
     <div className="grid items-center gap-8 lg:grid-cols-[1fr_380px]">
       <ol className="flex snap-x gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Steps">
         {STEPS.map((s, k) => (
@@ -398,12 +403,14 @@ function JourneyClick() {
       </ol>
       <PhoneMock i={i} />
     </div>
+    </div>
   );
 }
 
 /** Pinned to one screen: scrolling moves through the steps, then the page carries on. */
-function JourneyScroll() {
+function JourneyScroll({ head }: { head: Head }) {
   const outer = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState({ i: 0, within: 0, fit: 1 });
 
   useEffect(() => {
@@ -414,8 +421,9 @@ function JourneyScroll() {
       const total = r.height - window.innerHeight;
       const p = total > 0 ? Math.min(0.9999, Math.max(0, -r.top / total)) : 0;
       const pos = p * STEPS.length;
-      // Leave room for the header (4rem) and, on phones, the step card above the mock.
-      const room = window.innerHeight - 64 - (window.innerWidth >= 1024 ? 56 : 230);
+      // Leave room for the site header (4rem), the section heading and, on phones, the step card above the mock.
+      const headH = headRef.current?.offsetHeight ?? 0;
+      const room = window.innerHeight - 64 - headH - (window.innerWidth >= 1024 ? 40 : 230);
       const fit = Math.max(0.55, Math.min(1, room / PHONE_H));
       setView((v) => {
         const next = { i: Math.floor(pos), within: pos - Math.floor(pos), fit: Math.round(fit * 100) / 100 };
@@ -445,10 +453,11 @@ function JourneyScroll() {
   const s = STEPS[view.i];
   return (
     <div ref={outer} className="relative" style={{ height: `${STEPS.length * 65 + 100}vh` }} data-journey-step={view.i}>
-      <div className="sticky top-16 flex h-[calc(100svh-4rem)] items-center py-4">
+      <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col justify-center py-3">
+        <PinHead ref={headRef} {...head} />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-5 lg:grid-cols-[1fr_380px] lg:gap-8">
           {/* Desktop: every step, the current one open. */}
-          <ol className="hidden flex-col gap-2 lg:flex" aria-label="Steps">
+          <ol className="hidden flex-col gap-1.5 lg:flex" aria-label="Steps">
             {STEPS.map((x, k) => (
               <li key={x.title}>
                 <StepButton k={k} on={k === view.i} onPick={go} progress={k === view.i ? view.within : undefined} />
@@ -488,6 +497,6 @@ function JourneyScroll() {
   );
 }
 
-export function Journey() {
-  return useReducedMotion() ? <JourneyClick /> : <JourneyScroll />;
+export function Journey({ head }: { head: Head }) {
+  return useReducedMotion() ? <JourneyClick head={head} /> : <JourneyScroll head={head} />;
 }
