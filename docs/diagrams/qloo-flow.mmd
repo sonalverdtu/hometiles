@@ -1,0 +1,26 @@
+flowchart LR
+  KID(["👧 One child<br/>loves Bluey, Minecraft, Cadbury<br/>Camden, London · 8 · energetic"])
+
+  KID --> SEARCH["/search<br/>resolve each favourite"]
+  SEARCH --> INS["/v2/insights<br/>shows · games · music · films<br/>+ explainability + age"]
+  SEARCH --> TAGS["/v2/insights<br/>+ temperament tags (union)"]
+  SEARCH --> HEAT["urn:heatmap<br/>where this taste clusters"]
+  HEAT --> GEO["places inside the hot-spots<br/>filter.location.geohash"]
+  SEARCH --> BRAND["brands<br/>+ signal.location.query"]
+  AI["LLM suggests local snacks"] --> VERIFY["/search<br/>keep only what Qloo knows"]
+  SEARCH --> CMP["/v2/analysis/compare<br/>child × grandparent"]
+  SEARCH --> DEMO["urn:demographics<br/>who loves this?"]
+  SEARCH --> TREND["/v2/trending<br/>+ bias.trends"]
+
+  INS --> FAV["⭐ Favourites"]
+  TAGS --> FAV
+  GEO --> PLACES["📍 My places"]
+  BRAND --> FOOD["🍪 Food"]
+  VERIFY --> FOOD
+  CMP --> TOG["🤝 Talk together"]
+  DEMO --> WHO["👥 With cousins or grandparents"]
+  TREND --> NEW["📈 What's new"]
+
+  FAV & PLACES & FOOD & TOG & NEW --> SCREEN{{"Age screen<br/>no energy drinks · M games · adult shows"}}
+  SCREEN --> BOARD["🧩 Board<br/>every tile shows its Qloo evidence"]
+  WHO --> BOARD

@@ -1,0 +1,24 @@
+flowchart TB
+  W["📱 Parent wizard<br/>favourites · city · age · temperament"]
+  RB["/api/board<br/>streams each step"]
+  AG{{"AI agent<br/>Gemini function calling"}}
+  LLM["Gemini<br/>plans · tile words · local snack ideas"]
+  TOOLS["7 Qloo tools<br/>cache · rate limit · trace · fallbacks"]
+  QLOO[("Qloo taste graph")]
+  ENG["Board engine<br/>ranking · age screen · locked safety words"]
+  ARA["ARASAAC<br/>pictograms"]
+  BRD["📱 Talking board<br/>child lock · speech · on-device predictions"]
+  TAPS[("📱 Taps and sentences<br/>never leave the device")]
+  RR["/api/refresh<br/>weekly suggestions"]
+
+  W -->|"profile without names"| RB --> AG
+  AG <-->|"which tool next?"| LLM
+  AG --> TOOLS
+  TOOLS <-->|"search · insights · heatmap · compare · trending"| QLOO
+  TOOLS --> ENG
+  ARA -.->|"pictures"| ENG
+  ENG -->|"board + why each tile"| BRD
+  BRD --> TAPS
+  TAPS -->|"tap counts only"| RR
+  RR -->|"parent approves every change"| BRD
+  RR --> TOOLS
