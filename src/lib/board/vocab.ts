@@ -44,11 +44,18 @@ export const FOLDER_META: Record<Category, { title: Localized; emoji: string }> 
   fun: { title: { en: "Fun & banter", hi: "मस्ती", es: "Bromas" }, emoji: "😂" },
   together: { title: { en: "Talk together", hi: "साथ में", es: "Juntos" }, emoji: "🤝" },
   new: { title: { en: "What's new", hi: "नया क्या है", es: "Lo nuevo" }, emoji: "✨" },
+  things: { title: { en: "Toys & things", hi: "खिलौने", es: "Juguetes" }, emoji: "🧸" },
+  actions: { title: { en: "Actions", hi: "करना", es: "Acciones" }, emoji: "🏃" },
+  feelings: { title: { en: "Feelings", hi: "भावनाएँ", es: "Sentimientos" }, emoji: "😊" },
+  describe: { title: { en: "Colours & more", hi: "रंग और शब्द", es: "Colores y más" }, emoji: "🎨" },
+  body: { title: { en: "Body", hi: "शरीर", es: "Cuerpo" }, emoji: "🧍" },
+  chat: { title: { en: "Chat & questions", hi: "बातचीत", es: "Charla" }, emoji: "💬" },
 };
 
 type Tpl = Record<Lang, (name: string) => string>;
 
-export const PHRASES: Record<"food" | "places" | "favourites" | "together" | "new" | "people", Tpl> = {
+export const PHRASES: Record<"food" | "places" | "favourites" | "together" | "new" | "people" | "things", Tpl> = {
+  things: { en: (n) => `I want to play with ${n}`, hi: (n) => `मुझे ${n} से खेलना है`, es: (n) => `Quiero jugar con ${n}` },
   food: { en: (n) => `I want ${n}`, hi: (n) => `मुझे ${n} चाहिए`, es: (n) => `Quiero ${n}` },
   places: { en: (n) => `I want to go to ${n}`, hi: (n) => `मुझे ${n} जाना है`, es: (n) => `Quiero ir a ${n}` },
   favourites: { en: (n) => `${n} is my favourite!`, hi: (n) => `${n} मेरा पसंदीदा है!`, es: (n) => `¡${n} es mi favorito!` },

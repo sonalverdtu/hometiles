@@ -18,6 +18,7 @@ import {
   audienceProfile,
   expandPersonalTaste,
   findLocalBrands,
+  findToys,
   matchTemperament,
   findLocalPlaces,
   resolveLoves,
@@ -32,7 +33,7 @@ export interface RunHooks {
 }
 
 async function scripted(ctx: AgentCtx) {
-  await Promise.all([expandPersonalTaste(ctx), matchTemperament(ctx), findLocalBrands(ctx), findLocalPlaces(ctx), sharedWithFamily(ctx)]);
+  await Promise.all([expandPersonalTaste(ctx), matchTemperament(ctx), findLocalBrands(ctx), findLocalPlaces(ctx), sharedWithFamily(ctx), findToys(ctx)]);
   await Promise.all([audienceProfile(ctx), whatsRising(ctx)]);
 }
 
@@ -135,6 +136,8 @@ async function fillGaps(ctx: AgentCtx) {
   if (!ctx.ran.has("match_temperament") && ctx.profile.temperament?.length) gaps.push(matchTemperament(ctx));
   if (!ctx.ran.has("find_local_places")) gaps.push(findLocalPlaces(ctx));
   if (!ctx.ran.has("shared_with_family")) gaps.push(sharedWithFamily(ctx));
+  // Toys aren't an agent tool: every child's board gets them, seeded by their favourites.
+  if (!ctx.ran.has("find_toys")) gaps.push(findToys(ctx));
   await Promise.all(gaps);
   if (!ctx.ran.has("audience_profile")) await audienceProfile(ctx);
   if (!ctx.ran.has("whats_rising")) await whatsRising(ctx);

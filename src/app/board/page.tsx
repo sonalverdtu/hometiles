@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { applySuggestions } from "@/lib/board/engine";
 import { toObf } from "@/lib/board/obf";
 import type { Board, Category, Profile, Suggestion, TapEvent, Tile } from "@/lib/board/types";
@@ -33,10 +33,25 @@ import { HeatMap } from "@/components/HeatMap";
 const ROTATING: Category[] = ["food", "places", "favourites", "fun", "together", "new"];
 const LANG_NAME = Object.fromEntries(Object.entries(LANGUAGES).map(([k, v]) => [k, v.english])) as Record<Lang, string>;
 
-function Seg<T extends string>({ value, options, onChange, label }: { value: T; options: { v: T; t: string }[]; onChange: (v: T) => void; label: string }) {
+function Seg<T extends string>({ value, options, onChange, label, info }: { value: T; options: { v: T; t: string }[]; onChange: (v: T) => void; label: string; info?: ReactNode }) {
+  const [open, setOpen] = useState(false);
   return (
     <div>
-      <div className="mb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">{label}</div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">{label}</span>
+        {info && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-label={`What does “${label}” mean?`}
+            onClick={() => setOpen((o) => !o)}
+            className="grid h-6 w-6 place-items-center rounded-full bg-[var(--grape)] text-xs font-extrabold text-white shadow-[0_2px_0_#4a33a8]"
+          >
+            ?
+          </button>
+        )}
+      </div>
+      {info && open && <div className="fade-up mb-2 rounded-2xl bg-[var(--grape-soft)] px-3 py-2.5 text-xs leading-relaxed">{info}</div>}
       <div className="grid gap-1 rounded-2xl bg-[var(--surface-2)] p-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0,1fr))` }} role="radiogroup" aria-label={label}>
         {options.map((o) => (
           <button
@@ -57,6 +72,26 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
 
 /** The refresh needs taste, place and age, never who the child or their family is. */
 const anonymous = (p: Profile): Profile => ({ ...p, id: "anon", displayName: "Child", family: [] });
+
+// Tiles a parent removed (Qloo IDs, and labels for tiles without one), so the weekly refresh never brings them back.
+const removedKey = (boardId: string) => `ht:removed:${boardId}`;
+const removedKeys = (t: Tile) => [t.entity?.qlooId, `label:${t.label.en.toLowerCase()}`].filter((k): k is string => !!k);
+function getRemoved(boardId: string): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(removedKey(boardId)) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+function addRemoved(boardId: string, t: Tile) {
+  try {
+    const s = getRemoved(boardId);
+    removedKeys(t).forEach((k) => s.add(k));
+    localStorage.setItem(removedKey(boardId), JSON.stringify([...s]));
+  } catch {
+    // Storage blocked: the tile is still gone from the board, it just might be suggested again.
+  }
+}
 
 export default function BoardPage() {
   const [board, setBoard] = useState<Board | null>(null);
@@ -160,7 +195,9 @@ export default function BoardPage() {
       const res = await fetch("/api/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile: anonymous(board.profile), tiles, counts: relevant }) });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Refresh failed");
-      setRefresh({ loading: false, suggestions: j.suggestions, counts, seededBy: j.seededBy ?? [] });
+      const removed = getRemoved(board.id);
+      const suggestions = (j.suggestions as Suggestion[]).filter((s) => !s.tile || !removedKeys(s.tile).some((k) => removed.has(k)));
+      setRefresh({ loading: false, suggestions, counts, seededBy: j.seededBy ?? [] });
       if (j.trace?.length) update({ ...board, trace: [...board.trace, ...j.trace] });
     } catch (err) {
       setRefresh(null);
@@ -203,6 +240,22 @@ export default function BoardPage() {
     refreshStats(board);
     setToast(`Simulated a week: ${taps.length} taps on this device. The "For me" board now predicts from them.`);
     void runRefresh();
+  }
+
+  function removeTile(t: Tile, reason: string) {
+    if (!board) return;
+    const tiles = { ...board.tiles };
+    delete tiles[t.id];
+    addRemoved(board.id, t);
+    update({
+      ...board,
+      tiles,
+      folders: board.folders.map((f) => ({ ...f, tileIds: f.tileIds.filter((id) => id !== t.id) })),
+      coreIds: board.coreIds.filter((id) => id !== t.id),
+      notes: [...board.notes, `Parent removed "${t.label.en}": ${reason}`],
+    });
+    setWhy(null);
+    setToast(`Removed ${pick(t.label, board.profile.primaryLang)}. It won't come back in weekly refreshes.`);
   }
 
   function exportObf() {
@@ -272,8 +325,8 @@ export default function BoardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
-        {/* Live preview of exactly what the child sees */}
-        <section className="no-print">
+        {/* Live preview of exactly what the child sees; on desktop it stays in view while the tools scroll. */}
+        <section className="no-print lg:sticky lg:top-20 lg:self-start">
           <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
             <span className="font-display text-lg font-extrabold">What {p.displayName} sees</span>
             <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[var(--muted)] shadow-sm">👆 tap to try it</span>
@@ -282,7 +335,7 @@ export default function BoardPage() {
             </span>
           </div>
           <div className="phone">
-            <div className="phone-screen h-[72vh] min-h-[540px]">
+            <div className="phone-screen h-[72vh] min-h-[540px] lg:h-[calc(100vh-11rem)] lg:min-h-[460px]">
               <KidBoard key={previewKey} board={board} settings={settings} locked={false} onInfo={setWhy} compact />
             </div>
           </div>
@@ -296,18 +349,45 @@ export default function BoardPage() {
             </h2>
             <div className="space-y-3">
               <Seg
-                label="Which board"
+                label={`Tabs ${p.displayName} sees`}
                 value={settings.boards}
                 onChange={(v) => changeSettings({ ...settings, boards: v })}
                 options={[
-                  { v: "both", t: "Both" },
-                  { v: "smart", t: "⭐ For me (smart)" },
-                  { v: "classic", t: "📁 All words" },
+                  { v: "both", t: "Both tabs" },
+                  { v: "smart", t: "⭐ For me only" },
+                  { v: "classic", t: "📁 All words only" },
                 ]}
+                info={
+                  <ul className="space-y-1.5">
+                    <li>
+                      <strong>⭐ For me</strong> is the smart board. It learns on this device what {p.displayName} says and when, and changes the “Maybe next” tiles to match.
+                    </li>
+                    <li>
+                      <strong>📁 All words</strong> has every word in fixed folders (food, places, favourites, people…). Nothing ever moves.
+                    </li>
+                    <li>
+                      <strong>Both tabs</strong>: {p.displayName} sees the two tabs at the top of the board and can switch between them.
+                    </li>
+                    <li>Core words like “I”, “want” and “stop” sit in the same place on both.</li>
+                  </ul>
+                }
               />
               <p className="text-xs leading-relaxed text-[var(--muted)]">
-                <strong>For me</strong> learns on this device what {p.displayName} says, when, and what usually comes next, and puts likely words on one screen.{" "}
-                <strong>All words</strong> keeps every word in a fixed folder, so it never moves. Core words stay in the same place on both.
+                {settings.boards === "both" && (
+                  <>
+                    {p.displayName} can switch between <strong>⭐ For me</strong> (learns and suggests) and <strong>📁 All words</strong> (everything, never moves).
+                  </>
+                )}
+                {settings.boards === "smart" && (
+                  <>
+                    Only <strong>⭐ For me</strong>: the board that learns what {p.displayName} says and suggests the next words.
+                  </>
+                )}
+                {settings.boards === "classic" && (
+                  <>
+                    Only <strong>📁 All words</strong>: every word in a fixed folder, so nothing moves.
+                  </>
+                )}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <Seg
@@ -439,6 +519,7 @@ export default function BoardPage() {
           tile={why}
           lang={primary}
           onClose={() => setWhy(null)}
+          onRemove={removeTile}
           onToggleLock={(t) => {
             const next = { ...board, tiles: { ...board.tiles, [t.id]: { ...t, locked: !t.locked } } };
             update(next);

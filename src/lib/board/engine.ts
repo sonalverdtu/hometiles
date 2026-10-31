@@ -6,16 +6,20 @@ import type { TraceEntry } from "../qloo/trace";
 import { LANG_CODES, type LocalNames } from "../i18n";
 import type { Board, Category, Folder, Lang, Localized, Partner, Profile, Reason, Suggestion, Tile } from "./types";
 import { BANTER, CORE, FOLDER_META, newPhrase, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
+import { everydayFor } from "./everyday";
+import { EVERYDAY_PICTOS } from "./everyday-pictos";
 
-export const QUOTAS: Record<"food" | "places" | "favourites" | "together" | "new", number> = {
+export const QUOTAS: Record<"food" | "places" | "favourites" | "together" | "new" | "things", number> = {
   favourites: 10,
   food: 8,
   places: 6,
   together: 4,
   new: 3,
+  things: 4,
 };
 
-export const FOLDER_ORDER: Category[] = ["favourites", "food", "places", "fun", "together", "new", "people", "safety"];
+// The child's own world first, then everyday words, then the extras; "I need" always last.
+export const FOLDER_ORDER: Category[] = ["favourites", "food", "places", "people", "things", "actions", "feelings", "describe", "body", "chat", "fun", "together", "new", "safety"];
 
 export interface Candidate {
   entity: QEntity;
@@ -81,7 +85,7 @@ export function candidateToTile(c: Candidate, text?: TileText): Tile {
     category: c.category,
     label: text?.label ?? localized((l) => displayName(c.entity, l)),
     speak: text?.speak ?? localized((l) => tpl[l](displayName(c.entity, l))),
-    emoji: TYPE_EMOJI[c.entity.type] ?? "⭐",
+    emoji: c.category === "things" ? "🧸" : (TYPE_EMOJI[c.entity.type] ?? "⭐"),
     image: c.entity.image ? { url: c.entity.image, source: "qloo" } : undefined,
     entity: {
       // A favourite Qloo didn't recognise has a local id, which must never be sent to Qloo as a seed.
@@ -151,6 +155,24 @@ function fixedTiles(profile: Profile): Tile[] {
   return [...core, ...safety, ...people];
 }
 
+/** Everyday words (water, school, red, happy…) for the board's home language; they go after the personal tiles. */
+function everydayTiles(profile: Profile): Tile[] {
+  return everydayFor(profile.primaryLang).map((w) => {
+    const pic = EVERYDAY_PICTOS[w.key];
+    return {
+      id: `basic-${w.key}`,
+      kind: "basic",
+      category: w.cat,
+      label: w.label,
+      speak: w.label,
+      emoji: w.emoji,
+      image: pic ? { url: `https://static.arasaac.org/pictograms/${pic}/${pic}_300.png`, source: "arasaac" } : undefined,
+      locked: true,
+      reasons: [{ kind: "core", text: "Everyday word, so the child can ask for things nobody predicted" }],
+    };
+  });
+}
+
 function funTiles(favs: Tile[]): Tile[] {
   const tiles: Tile[] = [];
   favs.slice(0, 3).forEach((f, i) => {
@@ -200,6 +222,7 @@ export function assembleBoard(input: AssembleInput): Board {
   const tiles: Record<string, Tile> = {};
   const folders: Record<Category, string[]> = {
     core: [], safety: [], people: [], food: [], places: [], favourites: [], fun: [], together: [], new: [],
+    things: [], actions: [], feelings: [], describe: [], body: [], chat: [],
   };
 
   for (const t of fixedTiles(input.profile)) {
@@ -231,6 +254,11 @@ export function assembleBoard(input: AssembleInput): Board {
     tiles[t.id] = t;
     folders.fun.push(t.id);
   }
+  // Everyday words last in each folder: Parle-G before biscuit, Sharma Ji Chaat before park.
+  for (const t of everydayTiles(input.profile)) {
+    tiles[t.id] = t;
+    folders[t.category].push(t.id);
+  }
 
   const folderList: Folder[] = FOLDER_ORDER.filter((c) => folders[c].length > 0).map((c) => ({
     id: c,
@@ -257,7 +285,7 @@ export function assembleBoard(input: AssembleInput): Board {
 // ---------------- Refresh (FR-4xx) ----------------
 
 export function isProtected(t: Tile): boolean {
-  return t.locked || t.kind === "core" || t.kind === "safety" || t.kind === "people";
+  return t.locked || t.kind === "core" || t.kind === "safety" || t.kind === "people" || t.kind === "basic";
 }
 
 /**
