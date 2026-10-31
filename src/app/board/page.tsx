@@ -416,6 +416,9 @@ export default function BoardPage() {
                 Speak each tile when tapped
               </label>
               <p className="rounded-2xl bg-[var(--surface-2)] px-3 py-2.5 text-xs">
+                💡 Children learn a board by seeing it used: when you talk to {p.displayName}, tap the words too (&ldquo;I want … juice&rdquo;).
+              </p>
+              <p className="mt-2 rounded-xl bg-[var(--surface-2)] p-3 text-xs">
                 🔒 In child mode the menus are hidden and the back button is blocked. To exit, <strong>press and hold the lock for 2 seconds</strong>.
               </p>
             </div>
@@ -517,6 +520,7 @@ export default function BoardPage() {
       {why && (
         <WhyDialog
           tile={why}
+          talkWords={(why.talk ?? []).map((id) => board.tiles[id]).filter(Boolean)}
           lang={primary}
           onClose={() => setWhy(null)}
           onRemove={removeTile}

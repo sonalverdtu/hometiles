@@ -1,11 +1,11 @@
 flowchart TB
-  W["📱 Parent wizard<br/>favourites · city · age · temperament"]
+  W["📱 Parent wizard<br/>favourites · how they communicate<br/>access needs · dislikes"]
   RB["/api/board<br/>streams each step"]
   AG{{"AI agent<br/>Gemini function calling"}}
   LLM["Gemini<br/>plans · tile words · local snack ideas"]
   TOOLS["7 Qloo tools<br/>cache · rate limit · trace · fallbacks"]
   QLOO[("Qloo taste graph")]
-  ENG["Board engine<br/>ranking · age screen · locked safety words"]
+  ENG["Board engine<br/>ranking · age screen · locked safety words<br/>talk words from Qloo tags"]
   ARA["ARASAAC<br/>pictograms"]
   BRD["📱 Talking board<br/>child lock · speech · on-device predictions"]
   TAPS[("📱 Taps and sentences<br/>never leave the device")]

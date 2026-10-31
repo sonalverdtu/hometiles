@@ -40,6 +40,14 @@ describe("board pipeline (mock)", () => {
     expect(t?.entity?.qlooId).toBeUndefined();
   });
 
+  it("keeps the family's dislikes off the board", async () => {
+    const before = await build("leo");
+    const names = (b: typeof before.board) => Object.values(b.tiles).map((t) => t.entity?.name ?? "");
+    expect(names(before.board).some((n) => /peppa/i.test(n))).toBe(true);
+    const { board } = await build("leo", { dislikes: ["Peppa Pig"] });
+    expect(names(board).some((n) => /peppa/i.test(n))).toBe(false);
+  });
+
   it("skips the temperament step when none is given", async () => {
     const { tools } = await build("leo", { temperament: undefined });
     expect(tools).not.toContain("match_temperament");

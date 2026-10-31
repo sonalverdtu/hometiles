@@ -50,6 +50,7 @@ export const FOLDER_META: Record<Category, { title: Localized; emoji: string }> 
   describe: { title: { en: "Colours & more", hi: "रंग और शब्द", es: "Colores y más" }, emoji: "🎨" },
   body: { title: { en: "Body", hi: "शरीर", es: "Cuerpo" }, emoji: "🧍" },
   chat: { title: { en: "Chat & questions", hi: "बातचीत", es: "Charla" }, emoji: "💬" },
+  talk: { title: { en: "Talk about it", hi: "इसके बारे में", es: "Hablar de eso" }, emoji: "🗨️" },
 };
 
 type Tpl = Record<Lang, (name: string) => string>;

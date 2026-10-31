@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Lang, Reason, Tile } from "@/lib/board/types";
 import { tileSpeech } from "@/lib/board/sentence";
+import { pick } from "@/lib/board/vocab";
 import { BigTile } from "./kid/BigTile";
 import { Modal } from "./Modal";
 import { Sparkline } from "./Sparkline";
@@ -31,8 +32,11 @@ export function WhyDialog({
   onClose,
   onToggleLock,
   onRemove,
+  talkWords = [],
 }: {
   tile: Tile;
+  /** The tiles in tile.talk: words to talk about it, from its Qloo tags. */
+  talkWords?: Tile[];
   lang: Lang;
   onClose: () => void;
   onToggleLock: (t: Tile) => void;
@@ -74,6 +78,20 @@ export function WhyDialog({
           );
         })}
       </ul>
+
+      {talkWords.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-[var(--line)] p-3">
+          <p className="text-sm font-extrabold">Words to talk about it</p>
+          <p className="mb-2 text-xs text-[var(--muted)]">From Qloo&apos;s own tags for this {tile.category === "places" ? "place" : tile.category === "food" ? "snack" : "favourite"}. They come up first after the child taps it.</p>
+          <div className="flex flex-wrap gap-1.5">
+            {talkWords.map((w) => (
+              <span key={w.id} className="rounded-lg px-2 py-1 text-sm font-semibold" style={{ background: `var(--c-${w.category})` }}>
+                {w.emoji} {pick(w.label, lang)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {tile.trend && tile.trend.length > 1 && (
         <div className="mt-3 rounded-2xl border border-[var(--line)] p-3">

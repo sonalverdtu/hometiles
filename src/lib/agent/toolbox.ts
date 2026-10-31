@@ -3,13 +3,14 @@
 
 import { distanceM } from "../geo";
 import type { Qloo } from "../qloo";
-import type { AgeBand, QDemographics, QEntity, QHeatCell, QlooType } from "../qloo/types";
+import type { AgeBand, QDemographics, QEntity, QHeatCell, QlooType, QTag } from "../qloo/types";
 import type { Candidate } from "../board/engine";
 import type { EntityRef, Partner, Profile, Reason } from "../board/types";
 import { ageGroupOf, isMinor, ratingOk, screenRatings } from "../board/age";
 import { describeChild, temperamentTags } from "../board/temperament";
 import { getConfig } from "../config";
 import { proposeLocalSnacks } from "../llm";
+import { avoider } from "../board/talk";
 
 export interface AgentCtx {
   profile: Profile;
@@ -20,6 +21,8 @@ export interface AgentCtx {
   heat?: QHeatCell[];
   notes: string[];
   ran: Set<string>;
+  /** Qloo's tags for the family's own favourites (from /search), so their tiles get talk words too. */
+  loveTags?: Map<string, QTag[]>;
 }
 
 // Kid-friendly place categories (Qloo tag IDs). Adults get nightlife excluded instead.
@@ -105,7 +108,20 @@ function loveName(ctx: AgentCtx, id: string) {
   return ctx.profile.loves.find((l) => l.qlooId === id)?.name ?? ctx.profile.family.flatMap((f) => f.loves).find((l) => l.qlooId === id)?.name;
 }
 
+// Places whose Qloo tags say they're quiet, or loud: for children who find noise hard.
+const QUIET = /ambience:qloo:(quiet|relaxing|tranquil|serene|peaceful|calm)|noise_level:qloo:(quiet|low)/;
+const LOUD = /ambience:qloo:(lively|noisy|loud|bustling|energetic)|noise_level:qloo:(loud|high)/;
+const WHEELCHAIR = /accessibility:place:wheelchair_accessible_entrance/;
+
+/** True when the family asked to keep this off the board: its name, or for a place what it's like (dogs, loud). */
+function disliked(ctx: AgentCtx, e: QEntity): boolean {
+  const avoid = avoider(ctx.profile.dislikes);
+  if (avoid(e.name)) return true;
+  return e.type === "urn:entity:place" && e.tags.some((t) => /pets|ambience|noise|amenit/.test(t.id) && avoid(t.name));
+}
+
 function upsert(ctx: AgentCtx, c: Candidate) {
+  if (!c.own && disliked(ctx, c.entity)) return;
   const prev = ctx.candidates.get(c.entity.id);
   if (!prev) {
     ctx.candidates.set(c.entity.id, c);
@@ -146,6 +162,7 @@ export async function resolveLoves(ctx: AgentCtx) {
       .map(async (l) => {
         const best = await ctx.qloo.resolve(l.name, l.type).catch(() => null);
         if (best) {
+          (ctx.loveTags ??= new Map()).set(best.id, best.tags);
           l.qlooId = best.id;
           l.image = l.image ?? best.image;
           l.nameLocal = best.nameLocal;
@@ -167,7 +184,7 @@ function addOwnFavourites(ctx: AgentCtx) {
   for (const l of ctx.profile.loves) {
     const id = l.qlooId ?? `own-${l.name.toLowerCase().replace(/[^a-z0-9ऀ-ॿ]+/g, "-").replace(/^-|-$/g, "")}`;
     upsert(ctx, {
-      entity: { id, name: l.name, type: l.type, image: l.image, nameLocal: l.nameLocal, tags: [], affinity: 1 },
+      entity: { id, name: l.name, type: l.type, image: l.image, nameLocal: l.nameLocal, tags: (l.qlooId && ctx.loveTags?.get(l.qlooId)) || [], affinity: 1 },
       category: OWN_CATEGORY[l.type] ?? "favourites",
       personal: 1,
       own: true,
@@ -423,7 +440,21 @@ export async function findLocalPlaces(ctx: AgentCtx, radiusM = 2500, useHeatmap 
     if (dist !== undefined) reasons.push({ kind: "local", text: `${dist < 1000 ? `${dist} m` : `${(dist / 1000).toFixed(1)} km`} from home`, value: dist });
     if (heatUsed && places.some((p) => p.id === e.id)) reasons.push({ kind: "local", text: "Inside a taste hot-spot on Qloo's heatmap" });
     if (outdoorIds.has(e.id)) reasons.push({ kind: "local", text: "A park or playground near home: somewhere to run around" });
-    const local = dist !== undefined ? Math.max(0, 1 - dist / (radiusM * 1.2)) : 0.5;
+    let local = dist !== undefined ? Math.max(0, 1 - dist / (radiusM * 1.2)) : 0.5;
+    // Access needs the parent told us about, read from Qloo's own place tags.
+    const tagIds = e.tags.map((t) => t.id).join(" ");
+    const access = ctx.profile.access ?? {};
+    if (access.quiet && LOUD.test(tagIds)) continue;
+    if (access.quiet && QUIET.test(tagIds)) {
+      local = Math.min(1, local + 0.2);
+      reasons.push({ kind: "local", text: "Calm and quiet, by Qloo's ambience tags" });
+    }
+    if (access.wheelchair) {
+      if (WHEELCHAIR.test(tagIds)) {
+        local = Math.min(1, local + 0.3);
+        reasons.push({ kind: "local", text: "Wheelchair-accessible entrance, by Qloo's accessibility tags" });
+      } else local = Math.max(0, local - 0.25);
+    }
     const personal = outdoorIds.has(e.id) ? Math.max(e.affinity ?? 0, 0.75) : (e.affinity ?? 0.5);
     upsert(ctx, { entity: { ...e, distanceM: dist }, category: "places", personal, local, ageFit: outdoorIds.has(e.id) && ctx.profile.isChild ? 1 : undefined, reasons });
   }

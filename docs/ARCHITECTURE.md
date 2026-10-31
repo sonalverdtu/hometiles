@@ -159,6 +159,25 @@ The `match_temperament` tool sends them as `signal.interests.tags` (union), next
 ### A parent's music
 If a parent (mother, father, carer…) has favourite singers, one extra artist query blends them with the child's, and at most 2 new picks are kept, scored at ×0.7. The blend happens in the app because Qloo's POST weights only work within one signal group, so they can't make a parent's taste weaker than the child's. When we tried, the parent's taste took over the list.
 
+### Words to talk about each tile (Qloo tags → communication)
+A board of nouns only lets a child *ask for* things. Qloo's own tags say much more about each one, and `src/lib/board/talk.ts` turns them into words a child can use to comment, ask and tell. They go in a "Talk about it" folder, and after a tile is tapped its words come first in "Maybe next".
+
+| Tile | Qloo tags used | Words (live, Leo's board) |
+|---|---|---|
+| The Regent's Park | amenities (swings, slides, public restroom, picnic tables), activity (boating) | swing, slide, playground, toilet, picnic, boat |
+| London Zoo | amenity, activity (playgrounds, toilets, picnic areas, animal encounters) | playground, toilet, picnic, animals, flowers, shop |
+| Bluey | curated keywords and themes (puppy, family, friendship, kindness, imagination) | dog, family, friend, kind, pretend |
+| Cadbury | food tags, flavour, context (chocolate, sweet, sharing) | chocolate, sweet, share |
+
+Only Qloo's curated keyword, theme, plot and amenity tags are read. Scene-level `keyword:media` trivia is skipped ("Saturn V rocket model" made Peter Rabbit look like a space film). Taste words are only given to food and drink brands, and a place tagged both relaxing and lively gets neither "quiet" nor "loud". Words the board already has (toilet, ball, friend) are linked, not duplicated.
+
+### The parent's answers about communication
+The wizard also asks how the child communicates today, about access needs, and about dislikes:
+- **"Just starting with pictures"** gives a starter board: the core, safety and family words, the child's own favourites, about 30 everyday words and fewer Qloo picks. Starting with too many tiles is a common reason families give up.
+- **"Uses a wheelchair"** ranks places with Qloo's `accessibility:place:wheelchair_accessible_entrance` tag higher, and says so on the tile.
+- **"Finds loud places hard"** drops places Qloo tags `lively`, `noisy` or `loud`, and ranks `quiet`, `relaxing` or `tranquil` ones higher. On live Qloo this swapped Leo's three busiest restaurants for two quiet gardens.
+- **Dislikes and fears** (for example "dogs" or "Peppa Pig") keep matching shows, snacks and places (such as dog-friendly cafés) out of the agent's picks. The everyday words stay, so the child can still say "I don't like it".
+
 ### Local snacks: the LLM proposes, Qloo verifies
 Qloo's brand results lean global (Skittles and Hershey for a child in Delhi). An LLM knows local staples but also invents and misremembers. So `proposeLocalSnacks` (`src/lib/llm/index.ts`) asks the LLM for 8 snack brands children have in that city, and `verifiedLocalSnacks` looks each one up in Qloo. A name is kept only if Qloo finds it, it carries a Qloo food tag, and it passes the age screen. The food tag matters: name search alone matched "Real" (a juice) to Real Madrid CF. On live Qloo, Delhi kept Haldiram's (Bikanervala and Amul weren't found) and London kept Ribena (Fruit Shoot and Freddo weren't found). This only runs when an LLM key is set.
 

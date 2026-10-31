@@ -91,6 +91,20 @@ function ProfileCard({ p }: { p: Profile }) {
           </div>
         ) : null}
         <div>
+          <dt className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Communicates</dt>
+          <dd className="font-semibold">
+            {p.communication === "new" ? "🌱 Just starting (smaller board)" : p.communication === "words" ? "💬 Says some words" : "🖼️ Uses a picture board"}
+            {p.access?.wheelchair ? " · ♿ step-free places" : ""}
+            {p.access?.quiet ? " · 🤫 quiet places" : ""}
+          </dd>
+        </div>
+        {p.dislikes?.length ? (
+          <div>
+            <dt className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Keep off the board</dt>
+            <dd className="font-semibold">🚫 {p.dislikes.join(", ")}</dd>
+          </div>
+        ) : null}
+        <div>
           <dt className="text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Loves</dt>
           <dd className="mt-1 flex flex-wrap gap-1.5">
             {p.loves.map((l) => (

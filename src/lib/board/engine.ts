@@ -8,6 +8,7 @@ import type { Board, Category, Folder, Lang, Localized, Partner, Profile, Reason
 import { BANTER, CORE, FOLDER_META, newPhrase, PHRASES, REACTIONS, SAFETY, TYPE_EMOJI, togetherPhrase } from "./vocab";
 import { everydayFor } from "./everyday";
 import { EVERYDAY_PICTOS } from "./everyday-pictos";
+import { TALK_WORDS, talkFor } from "./talk";
 
 export const QUOTAS: Record<"food" | "places" | "favourites" | "together" | "new" | "things", number> = {
   favourites: 10,
@@ -18,8 +19,18 @@ export const QUOTAS: Record<"food" | "places" | "favourites" | "together" | "new
   things: 4,
 };
 
+// A child just starting with pictures gets a smaller board that can grow: their own words, the core and safety
+// words, a short everyday set, and fewer Qloo picks. Too many tiles at once is a common reason AAC gets dropped.
+const STARTER_QUOTAS: typeof QUOTAS = { favourites: 6, food: 5, places: 4, together: 2, new: 0, things: 3 };
+const STARTER_EVERYDAY = new Set([
+  "water", "milk", "juice", "fruit", "biscuit", "home", "school", "park", "outside", "ball", "book", "tablet",
+  "drink", "sleep", "wash", "watch", "look", "hug", "happy", "sad", "angry", "hello", "bye", "myturn", "again",
+  "what", "where", "dontlike", "turnoff", "tummy", "head",
+]);
+const quotasFor = (p: Profile) => (p.communication === "new" ? STARTER_QUOTAS : QUOTAS);
+
 // The child's own world first, then everyday words, then the extras; "I need" always last.
-export const FOLDER_ORDER: Category[] = ["favourites", "food", "places", "people", "things", "actions", "feelings", "describe", "body", "chat", "fun", "together", "new", "safety"];
+export const FOLDER_ORDER: Category[] = ["favourites", "food", "places", "talk", "people", "things", "actions", "feelings", "describe", "body", "chat", "fun", "together", "new", "safety"];
 
 export interface Candidate {
   entity: QEntity;
@@ -157,7 +168,8 @@ function fixedTiles(profile: Profile): Tile[] {
 
 /** Everyday words (water, school, red, happy…) for the board's home language; they go after the personal tiles. */
 function everydayTiles(profile: Profile): Tile[] {
-  return everydayFor(profile.primaryLang).map((w) => {
+  const words = everydayFor(profile.primaryLang).filter((w) => profile.communication !== "new" || STARTER_EVERYDAY.has(w.key));
+  return words.map((w) => {
     const pic = EVERYDAY_PICTOS[w.key];
     return {
       id: `basic-${w.key}`,
@@ -171,6 +183,50 @@ function everydayTiles(profile: Profile): Tile[] {
       reasons: [{ kind: "core", text: "Everyday word, so the child can ask for things nobody predicted" }],
     };
   });
+}
+
+/**
+ * Talk words for every placed Qloo tile: links each tile to its words (tile.talk) and returns the new word tiles,
+ * most-shared first. A word that already exists on the board (toilet, ball, friend) is linked, not duplicated.
+ */
+function talkTiles(placed: Candidate[], tiles: Record<string, Tile>): Tile[] {
+  const made = new Map<string, Tile & { from: string[] }>();
+  for (const c of placed) {
+    const tile = tiles[`t-${c.entity.id}`];
+    if (!tile) continue;
+    const ids: string[] = [];
+    for (const w of talkFor(c.entity.type, c.entity.tags)) {
+      if (w.startsWith("=")) {
+        if (tiles[w.slice(1)]) ids.push(w.slice(1));
+        continue;
+      }
+      const id = `talk-${w}`;
+      const word = TALK_WORDS[w];
+      const prev = made.get(id);
+      if (prev) prev.from.push(c.entity.name);
+      else
+        made.set(id, {
+          id,
+          kind: "basic",
+          category: "talk",
+          label: word.label,
+          speak: word.label,
+          emoji: word.emoji,
+          image: { url: `https://static.arasaac.org/pictograms/${word.picto}/${word.picto}_300.png`, source: "arasaac" },
+          locked: true,
+          reasons: [],
+          from: [c.entity.name],
+        });
+      ids.push(id);
+    }
+    if (ids.length) tile.talk = ids;
+  }
+  return [...made.values()]
+    .sort((a, b) => b.from.length - a.from.length)
+    .map(({ from, ...t }) => ({
+      ...t,
+      reasons: [{ kind: "personal" as const, text: `A word to talk about ${from.slice(0, 3).join(", ")}, from Qloo's own tags for ${from.length > 1 ? "them" : "it"}` }],
+    }));
 }
 
 function funTiles(favs: Tile[]): Tile[] {
@@ -222,7 +278,7 @@ export function assembleBoard(input: AssembleInput): Board {
   const tiles: Record<string, Tile> = {};
   const folders: Record<Category, string[]> = {
     core: [], safety: [], people: [], food: [], places: [], favourites: [], fun: [], together: [], new: [],
-    things: [], actions: [], feelings: [], describe: [], body: [], chat: [],
+    things: [], actions: [], feelings: [], describe: [], body: [], chat: [], talk: [],
   };
 
   for (const t of fixedTiles(input.profile)) {
@@ -230,9 +286,11 @@ export function assembleBoard(input: AssembleInput): Board {
     folders[t.category].push(t.id);
   }
   const counts: Record<string, number> = {};
+  const quotas = quotasFor(input.profile);
+  const placed: Candidate[] = [];
   for (const c of ranked) {
     const n = counts[c.category] ?? 0;
-    if (n >= QUOTAS[c.category]) continue;
+    if (n >= quotas[c.category]) continue;
     // Keep favourites varied: at most 4 of any one kind (shows, games, music, films).
     const typeKey = `${c.category}|${c.entity.type}`;
     if (c.category === "favourites" && !c.own && (counts[typeKey] ?? 0) >= 4) continue;
@@ -241,13 +299,15 @@ export function assembleBoard(input: AssembleInput): Board {
     tiles[tile.id] = tile;
     folders[c.category].push(tile.id);
     counts[c.category] = n + 1;
+    placed.push(c);
   }
   // Second pass: if the per-kind cap left favourites slots empty, fill them with the best remaining picks.
   for (const c of ranked) {
-    if (c.category !== "favourites" || folders.favourites.length >= QUOTAS.favourites || tiles[`t-${c.entity.id}`]) continue;
+    if (c.category !== "favourites" || folders.favourites.length >= quotas.favourites || tiles[`t-${c.entity.id}`]) continue;
     const tile = candidateToTile(c, input.text?.[c.entity.id]);
     tiles[tile.id] = tile;
     folders.favourites.push(tile.id);
+    placed.push(c);
   }
   const favs = folders.favourites.map((id) => tiles[id]);
   for (const t of funTiles(favs)) {
@@ -258,6 +318,11 @@ export function assembleBoard(input: AssembleInput): Board {
   for (const t of everydayTiles(input.profile)) {
     tiles[t.id] = t;
     folders[t.category].push(t.id);
+  }
+  // Words to talk about each tile, from its own Qloo tags (after everyday words, so those can be reused).
+  for (const t of talkTiles(placed, tiles)) {
+    tiles[t.id] = t;
+    folders.talk.push(t.id);
   }
 
   const folderList: Folder[] = FOLDER_ORDER.filter((c) => folders[c].length > 0).map((c) => ({

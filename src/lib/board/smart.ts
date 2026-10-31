@@ -76,7 +76,7 @@ const PERSON_FOLLOW_UPS = ["basic-love", "basic-hello", "basic-bye", "basic-wher
 
 // The smart row's balance, checked at every position: communication words (feelings, needs, questions, people)
 // get at least a quarter of it, and things to watch, play or listen to at most a third.
-const COMMUNICATION = new Set<Category>(["feelings", "chat", "body", "people", "safety"]);
+const COMMUNICATION = new Set<Category>(["feelings", "chat", "body", "people", "safety", "talk"]);
 const ENTERTAINMENT = new Set<Category>(["favourites", "fun", "together", "new", "things"]);
 const minCommunication = (n: number) => Math.floor(n / 4);
 const maxEntertainment = (n: number) => Math.ceil(n / 3);
@@ -123,7 +123,8 @@ export function predict(board: Board, lastTileId: string | null, taps: TapEvent[
   // Within a folder, earlier words are the more common ones (happy before angry, tummy before teeth).
   const folderPos = new Map(board.folders.flatMap((f) => f.tileIds.map((id, i) => [id, i] as const)));
   const last = lastTileId ? board.tiles[lastTileId] : undefined;
-  const follow = [...(lastTileId ? (FOLLOW_UPS[lastTileId] ?? []) : []), ...(last?.kind === "people" ? PERSON_FOLLOW_UPS : [])];
+  // After a tile: its own words from Qloo's tags first (at the park: swing, slide, toilet; Bluey: dog, funny).
+  const follow = [...(last?.talk ?? []), ...(lastTileId ? (FOLLOW_UPS[lastTileId] ?? []) : []), ...(last?.kind === "people" ? PERSON_FOLLOW_UPS : [])];
   const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
   const nextTotal = next ? [...next.values()].reduce((s, n) => s + n, 0) : 0;
   const weekAgo = now.getTime() - 7 * 86400000;

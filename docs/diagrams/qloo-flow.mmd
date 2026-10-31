@@ -5,7 +5,7 @@ flowchart LR
   SEARCH --> INS["/v2/insights<br/>shows · games · music · films<br/>+ explainability + age"]
   SEARCH --> TAGS["/v2/insights<br/>+ temperament tags (union)"]
   SEARCH --> HEAT["urn:heatmap<br/>where this taste clusters"]
-  HEAT --> GEO["places inside the hot-spots<br/>filter.location.geohash"]
+  HEAT --> GEO["places inside the hot-spots<br/>filter.location.geohash<br/>+ step-free · quiet (tags)"]
   SEARCH --> BRAND["brands<br/>+ signal.location.query"]
   AI["LLM suggests local snacks"] --> VERIFY["/search<br/>keep only what Qloo knows"]
   SEARCH --> CMP["/v2/analysis/compare<br/>child × grandparent"]
@@ -22,5 +22,6 @@ flowchart LR
   TREND --> NEW["📈 What's new"]
 
   FAV & PLACES & FOOD & TOG & NEW --> SCREEN{{"Age screen<br/>no energy drinks · M games · adult shows"}}
-  SCREEN --> BOARD["🧩 Board<br/>every tile shows its Qloo evidence"]
+  SCREEN --> TALK["🗨️ Words to talk about each tile<br/>from its Qloo tags<br/>park → swing, slide, toilet<br/>Bluey → dog, friend, kind"]
+  TALK --> BOARD["🧩 Board<br/>every tile shows its Qloo evidence"]
   WHO --> BOARD

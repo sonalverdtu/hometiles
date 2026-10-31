@@ -146,6 +146,9 @@ export default function CreatePage() {
   const [type, setType] = useState(TYPES[0]);
   const [favs, setFavs] = useState<Fav[]>([]);
   const [temper, setTemper] = useState<Temperament[]>([]);
+  const [comm, setComm] = useState<NonNullable<Profile["communication"]>>("pictures");
+  const [access, setAccess] = useState<{ wheelchair: boolean; quiet: boolean }>({ wheelchair: false, quiet: false });
+  const [dislikes, setDislikes] = useState("");
   const [family, setFamily] = useState<{ name: string; relation: string; singers: string }[]>([{ name: "", relation: "mother", singers: "" }]);
   const [err, setErr] = useState<string | null>(null);
   const key = useRef(1);
@@ -170,6 +173,9 @@ export default function CreatePage() {
       isChild: age.group === "young" || age.group === "child",
       ageGroup: age.group,
       temperament: temper.length ? temper : undefined,
+      communication: comm,
+      access: access.wheelchair || access.quiet ? access : undefined,
+      dislikes: dislikes.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 10).map((s) => s.slice(0, 60)),
       city: city.trim(),
       home,
       primaryLang: primary,
@@ -261,6 +267,39 @@ export default function CreatePage() {
                     onChange={setSecondary}
                     options={[{ v: "" as const, t: "None" }, ...LANGS.filter((l) => l.id !== primary).map((l) => ({ v: l.id, t: l.label }))]}
                   />
+                  <div className="grid gap-1.5">
+                    <ChipGroup
+                      label={`How does ${who} communicate today?`}
+                      value={comm}
+                      onChange={setComm}
+                      options={[
+                        { v: "new", t: "Just starting with pictures" },
+                        { v: "pictures", t: "Uses a picture board" },
+                        { v: "words", t: "Says some words" },
+                      ]}
+                    />
+                    <p className="text-xs text-[var(--muted)]">
+                      {comm === "new"
+                        ? "They'll start with a smaller board: their own words, the core words and the most useful everyday ones. It can grow later."
+                        : "They'll get the full board: their own words, the core words and about 100 everyday words."}
+                    </p>
+                  </div>
+                  <fieldset className="grid gap-1.5">
+                    <legend className="mb-2 text-sm font-bold">Getting out and about (optional)</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {(
+                        [
+                          ["wheelchair", "♿ Uses a wheelchair"],
+                          ["quiet", "🤫 Finds loud places hard"],
+                        ] as const
+                      ).map(([k, label]) => (
+                        <button key={k} type="button" aria-pressed={access[k]} onClick={() => setAccess((a) => ({ ...a, [k]: !a[k] }))} className="chip">
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[var(--muted)]">Places near home are picked with Qloo&apos;s own tags for step-free entrances and for how loud a place is.</p>
+                  </fieldset>
                 </div>
               )}
 
@@ -328,6 +367,12 @@ export default function CreatePage() {
                       and adds a few that fit next to the ones from their favourites.
                     </p>
                   </fieldset>
+
+                  <label className="mt-4 grid gap-1.5 text-sm font-bold">
+                    Anything {who} dislikes or is scared of? (optional)
+                    <input className="input" value={dislikes} onChange={(e) => setDislikes(e.target.value)} maxLength={300} placeholder="e.g. dogs, Peppa Pig, loud places" />
+                    <span className="text-xs font-normal text-[var(--muted)]">Kept off the board&apos;s suggestions. They can still say &ldquo;I don&apos;t like it&rdquo;.</span>
+                  </label>
                 </div>
               )}
 
