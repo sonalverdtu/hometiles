@@ -330,6 +330,23 @@ export async function findLocalBrands(ctx: AgentCtx, take = 12) {
   return `Found ${all.size + verified.length} brands/snacks: ${[...all.values(), ...verified].slice(0, 8).map((e) => e.name).join(", ")}`;
 }
 
+// Qloo has no "toys" genre, but toy makers are tagged as each other's competitors: a union of those tags
+// finds toy brands, ranked by how well they fit the child's favourites (Bluey → LEGO, Toca Boca, Playmobil…).
+const TOY_TAGS = ["urn:tag:competitor_brand:qloo:mattel", "urn:tag:competitor_brand:qloo:hasbro", "urn:tag:competitor_brand:qloo:lego"];
+// Parent companies and toy shops read badly on a tile a child taps ("I want Hasbro").
+const NOT_A_TOY = /^(hasbro|mattel|spin master|fao schwarz|jada toys|moose toys|wowwee)$/i;
+
+export async function findToys(ctx: AgentCtx, take = 12) {
+  ctx.ran.add("find_toys");
+  const ids = loveIds(ctx.profile.loves);
+  if (!ctx.profile.isChild || !ids.length || ctx.qloo.mode !== "live") return "No toy search";
+  ctx.emit("Finding toys that go with their favourites…", "find_toys");
+  const toys = await ctx.qloo.insights({ type: "urn:entity:brand", interests: ids, age: ctx.profile.ageBand, explain: true, filterTags: TOY_TAGS, take }, "find_toys").catch(() => []);
+  const picks = toys.filter((e) => !NOT_A_TOY.test(e.name.trim()) && ageSafe(ctx, e));
+  for (const e of picks) upsert(ctx, { entity: e, category: "things", personal: e.affinity ?? 0.5, reasons: [personalReason(ctx, e)] });
+  return `Found ${picks.length} toys: ${picks.slice(0, 5).map((e) => e.name).join(", ")}`;
+}
+
 /** The LLM proposes local snack brands; only the ones Qloo can find (and that pass the age screen) are kept. */
 async function verifiedLocalSnacks(ctx: AgentCtx, have: Set<string>): Promise<QEntity[]> {
   if (getConfig().llmMode !== "live") return [];

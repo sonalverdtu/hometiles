@@ -30,6 +30,12 @@
   --c-fun: #ffd6ec;
   --c-together: #cceeee;
   --c-new: #ececec;
+  --c-things: #fde7c8;
+  --c-actions: #dff3c4;
+  --c-feelings: #fff0c7;
+  --c-describe: #f1e4ff;
+  --c-body: #ffe1d6;
+  --c-chat: #dceeff;
 
   --b-core: #e2c34a;
   --b-safety: #e06666;
@@ -40,6 +46,12 @@
   --b-fun: #e57bb4;
   --b-together: #4fb0b0;
   --b-new: #a0a0a0;
+  --b-things: #d9a04a;
+  --b-actions: #86c14a;
+  --b-feelings: #e8b93a;
+  --b-describe: #b48be0;
+  --b-body: #e8927a;
+  --b-chat: #5f9fe0;
 
   --kid-bg: #f3efe8;
   --go: #15803d;
@@ -580,4 +592,116 @@ html[data-kidlock] .site-chrome {
     min-height: 5rem;
     box-shadow: none;
   }
+}
+
+/* ---------- Landing v2 ---------- */
+
+/* AI alone vs. AI + Qloo: each tile flips from a generic guess to the Qloo pick. */
+.flip {
+  perspective: 900px;
+}
+.flip-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.75s var(--ease-spring);
+}
+.flip[data-flipped="true"] .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
+/* Story: the empty slots where her own words should have been. */
+@keyframes missingPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.96);
+    opacity: 0.65;
+  }
+}
+.story-missing {
+  animation: missingPulse 2.6s ease-in-out infinite;
+}
+.story-missing:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.story-missing:nth-child(6) {
+  animation-delay: 0.8s;
+}
+
+/* Architecture walkthrough: stages switch on as they scroll in; the spine fills to the reached stage. */
+.arch-fill {
+  height: calc(var(--fill, 1) * 100%);
+  transition: height 0.15s linear;
+}
+.arch-armed .arch-stage {
+  opacity: 0.18;
+  transform: translateY(36px) scale(0.97);
+  filter: saturate(0.3);
+  transition:
+    opacity 0.6s ease,
+    transform 0.7s var(--ease-spring),
+    filter 0.6s ease;
+}
+.arch-armed .arch-stage[data-on="true"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.arch-armed .arch-node {
+  transition: transform 0.5s var(--ease-spring);
+}
+.arch-armed .arch-stage:not([data-on="true"]) .arch-node {
+  transform: scale(0.6);
+}
+.arch-armed .arch-tool {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.5s var(--ease-spring);
+}
+.arch-armed .arch-stage[data-on="true"] .arch-tool {
+  opacity: 1;
+  transform: none;
+}
+.arch-armed .arch-flow {
+  opacity: 0;
+  transition: opacity 0.5s ease 0.35s;
+}
+.arch-armed .arch-stage[data-on="true"] .arch-flow {
+  opacity: 1;
+}
+@keyframes packet {
+  0%,
+  100% {
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 0 rgb(109 79 224 / 0.5);
+  }
+  50% {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 6px rgb(109 79 224 / 0);
+  }
+}
+.arch-packet {
+  animation: packet 1.1s ease-in-out infinite;
+}
+@keyframes headGlow {
+  50% {
+    transform: translateX(-50%) scale(1.25);
+  }
+}
+.arch-head {
+  animation: headGlow 1.4s ease-in-out infinite;
 }

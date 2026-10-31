@@ -11,10 +11,11 @@ interface BaselineTile {
   labelPrimary?: string;
 }
 
-const CATS: { id: "favourites" | "food" | "places"; title: string }[] = [
+const CATS: { id: "favourites" | "food" | "places" | "things"; title: string }[] = [
   { id: "favourites", title: "Favourites" },
   { id: "food", title: "Food & snacks" },
   { id: "places", title: "Places" },
+  { id: "things", title: "Toys" },
 ];
 
 export function CompareDialog({ board, lang, onClose }: { board: Board; lang: Lang; onClose: () => void }) {
@@ -28,7 +29,12 @@ export function CompareDialog({ board, lang, onClose }: { board: Board; lang: La
       .catch((e) => setErr(String(e)));
   }, [board.profile]);
 
-  const ours = (cat: string) => (board.folders.find((f) => f.id === cat)?.tileIds ?? []).map((id) => board.tiles[id]).filter(Boolean);
+  // The personal tiles are the comparison; everyday words (water, school…) are listed separately below.
+  const ours = (cat: string) =>
+    (board.folders.find((f) => f.id === cat)?.tileIds ?? [])
+      .map((id) => board.tiles[id])
+      .filter((t) => t && t.kind !== "basic");
+  const everyday = Object.values(board.tiles).filter((t) => t.kind === "basic");
   const allOurs = CATS.flatMap((c) => ours(c.id));
   const grounded = allOurs.filter((t) => t.entity?.qlooId).length;
   const nearby = ours("places").filter((t) => t.entity?.distanceM !== undefined);
@@ -58,6 +64,7 @@ export function CompareDialog({ board, lang, onClose }: { board: Board; lang: La
                   {base.tiles.filter((t) => t.category === c.id).map((t, i) => (
                     <span key={i} className="rounded-lg bg-[#f1f1f1] px-2 py-1 text-sm">{t.labelPrimary && lang !== "en" ? t.labelPrimary : t.label}</span>
                   ))}
+                  {!base.tiles.some((t) => t.category === c.id) && <span className="text-sm text-[var(--muted)]">None</span>}
                 </div>
               </div>
             ))}
@@ -77,6 +84,19 @@ export function CompareDialog({ board, lang, onClose }: { board: Board; lang: La
               </div>
             </div>
           ))}
+          {everyday.length > 0 && (
+            <div className="mb-1 border-t border-[var(--line)] pt-3">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wide text-[var(--muted)]">Plus {everyday.length} everyday words</div>
+              <div className="flex flex-wrap gap-1.5">
+                {everyday.slice(0, 16).map((t) => (
+                  <span key={t.id} className="rounded-lg px-2 py-1 text-sm" style={{ background: `var(--c-${t.category})` }}>
+                    {t.emoji} {pick(t.label, lang)}
+                  </span>
+                ))}
+                {everyday.length > 16 && <span className="px-1 py-1 text-sm text-[var(--muted)]">+{everyday.length - 16} more</span>}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

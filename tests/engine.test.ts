@@ -43,7 +43,24 @@ describe("assembleBoard", () => {
     expect(b.coreIds.length).toBeGreaterThan(5);
     for (const t of Object.values(b.tiles)) if (t.kind !== "rotating") expect(t.locked).toBe(true);
     expect(b.folders.find((f) => f.id === "safety")?.tileIds.length).toBeGreaterThan(0);
-    expect(b.folders.find((f) => f.id === "people")?.tileIds.length).toBe(2); // default Mom + Dad
+    const people = b.folders.find((f) => f.id === "people")!.tileIds.map((id) => b.tiles[id]);
+    expect(people.filter((t) => t.kind === "people").length).toBe(2); // default Mom + Dad
+    expect(people[0].kind).toBe("people"); // family before everyday people (teacher, friend)
+  });
+
+  it("adds everyday words after the personal tiles", () => {
+    const b = makeBoard(20);
+    const ids = (folder: string) => b.folders.find((f) => f.id === folder)?.tileIds ?? [];
+    expect(ids("food")).toContain("basic-water");
+    expect(ids("places")).toContain("basic-school");
+    expect(ids("describe")).toContain("basic-red");
+    expect(ids("feelings")).toContain("basic-happy");
+    // Qloo picks first, then the everyday words.
+    const food = ids("food").map((id) => b.tiles[id].kind);
+    expect(food.lastIndexOf("rotating")).toBeLessThan(food.indexOf("basic"));
+    // Staples follow the home language (this board is Hindi-first).
+    expect(ids("food")).toContain("basic-roti");
+    expect(ids("food")).not.toContain("basic-tortilla");
   });
 
   it("gives every tile both language labels", () => {

@@ -9,8 +9,25 @@ import type { Temperament } from "./temperament";
 export type { Lang };
 export type Localized = Partial<Record<Lang, string>> & { en: string };
 
-export type Category = "core" | "safety" | "people" | "food" | "places" | "favourites" | "fun" | "together" | "new";
-export type TileKind = "core" | "safety" | "people" | "rotating";
+export type Category =
+  | "core"
+  | "safety"
+  | "people"
+  | "food"
+  | "places"
+  | "favourites"
+  | "fun"
+  | "together"
+  | "new"
+  // Everyday-vocabulary folders (things also holds Qloo's toy picks).
+  | "things"
+  | "actions"
+  | "feelings"
+  | "describe"
+  | "body"
+  | "chat";
+/** basic = an everyday word (water, red, happy…): fixed like core words, but a parent can remove it. */
+export type TileKind = "core" | "safety" | "people" | "rotating" | "basic";
 export type Partner = "friends" | "elders" | "everyone";
 
 export interface EntityRef {

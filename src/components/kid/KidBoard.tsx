@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { FOLDER_META, pick } from "@/lib/board/vocab";
 import { UI } from "@/lib/i18n";
-import { predict, stabilize, type Prediction } from "@/lib/board/smart";
+import { nextActions, predict, stabilize, type Prediction } from "@/lib/board/smart";
 import { NO_TOPIC, topicOf, type Topic } from "@/lib/board/topic";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { addSaid, getSaid, getTaps, logTap, type KidSettings, type SaidEntry } from "@/lib/client/store";
@@ -69,7 +69,9 @@ export function KidBoard({
   }, [settings.boards]);
 
   const last = sentence[sentence.length - 1]?.id ?? null;
-  const take = compact ? 8 : 12;
+  // Enough "Maybe next" tiles to fill the screen under the core rows.
+  const take = compact ? 12 : 18;
+  const actions = nextActions(board, last, 6, CORE_SLOTS);
   const ranked = useMemo(() => predict(board, last, taps, new Date(), take + 8, topic), [board, last, taps, take, topic]);
   // Steady row: tiles keep their slots, and at most 3 slots change per tap (stabilize in smart.ts).
   let predictions = row.shown;
@@ -213,6 +215,19 @@ export function KidBoard({
                   <BigTile key={t.id} tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
                 ))}
               </div>
+            )}
+            {actions.length >= 3 && (
+              <>
+                <div className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--muted)]">
+                  <span aria-hidden>{FOLDER_META.actions.emoji}</span>
+                  {pick(FOLDER_META.actions.title, lang)}
+                </div>
+                <div className="mb-3 grid grid-cols-3 gap-2 @2xl:grid-cols-6">
+                  {actions.map((t) => (
+                    <BigTile key={t.id} tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
+                  ))}
+                </div>
+              </>
             )}
             <div className="mb-2 flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--muted)]">
               <span aria-hidden>✨</span>

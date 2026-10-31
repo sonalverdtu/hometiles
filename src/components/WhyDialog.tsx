@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Lang, Reason, Tile } from "@/lib/board/types";
 import { tileSpeech } from "@/lib/board/sentence";
 import { BigTile } from "./kid/BigTile";
@@ -22,7 +23,27 @@ const KIND: Record<Reason["kind"], { icon: string; title: string; bg: string }> 
 
 const PARTNER: Record<string, string> = { friends: "Great with cousins and friends", elders: "Great with grandparents", everyone: "Everyone can join in" };
 
-export function WhyDialog({ tile, lang, onClose, onToggleLock }: { tile: Tile; lang: Lang; onClose: () => void; onToggleLock: (t: Tile) => void }) {
+const REMOVE_REASONS = ["Misleading", "Not relevant to my child", "Not appropriate", "They don't like it", "Wrong place / too far", "Other"];
+
+export function WhyDialog({
+  tile,
+  lang,
+  onClose,
+  onToggleLock,
+  onRemove,
+}: {
+  tile: Tile;
+  lang: Lang;
+  onClose: () => void;
+  onToggleLock: (t: Tile) => void;
+  /** Parent removes the tile; `reason` is the chosen reason plus any note. */
+  onRemove?: (t: Tile, reason: string) => void;
+}) {
+  const [removing, setRemoving] = useState(false);
+  const [why, setWhy] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const removable = !!onRemove && tile.kind !== "core" && tile.kind !== "safety";
+  const label = tileSpeech(tile, lang);
   return (
     <Modal title="Why is this tile here?" onClose={onClose}>
       <div className="mb-4 flex items-center gap-4 rounded-2xl bg-[var(--surface-2)] p-3">
@@ -67,6 +88,11 @@ export function WhyDialog({ tile, lang, onClose, onToggleLock }: { tile: Tile; l
             {tile.locked ? "🔓 Allow weekly changes" : "🔒 Keep this tile forever"}
           </button>
         )}
+        {removable && !removing && (
+          <button type="button" className="btn border-[#f3b0a0] text-[#b42318]" onClick={() => setRemoving(true)}>
+            🗑️ Remove this tile
+          </button>
+        )}
         {tile.entity?.qlooId && (
           <p className="font-mono text-[11px] text-[var(--muted)]">
             Qloo entity {tile.entity.qlooId.slice(0, 13)}…
@@ -74,6 +100,42 @@ export function WhyDialog({ tile, lang, onClose, onToggleLock }: { tile: Tile; l
           </p>
         )}
       </div>
+
+      {removable && removing && (
+        <div className="fade-up mt-4 rounded-2xl border-2 border-[#f3b0a0] bg-[#fff6f3] p-4">
+          <p className="font-display text-lg font-extrabold">Why remove “{label}”?</p>
+          <p className="mb-3 text-sm text-[var(--muted)]">Your reason is kept in the board notes, and the weekly refresh won&apos;t suggest it again.</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Reason">
+            {REMOVE_REASONS.map((r) => (
+              <button key={r} type="button" role="radio" aria-checked={why === r} onClick={() => setWhy(r)} className="chip text-sm">
+                {r}
+              </button>
+            ))}
+          </div>
+          <input
+            className="input mt-3 text-sm"
+            placeholder="Add a note (optional)"
+            aria-label="Note"
+            maxLength={120}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="button" className="btn" onClick={() => setRemoving(false)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn ml-auto"
+              disabled={!why}
+              style={{ ["--btn-face" as string]: "linear-gradient(180deg,#e5484d 0%,#c22a2f 100%)", ["--btn-edge" as string]: "#86161a", ["--btn-ink" as string]: "#fff", borderColor: "#a31d22" }}
+              onClick={() => why && onRemove?.(tile, note.trim() ? `${why}: ${note.trim()}` : why)}
+            >
+              🗑️ Remove “{label}”
+            </button>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 }

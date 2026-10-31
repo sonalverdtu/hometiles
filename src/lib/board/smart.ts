@@ -46,14 +46,43 @@ export function transitions(taps: TapEvent[]): Map<string, Map<string, number>> 
 
 // Cold-start hints: after a core word, which folders usually follow.
 const AFTER_CORE: Record<string, Category[]> = {
-  "core-want": ["food", "favourites", "places"],
+  "core-want": ["food", "favourites", "places", "things"],
   "core-eat": ["food"],
   "core-go": ["places"],
-  "core-play": ["favourites"],
+  "core-play": ["favourites", "things"],
   "core-like": ["favourites", "food", "together"],
   "core-more": ["food", "favourites"],
   "core-i": ["food", "places", "favourites"],
+  "basic-drink": ["food"],
+  "basic-watch": ["favourites", "new"],
+  "basic-listen": ["together", "favourites"],
 };
+
+// Action words that usually go with what was just tapped: a snack → eat/drink, a show → watch, a place → go.
+const DEFAULT_ACTIONS = ["core-eat", "basic-drink", "core-play", "basic-watch", "basic-sleep", "basic-listen", "basic-look", "basic-wash"];
+function actionsFor(t: Tile | undefined): string[] {
+  if (!t) return [];
+  const type = t.entity?.type ?? "";
+  if (t.category === "food") return ["core-eat", "basic-drink", "basic-give", "basic-open"];
+  if (t.category === "places") return ["core-go", "basic-come", "basic-wait", "basic-run"];
+  if (t.category === "things") return ["core-play", "basic-give", "basic-open", "basic-look"];
+  if (t.category === "people") return ["basic-hug", "basic-come", "core-play", "basic-look"];
+  if (/artist|podcast/.test(type)) return ["basic-listen", "basic-sing", "basic-dance"];
+  if (/videogame/.test(type)) return ["core-play", "basic-watch"];
+  if (/tv_show|movie|book/.test(type)) return ["basic-watch", "basic-read", "core-play"];
+  if (t.category === "feelings" || t.category === "body" || t.kind === "safety") return ["basic-hug", "basic-sit", "basic-sleep", "basic-wait"];
+  return [];
+}
+
+/** The "Action words" row on the smart board: verbs that fit the last tap first, then the everyday ones. */
+export function nextActions(board: Board, lastTileId: string | null, take = 6, skip: readonly string[] = []): Tile[] {
+  const ids = [...actionsFor(lastTileId ? board.tiles[lastTileId] : undefined), ...DEFAULT_ACTIONS];
+  return [...new Set(ids)]
+    .filter((id) => id !== lastTileId && !skip.includes(id))
+    .map((id) => board.tiles[id])
+    .filter((t): t is Tile => !!t)
+    .slice(0, take);
+}
 
 function timeOfDayCategories(hour: number): { cats: Category[]; label: string } {
   if (hour >= 6 && hour < 10) return { cats: ["food", "people"], label: "morning" };
@@ -65,8 +94,8 @@ function timeOfDayCategories(hour: number): { cats: Category[]; label: string } 
 const sameHourBand = (a: number, b: number) => Math.abs(a - b) <= 1 || Math.abs(a - b) >= 23;
 
 export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12, topic?: Topic): Prediction[] {
-  // "help" already sits next to the core words, so it never needs predicting.
-  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help");
+  // "help" already sits next to the core words, and verbs have their own row, so neither needs predicting.
+  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help" && t.category !== "actions");
   const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
   const nextTotal = next ? [...next.values()].reduce((s, n) => s + n, 0) : 0;
   const weekAgo = now.getTime() - 7 * 86400000;

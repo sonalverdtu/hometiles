@@ -1,9 +1,11 @@
 "use client";
 
 // "See every screen": a walkthrough of what a parent actually sees, one step at a time, each with a
-// faithful mock of that screen. Auto-advances until someone picks a step.
+// faithful mock of that screen. The section pins to the screen and scrolling moves through the steps;
+// with reduced motion it's a plain tap-to-pick list.
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { frameThrottle, useReducedMotion } from "./useReducedMotion";
 
 type Cat = "core" | "safety" | "people" | "food" | "places" | "favourites" | "fun" | "together";
 
@@ -337,64 +339,155 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   },
 ];
 
-const AUTO_MS = 6500;
+// The phone mock is drawn at this size, then scaled to fit the screen.
+const PHONE_W = 340;
+const PHONE_H = 560;
 
-export function Journey() {
-  const [i, setI] = useState(0);
-  const [auto, setAuto] = useState(true);
-
-  useEffect(() => {
-    if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setTimeout(() => setI((x) => (x + 1) % STEPS.length), AUTO_MS);
-    return () => clearTimeout(id);
-  }, [i, auto]);
-
-  const pick = (k: number) => {
-    setAuto(false);
-    setI(k);
-  };
-  const step = STEPS[i];
-
+/** A picture of the screen for step i; the step text says the same thing for screen readers. */
+function PhoneMock({ i, fit = 1 }: { i: number; fit?: number }) {
   return (
-    <div className="grid items-center gap-8 lg:grid-cols-[1fr_380px]">
-      <ol className="flex snap-x gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Steps">
-        {STEPS.map((s, k) => {
-          const on = k === i;
-          return (
-            <li key={s.title} className="shrink-0 snap-start lg:shrink">
-              <button
-                type="button"
-                onClick={() => pick(k)}
-                aria-current={on ? "step" : undefined}
-                className={`relative w-56 overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-300 lg:w-full lg:p-4 ${on ? "border-[var(--brand)] bg-white shadow-[0_5px_0_var(--brand)]" : "border-transparent bg-white/50 hover:bg-white"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-2xl transition-transform ${on ? "scale-110 bg-[var(--brand-soft)]" : "bg-[var(--surface-2)]"}`}>{s.icon}</span>
-                  <span>
-                    <span className="block text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Step {k + 1}</span>
-                    <span className="font-display block text-base font-extrabold leading-tight lg:text-lg">{s.title}</span>
-                  </span>
-                </div>
-                {on && <p className="fade-up mt-2 text-sm leading-relaxed text-[#3c3a48] lg:pl-14">{s.text}</p>}
-                {on && auto && <span key={i} aria-hidden className="absolute bottom-0 left-0 h-1 bg-[var(--brand)]" style={{ animation: `grow ${AUTO_MS}ms linear both` }} />}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* A picture of the screen; the step text above says the same thing for screen readers. */}
-      <div aria-hidden className="relative mx-auto w-full max-w-[340px]">
-        <div className="blob -inset-6 bg-[var(--grape)]/40" />
+    <div aria-hidden className="relative mx-auto shrink-0" style={{ width: PHONE_W * fit, height: PHONE_H * fit }}>
+      <div className="blob -inset-6 bg-[var(--grape)]/40" />
+      <div className="absolute left-0 top-0 origin-top-left" style={{ width: PHONE_W, transform: `scale(${fit})` }}>
         <div className="phone relative">
           <div className="phone-screen h-[540px] bg-[var(--kid-bg)]">
-            <div aria-hidden className="mx-auto mt-2 h-5 w-24 rounded-full bg-[#15141b]" />
+            <div className="mx-auto mt-2 h-5 w-24 rounded-full bg-[#15141b]" />
             <div key={i} className="h-[calc(100%-1.75rem)]">
-              {step.screen()}
+              {STEPS[i].screen()}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function StepButton({ k, on, onPick, progress }: { k: number; on: boolean; onPick: (k: number) => void; progress?: number }) {
+  const s = STEPS[k];
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(k)}
+      aria-current={on ? "step" : undefined}
+      className={`relative w-56 overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-300 lg:w-full lg:p-3.5 ${on ? "border-[var(--brand)] bg-white shadow-[0_5px_0_var(--brand)]" : "border-transparent bg-white/50 hover:bg-white"}`}
+    >
+      <div className="flex items-center gap-3">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl transition-transform ${on ? "scale-110 bg-[var(--brand-soft)]" : "bg-[var(--surface-2)]"}`}>{s.icon}</span>
+        <span>
+          <span className="block text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Step {k + 1}</span>
+          <span className="font-display block text-base font-extrabold leading-tight">{s.title}</span>
+        </span>
+      </div>
+      {on && <p className="fade-up mt-2 text-sm leading-relaxed text-[#3c3a48] lg:pl-[3.25rem]">{s.text}</p>}
+      {on && progress !== undefined && <span aria-hidden className="absolute bottom-0 left-0 h-1 bg-[var(--brand)] transition-[width] duration-150" style={{ width: `${progress * 100}%` }} />}
+    </button>
+  );
+}
+
+/** Reduced motion: pick a step by tapping it. Nothing moves on its own. */
+function JourneyClick() {
+  const [i, setI] = useState(0);
+  return (
+    <div className="grid items-center gap-8 lg:grid-cols-[1fr_380px]">
+      <ol className="flex snap-x gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0" aria-label="Steps">
+        {STEPS.map((s, k) => (
+          <li key={s.title} className="shrink-0 snap-start lg:shrink">
+            <StepButton k={k} on={k === i} onPick={setI} />
+          </li>
+        ))}
+      </ol>
+      <PhoneMock i={i} />
+    </div>
+  );
+}
+
+/** Pinned to one screen: scrolling moves through the steps, then the page carries on. */
+function JourneyScroll() {
+  const outer = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState({ i: 0, within: 0, fit: 1 });
+
+  useEffect(() => {
+    const update = () => {
+      const el = outer.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      const p = total > 0 ? Math.min(0.9999, Math.max(0, -r.top / total)) : 0;
+      const pos = p * STEPS.length;
+      // Leave room for the header (4rem) and, on phones, the step card above the mock.
+      const room = window.innerHeight - 64 - (window.innerWidth >= 1024 ? 56 : 230);
+      const fit = Math.max(0.55, Math.min(1, room / PHONE_H));
+      setView((v) => {
+        const next = { i: Math.floor(pos), within: pos - Math.floor(pos), fit: Math.round(fit * 100) / 100 };
+        return v.i === next.i && Math.abs(v.within - next.within) < 0.02 && v.fit === next.fit ? v : next;
+      });
+    };
+    const { schedule, cancel } = frameThrottle(update);
+    schedule();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancel();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
+
+  // Clicking a step scrolls the page to the middle of that step's stretch.
+  const go = (k: number) => {
+    const el = outer.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    window.scrollTo({ top: window.scrollY + r.top + ((k + 0.5) / STEPS.length) * total, behavior: "smooth" });
+  };
+
+  const s = STEPS[view.i];
+  return (
+    <div ref={outer} className="relative" style={{ height: `${STEPS.length * 65 + 100}vh` }} data-journey-step={view.i}>
+      <div className="sticky top-16 flex h-[calc(100svh-4rem)] items-center py-4">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-5 lg:grid-cols-[1fr_380px] lg:gap-8">
+          {/* Desktop: every step, the current one open. */}
+          <ol className="hidden flex-col gap-2 lg:flex" aria-label="Steps">
+            {STEPS.map((x, k) => (
+              <li key={x.title}>
+                <StepButton k={k} on={k === view.i} onPick={go} progress={k === view.i ? view.within : undefined} />
+              </li>
+            ))}
+          </ol>
+
+          {/* Phones: dots for every step, then the current step. */}
+          <div className="lg:hidden">
+            <div className="mb-3 flex items-center justify-center gap-1.5" role="group" aria-label="Steps">
+              {STEPS.map((x, k) => (
+                <button
+                  key={x.title}
+                  type="button"
+                  onClick={() => go(k)}
+                  aria-label={`Step ${k + 1}: ${x.title}`}
+                  aria-current={k === view.i ? "step" : undefined}
+                  className={`grid h-9 place-items-center rounded-full text-base transition-all duration-300 ${k === view.i ? "w-14 bg-[var(--brand)] shadow-[0_3px_0_var(--brand-edge)]" : "w-9 bg-white shadow-[0_3px_0_var(--line)]"}`}
+                >
+                  <span aria-hidden>{x.icon}</span>
+                </button>
+              ))}
+            </div>
+            <div key={view.i} className="fade-up text-center">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+                Step {view.i + 1} of {STEPS.length}
+              </p>
+              <p className="font-display text-xl font-extrabold leading-tight">{s.title}</p>
+              <p className="mx-auto mt-1 max-w-md text-sm leading-snug text-[#3c3a48]">{s.text}</p>
+            </div>
+          </div>
+
+          <PhoneMock i={view.i} fit={view.fit} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Journey() {
+  return useReducedMotion() ? <JourneyClick /> : <JourneyScroll />;
 }

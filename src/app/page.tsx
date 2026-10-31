@@ -3,25 +3,10 @@ import type { CSSProperties, ReactNode } from "react";
 import { PersonaButtons } from "@/components/PersonaButtons";
 import { HeroDemo } from "@/components/landing/HeroDemo";
 import { Journey } from "@/components/landing/Journey";
+import { Story } from "@/components/landing/Story";
+import { AiVsQloo } from "@/components/landing/AiVsQloo";
+import { Architecture } from "@/components/landing/Architecture";
 import { LANGUAGES, type Lang } from "@/lib/i18n";
-
-const GENERIC = [
-  { e: "🍪", l: "cookie" },
-  { e: "🌳", l: "park" },
-  { e: "📺", l: "cartoon" },
-  { e: "🧃", l: "juice" },
-  { e: "👩", l: "mom" },
-  { e: "⚽", l: "ball" },
-];
-// Leo, 8, Camden (a fictional demo child).
-const HOME = [
-  { e: "🍫", l: "Cadbury Buttons", c: "food" },
-  { e: "🛝", l: "Regent's Park playground", s: "10 min from home", c: "places" },
-  { e: "📺", l: "Bluey", c: "favourites" },
-  { e: "🧸", l: "Paddington", c: "favourites" },
-  { e: "👵", l: "Grandma", c: "people" },
-  { e: "🎵", l: "Beatles songs", s: "with Grandma", c: "together" },
-];
 
 // The same idea for other demo children, in their family's language.
 const ELSEWHERE: { who: string; lang: Lang; words: [string, string][] }[] = [
@@ -49,10 +34,27 @@ const WORLD: readonly (readonly [string, string, string, Lang?])[] = [
 
 const tileStyle = (c: string): CSSProperties => ({ background: `var(--c-${c})`, ["--edge" as string]: `var(--b-${c})` });
 
-function Section({ id, eyebrow, title, sub, children, className = "" }: { id?: string; eyebrow: string; title: string; sub?: string; children: ReactNode; className?: string }) {
+function Section({
+  id,
+  eyebrow,
+  title,
+  sub,
+  children,
+  className = "",
+  reveal = true,
+}: {
+  id?: string;
+  eyebrow: string;
+  title: string;
+  sub?: string;
+  children: ReactNode;
+  className?: string;
+  /** Rise in on scroll. Off for sections that pin to the screen, since a scroll animation on a tall block would fade it mid-way. */
+  reveal?: boolean;
+}) {
   return (
     <section id={id} className={`scroll-mt-20 px-4 py-16 sm:py-20 ${className}`}>
-      <div className="reveal mx-auto max-w-6xl">
+      <div className={`${reveal ? "reveal " : ""}mx-auto max-w-6xl`}>
         <p className="text-center text-xs font-extrabold uppercase tracking-[0.18em] text-[var(--brand)]">{eyebrow}</p>
         <h2 className="mx-auto mt-2 max-w-3xl text-center text-3xl font-extrabold leading-tight sm:text-5xl">{title}</h2>
         {sub && <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-[var(--muted)]">{sub}</p>}
@@ -112,6 +114,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* WHY WE MADE THIS */}
+      <Story />
+
       {/* WORLD MARQUEE */}
       <section aria-label="Words from children's own worlds" className="border-y border-[var(--line)] bg-white/60 py-5">
         <div className="relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
@@ -133,73 +138,42 @@ export default function Home() {
 
       {/* PROBLEM */}
       <Section
-        eyebrow="The problem"
+        eyebrow="AI alone vs. AI + Qloo"
         title="Same child. Two very different boards."
-        sub="Speech therapists have asked for culture-specific words since at least 2022. Today parents add them by hand, one picture at a time."
+        sub="Give an AI alone a child's form and it guesses. Give it Qloo's taste graph and it finds his world: shows his favourites' fans love, snacks kids near him like, real places near home."
       >
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-[2rem] border-2 border-dashed border-[#d6d0c4] bg-white/40 p-6">
-            <div className="mb-4 flex items-center gap-2 font-bold text-[var(--muted)]">
-              <span className="rounded-full bg-[#ececec] px-2.5 py-1 text-xs">Before</span> A generic board
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {GENERIC.map((g) => (
-                <div key={g.l} className="flex min-h-24 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-[#dcdcdc] bg-[#f2f2f2] grayscale">
-                  <span className="text-4xl">{g.e}</span>
-                  <span className="font-bold text-[#6b6b6b]">{g.l}</span>
-                </div>
+        <AiVsQloo />
+        <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[var(--muted)]" aria-label="Other demo children, in their family's language">
+          {ELSEWHERE.map((x) => (
+            <li key={x.who} className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold">
+                In {LANGUAGES[x.lang].english}, for {x.who}:
+              </span>
+              {x.words.map(([e, w]) => (
+                <span key={w} lang={x.lang} className="rounded-full bg-white px-2 py-0.5 font-display text-xs font-bold text-[var(--ink)] shadow-sm">
+                  <span aria-hidden>{e} </span>
+                  {w}
+                </span>
               ))}
-            </div>
-            <p className="mt-4 text-[var(--muted)]">
-              He can ask for <em>a</em> cookie. He can&apos;t ask for <em>his</em>.
-            </p>
-          </div>
-          <div className="relative rounded-[2rem] border-2 border-[var(--accent)] bg-gradient-to-br from-[#f1fbf8] to-white p-6 shadow-[0_8px_0_var(--accent)]">
-            <div className="mb-4 flex items-center gap-2 font-bold text-[var(--accent)]">
-              <span className="rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs text-white">After</span> HomeTiles, built for Leo in London
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {HOME.map((g, k) => (
-                <div key={g.l} className="kid-tile pop-in min-h-24" style={{ ...tileStyle(g.c), animationDelay: `${k * 80}ms` }}>
-                  <span className="text-4xl leading-none">{g.e}</span>
-                  <span className="font-display text-sm font-bold leading-tight">{g.l}</span>
-                  {g.s && <span className="text-[10px] font-semibold opacity-70">{g.s}</span>}
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 font-semibold">His snack, his playground, his cartoon, his grandma&apos;s songs.</p>
-            <ul className="mt-3 space-y-1.5 border-t border-[var(--line)] pt-3 text-sm text-[var(--muted)]" aria-label="Other demo children, in their family's language">
-              {ELSEWHERE.map((x) => (
-                <li key={x.who} className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold">
-                    In {LANGUAGES[x.lang].english}, for {x.who}:
-                  </span>
-                  {x.words.map(([e, w]) => (
-                    <span key={w} lang={x.lang} className="rounded-full bg-white px-2 py-0.5 font-display text-xs font-bold text-[var(--ink)] shadow-sm">
-                      <span aria-hidden>{e} </span>
-                      {w}
-                    </span>
-                  ))}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+            </li>
+          ))}
+        </ul>
       </Section>
 
-      {/* JOURNEY */}
+      {/* JOURNEY: pins to the screen; scrolling walks through the steps */}
       <Section
         className="bg-gradient-to-b from-white/70 to-transparent"
         eyebrow="See every screen"
         title="From a few questions to a board that talks"
-        sub="This is exactly what you'll see, step by step. Tap a step to look closer."
+        sub="This is exactly what you'll see. Keep scrolling to move through each screen, or tap a step."
+        reveal={false}
       >
         <Journey />
       </Section>
 
       {/* TWO BOARDS */}
       <Section eyebrow="Built for how children learn" title="Two boards, one child" sub="Core words like “I”, “want” and “stop” stay in the same place on both, so muscle memory works.">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {[
             {
               e: "⭐",
@@ -215,13 +189,6 @@ export default function Home() {
               bg: "#eaf1ff",
               edge: "#b8cbf2",
             },
-            {
-              e: "🔒",
-              t: "A child lock",
-              d: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. Parents exit by holding the lock for 2 seconds.",
-              bg: "var(--accent-soft)",
-              edge: "#9ed6ca",
-            },
           ].map((c) => (
             <div key={c.t} className="rounded-[2rem] border-2 p-6 transition-transform duration-300 hover:-translate-y-1" style={{ background: c.bg, borderColor: c.edge, boxShadow: `0 6px 0 ${c.edge}` }}>
               <div className="grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-white/70 text-3xl shadow-[0_4px_0_rgb(0_0_0/0.08)]">{c.e}</div>
@@ -230,47 +197,25 @@ export default function Home() {
             </div>
           ))}
         </div>
+        <div className="mt-5 flex flex-col items-start gap-3 rounded-[1.5rem] border-2 border-[#9ed6ca] bg-[var(--accent-soft)] px-5 py-4 sm:flex-row sm:items-center">
+          <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border-2 border-white bg-white/70 text-2xl shadow-[0_3px_0_rgb(0_0_0/0.08)]">
+            🔒
+          </span>
+          <p className="leading-relaxed text-[#3c3a48]">
+            <strong className="text-[var(--ink)]">Either board, safely in their hands.</strong> “Give to Leo” goes full-screen and hides every menu; the back button is blocked. Parents exit by holding the lock for 2 seconds.
+          </p>
+        </div>
       </Section>
 
-      {/* QLOO */}
+      {/* UNDER THE HOOD: the architecture, stage by stage as you scroll */}
       <Section
         className="bg-white/60"
-        eyebrow="Why Qloo"
-        title="What an AI alone gets wrong, and Qloo gets right"
-        sub="A chatbot can guess “kids like chocolate”. It can't know the playground 10 minutes from this child's home, or which songs he and his grandma would both love."
+        eyebrow="Under the hood"
+        title="How HomeTiles uses Qloo"
+        sub="Follow one board from a parent's form to a child's hand. Scroll, and each stage switches on."
+        reveal={false}
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card p-5 lg:col-span-2">
-            <div aria-hidden className="mb-4 grid h-28 grid-cols-8 gap-1 rounded-2xl bg-[var(--surface-2)] p-2">
-              {Array.from({ length: 24 }, (_, k) => {
-                const v = [0.1, 0.2, 0.15, 0.4, 0.25, 0.1, 0.05, 0.1, 0.2, 0.6, 0.85, 0.5, 0.3, 0.15, 0.1, 0.2, 0.1, 0.35, 0.7, 1, 0.55, 0.2, 0.1, 0.05][k];
-                return <span key={k} className="relative rounded-md" style={{ background: `rgb(226 87 43 / ${v})` }}>{k === 19 && <span className="absolute inset-0 grid place-items-center text-sm">🏠</span>}</span>;
-              })}
-            </div>
-            <h3 className="text-xl font-extrabold">📍 Places near home</h3>
-            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">A taste heatmap finds where this child&apos;s kind of taste clusters near home, then the real places inside those hot-spots.</p>
-          </div>
-          <div className="card p-5">
-            <div aria-hidden className="relative mb-4 h-28">
-              <span className="absolute left-4 top-3 h-20 w-20 rounded-full bg-[var(--brand)]/30" />
-              <span className="absolute left-14 top-3 h-20 w-20 rounded-full bg-[var(--grape)]/30" />
-              <span className="absolute left-[3.4rem] top-10 text-xl">🎵</span>
-              <span className="absolute left-6 top-9 text-lg">👦</span>
-              <span className="absolute left-24 top-9 text-lg">👵</span>
-            </div>
-            <h3 className="text-xl font-extrabold">🤝 Shared with grandparents</h3>
-            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Comparing the child&apos;s tastes with a grandparent&apos;s finds songs and films they&apos;d both enjoy.</p>
-          </div>
-          <div className="card p-5">
-            <div aria-hidden className="mb-4 flex h-28 items-end gap-2 rounded-2xl bg-[var(--surface-2)] p-3">
-              {[30, 52, 41, 68, 88].map((h, k) => (
-                <span key={k} className="flex-1 rounded-t-lg bg-[var(--accent)]" style={{ height: `${h}%`, opacity: 0.4 + k * 0.15 }} />
-              ))}
-            </div>
-            <h3 className="text-xl font-extrabold">📈 What&apos;s new</h3>
-            <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">Trending data adds the rising show everyone at school is talking about, so the child can join in.</p>
-          </div>
-        </div>
+        <Architecture />
       </Section>
 
       {/* WHY */}

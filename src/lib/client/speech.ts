@@ -1,17 +1,48 @@
 "use client";
 // Web Speech API text-to-speech (FR-302). With no voice for the language it says the English text instead.
+// Voices differ by device, so each language picks the gentlest one it can find: a natural / neural female
+// voice when there is one (Edge's "Ana" child voice for English), never a known male voice if avoidable.
 
 import { LANGUAGES, type Lang } from "../i18n";
 
 const BCP47 = Object.fromEntries(Object.entries(LANGUAGES).map(([k, v]) => [k, [...v.speech]])) as Record<Lang, string[]>;
 
+const NATURAL = /natural|neural|online|google|premium|enhanced/i;
+const FEMALE: Record<Lang, RegExp> = {
+  en: /\b(ana|aria|jenny|neerja|sonia|libby|emma|samantha|karen|moira|tessa|serena|zira|hazel|susan|fiona|veena|kate|female)\b|google us english/i,
+  hi: /swara|kalpana|lekha|google हिन्दी/i,
+  es: /dalia|elvira|paloma|paulina|m[oó]nica|helena|laura|sabina|google espa[nñ]ol/i,
+};
+const MALE = /\b(ravi|hemant|madhur|prabhat|david|mark|guy|ryan|rishi|jorge|pablo|diego|[aá]lvaro|ra[uú]l|daniel|george|james|thomas|alex|fred|arthur|aaron|male)\b/i;
+
+function score(v: SpeechSynthesisVoice, lang: Lang): number {
+  const tags = BCP47[lang];
+  const at = tags.findIndex((t) => t.toLowerCase() === v.lang.toLowerCase());
+  let s = at >= 0 ? 4 + (tags.length - at) * 0.5 : 2;
+  if (FEMALE[lang].test(v.name)) s += 6;
+  if (lang === "en" && /\bana\b/i.test(v.name)) s += 3; // Edge's young, soft voice
+  if (NATURAL.test(v.name)) s += 3;
+  if (MALE.test(v.name)) s -= 8;
+  return s;
+}
+
+const chosen = new Map<Lang, SpeechSynthesisVoice | undefined>();
+let listening = false;
+
 function voiceFor(lang: Lang): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis?.getVoices() ?? [];
-  for (const tag of BCP47[lang]) {
-    const v = voices.find((x) => x.lang.toLowerCase() === tag.toLowerCase()) ?? voices.find((x) => x.lang.toLowerCase().startsWith(tag.slice(0, 2)));
-    if (v) return v;
+  const synth = window.speechSynthesis;
+  if (!synth) return undefined;
+  if (!listening) {
+    listening = true;
+    // Chrome and Edge load voices late; re-pick once they arrive.
+    synth.addEventListener?.("voiceschanged", () => chosen.clear());
   }
-  return undefined;
+  if (chosen.has(lang)) return chosen.get(lang);
+  const prefix = BCP47[lang][0].slice(0, 2).toLowerCase();
+  const voices = synth.getVoices().filter((v) => v.lang.toLowerCase().replace("_", "-").startsWith(prefix));
+  const best = voices.sort((a, b) => score(b, lang) - score(a, lang))[0];
+  if (voices.length) chosen.set(lang, best);
+  return best;
 }
 
 const EMOJI = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu;
@@ -35,7 +66,9 @@ export function speak(text: string, lang: Lang, english?: string) {
   } else {
     u.lang = BCP47[lang][0];
   }
-  u.rate = 0.95;
+  // A little higher and slower than the default: calmer and easier to follow.
+  u.pitch = 1.1;
+  u.rate = 0.92;
   synth.speak(u);
 }
 
