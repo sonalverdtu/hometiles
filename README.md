@@ -8,6 +8,12 @@ Non-speaking people (autistic children and adults, people with cerebral palsy, s
 
 **HomeTiles is an agent that builds a board around one real child.** It uses Qloo's taste graph to find their real snacks, places near home, favourite shows and the things they share with their family, in their family's language. The board speaks, learns from what gets tapped on the device, and suggests weekly updates that a parent approves.
 
+| The agent researching with Qloo | Every tile explains itself | Child mode on a phone |
+|---|---|---|
+| ![The agent researching Leo's board with Qloo](docs/screenshots/03-agent-researching-with-qloo.png) | ![Why this tile: Qloo evidence](docs/screenshots/05-why-this-tile-qloo-evidence.png) | ![Child mode on a phone](docs/screenshots/08-phone-child-mode.png) |
+
+More in [`docs/screenshots`](docs/screenshots).
+
 ## Try it (about a minute)
 1. Open the live demo and pick **Leo** (8, Camden, London), **Aarav** (Delhi, Hindi) or **Sofía** (Los Angeles, Spanish). These are fictional children.
 2. Watch the agent research the child with Qloo: each step and each Qloo call is shown live.

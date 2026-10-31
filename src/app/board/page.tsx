@@ -372,7 +372,7 @@ export default function BoardPage() {
               <button type="button" className="btn" onClick={simulateWeek}>⏩ Simulate a week</button>
               <button type="button" className="btn btn-primary" onClick={runRefresh}>🔄 Weekly refresh</button>
             </div>
-            <p className="mt-2 text-xs text-[var(--muted)]">Taps never leave this device. The refresh sends only anonymous Qloo IDs and counts, and you approve every change.</p>
+            <p className="mt-2 text-xs text-[var(--muted)]">Taps never leave this device. The refresh sends tile names, Qloo IDs and tap counts with the city and age (never names or sentences), and you approve every change.</p>
           </div>
 
           <div className="card p-5">
