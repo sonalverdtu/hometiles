@@ -12,6 +12,7 @@ import { BigTile } from "@/components/kid/BigTile";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { pick } from "@/lib/board/vocab";
 import { LANGUAGES, UI } from "@/lib/i18n";
+import { ConfettiLayer, makeBurst, type Burst } from "./Confetti";
 
 type Step = { tap: string } | { say: true } | { clear: true };
 
@@ -159,6 +160,8 @@ export function HeroDemo() {
   const [pressed, setPressed] = useState<string | null>(null);
   const [hand, setHand] = useState<{ x: number; y: number; show: boolean; tap: number }>({ x: 200, y: 520, show: false, tap: 0 });
   const [soundOn, setSoundOn] = useState(false);
+  const [bursts, setBursts] = useState<Burst[]>([]);
+  const wrap = useRef<HTMLDivElement>(null);
   const screen = useRef<HTMLDivElement>(null);
   const targets = useRef<Record<string, HTMLElement | null>>({});
   const sound = useRef(false);
@@ -179,6 +182,16 @@ export function HeroDemo() {
     setSpeaking(true);
     if (sound.current) speak(text.text, l);
     setTimeout(() => setSpeaking(false), 2200);
+    // Confetti from the Speak button (screen positions, so the 3D tilt is accounted for).
+    const btn = targets.current.say;
+    const box = wrap.current;
+    if (btn && box && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const b = btn.getBoundingClientRect();
+      const w = box.getBoundingClientRect();
+      const burst = makeBurst(b.left + b.width / 2 - w.left, b.top + b.height / 2 - w.top);
+      setBursts((xs) => [...xs.slice(-2), burst]);
+      setTimeout(() => setBursts((xs) => xs.filter((x) => x.id !== burst.id)), 1900);
+    }
   }, []);
 
   // A real tap by the visitor: speak it, pause the robot hand for a while.
@@ -274,7 +287,8 @@ export function HeroDemo() {
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[380px]">
+    <div ref={wrap} className="relative mx-auto w-full max-w-[380px]">
+      <ConfettiLayer bursts={bursts} />
       {/* Floating 3D tiles from other children's worlds. */}
       {FLOATERS.map((f) => (
         <div

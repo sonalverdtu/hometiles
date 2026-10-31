@@ -107,18 +107,27 @@ export function Architecture() {
   const root = useRef<HTMLOListElement>(null);
 
   // Scroll drives everything without re-rendering: stages get data-on, the spine gets --fill.
+  // Forward only: a stage that has switched on stays on and the spine only grows, so small wheel or
+  // trackpad nudges never flicker stages off and on. Scrolling back above the whole section resets it.
   useEffect(() => {
     const el = root.current;
     if (!el || reduced) return;
     el.classList.add("arch-armed");
+    let reached = 0;
     const update = () => {
       const vh = window.innerHeight;
       const r = el.getBoundingClientRect();
-      const fill = Math.min(1, Math.max(0, (vh * 0.7 - r.top) / r.height));
-      el.style.setProperty("--fill", String(fill));
-      el.querySelectorAll<HTMLElement>("[data-stage]").forEach((s) => {
-        s.dataset.on = String(s.getBoundingClientRect().top < vh * 0.8);
-      });
+      const stages = el.querySelectorAll<HTMLElement>("[data-stage]");
+      if (r.top > vh) {
+        reached = 0;
+        stages.forEach((s) => (s.dataset.on = "false"));
+      } else {
+        reached = Math.max(reached, Math.min(1, Math.max(0, (vh * 0.65 - r.top) / r.height)));
+        stages.forEach((s) => {
+          if (s.dataset.on !== "true" && s.getBoundingClientRect().top < vh * 0.72) s.dataset.on = "true";
+        });
+      }
+      el.style.setProperty("--fill", String(reached));
     };
     const { schedule, cancel } = frameThrottle(update);
     schedule();
