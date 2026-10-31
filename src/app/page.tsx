@@ -82,9 +82,8 @@ export default function Home() {
               A talking picture board that <span className="text-gradient">sounds like home.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#3c3a48]">
-              HomeTiles helps children who can&apos;t speak talk by tapping pictures, and the board says the words out loud. Not everyone around them knows sign language, but{" "}
-              <strong>everyone understands a voice</strong>. Most boards only know <em>&ldquo;cookie&rdquo;</em> and <em>&ldquo;park&rdquo;</em>. HomeTiles builds one in about a minute with the{" "}
-              <strong>snacks, shows, places and family a child actually knows</strong>, in English, Hindi or Spanish.
+              <strong>Every child deserves to say what they love.</strong> HomeTiles gives non-speaking children a talking picture board built from their own snacks, shows, places and family, by
+              an AI agent using Qloo.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/create" className="btn btn-primary btn-lg">
@@ -136,14 +135,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PROBLEM */}
-      <Section
-        eyebrow="AI alone vs. AI + Qloo"
-        title="Same child. Two very different boards."
-        sub="Give an AI alone a child's form and it guesses. Give it Qloo's taste graph and it finds his world: shows his favourites' fans love, snacks kids near him like, real places near home."
-      >
+      {/* PROBLEM: pins to the screen; scrolling flips each AI guess into the Qloo pick (heading inside the frame) */}
+      <section className="px-4 pb-14 pt-6">
         <AiVsQloo />
-        <ul className="mx-auto mt-6 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[var(--muted)]" aria-label="Other demo children, in their family's language">
+        <ul className="mx-auto mt-2 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-[var(--muted)]" aria-label="Other demo children, in their family's language">
           {ELSEWHERE.map((x) => (
             <li key={x.who} className="flex flex-wrap items-center gap-1.5">
               <span className="font-semibold">
@@ -158,18 +153,18 @@ export default function Home() {
             </li>
           ))}
         </ul>
-      </Section>
+      </section>
 
-      {/* JOURNEY: pins to the screen; scrolling walks through the steps */}
-      <Section
-        className="bg-gradient-to-b from-white/70 to-transparent"
-        eyebrow="See every screen"
-        title="From a few questions to a board that talks"
-        sub="This is exactly what you'll see. Keep scrolling to move through each screen, or tap a step."
-        reveal={false}
-      >
-        <Journey />
-      </Section>
+      {/* JOURNEY: pins to the screen; scrolling walks through the steps (heading inside the frame) */}
+      <section className="bg-gradient-to-b from-white/70 to-transparent px-4 py-6">
+        <Journey
+          head={{
+            eyebrow: "See every screen",
+            title: "From a few questions to a board that talks",
+            sub: "This is exactly what you'll see. Keep scrolling to move through each screen, or tap a step.",
+          }}
+        />
+      </section>
 
       {/* TWO BOARDS */}
       <Section eyebrow="Built for how children learn" title="Two boards, one child" sub="Core words like “I”, “want” and “stop” stay in the same place on both, so muscle memory works.">
