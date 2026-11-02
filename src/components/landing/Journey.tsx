@@ -497,6 +497,7 @@ function JourneyScroll({ head }: { head: Head }) {
   );
 }
 
-export function Journey({ head }: { head: Head }) {
-  return useReducedMotion() ? <JourneyClick head={head} /> : <JourneyScroll head={head} />;
+/** `click`: step through with buttons instead of pinning to the screen (used where it sits folded away). */
+export function Journey({ head, click = false }: { head: Head; click?: boolean }) {
+  return useReducedMotion() || click ? <JourneyClick head={head} /> : <JourneyScroll head={head} />;
 }

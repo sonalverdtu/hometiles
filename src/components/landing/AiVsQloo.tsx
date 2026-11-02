@@ -172,7 +172,7 @@ function AiVsQlooScroll() {
   };
 
   return (
-    <div ref={outer} className="relative" style={{ height: `${100 + SEGMENTS * 40}vh` }} data-ai-vs-qloo={shown}>
+    <div ref={outer} className="relative" style={{ height: `${100 + SEGMENTS * 22}vh` }} data-ai-vs-qloo={shown}>
       <div className="sticky top-16 flex h-[calc(100svh-4rem)] flex-col justify-center py-3">
         <PinHead {...HEAD} />
         <Layout shown={shown} onPick={pick} hint />

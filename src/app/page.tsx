@@ -64,6 +64,27 @@ function Section({
   );
 }
 
+/** A section that stays folded until it's tapped open. */
+function Fold({ icon, title, sub, children }: { icon: string; title: string; sub: string; children: ReactNode }) {
+  return (
+    <details className="group rounded-[2rem] border-2 border-[var(--line)] bg-white/70 open:bg-white">
+      <summary className="flex cursor-pointer list-none items-center gap-4 p-5 [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--surface-2)] text-2xl">
+          {icon}
+        </span>
+        <span className="min-w-0">
+          <span className="font-display block text-xl font-extrabold sm:text-2xl">{title}</span>
+          <span className="text-sm text-[var(--muted)]">{sub}</span>
+        </span>
+        <span aria-hidden className="ml-auto text-2xl transition-transform group-open:rotate-180">
+          ⌄
+        </span>
+      </summary>
+      <div className="px-3 pb-5 sm:px-5">{children}</div>
+    </details>
+  );
+}
+
 export default function Home() {
   return (
     <div className="overflow-x-clip">
@@ -113,8 +134,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* WHY WE MADE THIS */}
-      <Story />
+      {/* TRY: right under the hero, so a visitor (or judge) is one tap from a live build */}
+      <Section id="try" eyebrow="Try it now" title="Build a board in about a minute" sub="Watch the agent research a demo child live, in English, Hindi or Spanish. Or make one for your own child.">
+        <div className="mx-auto max-w-5xl">
+          <PersonaButtons />
+          <Link
+            href="/create"
+            className="group mt-4 flex items-center gap-4 rounded-[2rem] border-2 border-dashed border-[var(--brand)] bg-white/60 p-5 transition-colors hover:bg-[var(--brand-soft)]"
+          >
+            <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] text-3xl text-white shadow-[0_4px_0_var(--brand-edge)] transition-transform group-hover:rotate-90">
+              ＋
+            </span>
+            <span>
+              <span className="font-display block text-2xl font-extrabold">Make a board for your own child</span>
+              <span className="text-sm text-[var(--muted)]">Three quick steps. Names never go to the AI or to Qloo; only favourites, the city and age do.</span>
+            </span>
+            <span aria-hidden className="ml-auto hidden text-2xl transition-transform group-hover:translate-x-1 sm:block">
+              →
+            </span>
+          </Link>
+          <p className="mt-4 text-center text-xs text-[var(--muted)]">Demo children are fictional. HomeTiles supports speech-language therapists; it doesn&apos;t replace them.</p>
+        </div>
+      </Section>
 
       {/* WORLD MARQUEE */}
       <section aria-label="Words from children's own worlds" className="border-y border-[var(--line)] bg-white/60 py-5">
@@ -155,16 +196,8 @@ export default function Home() {
         </ul>
       </section>
 
-      {/* JOURNEY: pins to the screen; scrolling walks through the steps (heading inside the frame) */}
-      <section className="bg-gradient-to-b from-white/70 to-transparent px-4 py-6">
-        <Journey
-          head={{
-            eyebrow: "See every screen",
-            title: "From a few questions to a board that talks",
-            sub: "This is exactly what you'll see. Keep scrolling to move through each screen, or tap a step.",
-          }}
-        />
-      </section>
+      {/* WHY WE MADE THIS */}
+      <Story />
 
       {/* TWO BOARDS */}
       <Section eyebrow="Built for how children learn" title="Two boards, one child" sub="Core words like “I”, “want” and “stop” stay in the same place on both, so muscle memory works.">
@@ -202,17 +235,6 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* UNDER THE HOOD: the architecture, stage by stage as you scroll */}
-      <Section
-        className="bg-white/60"
-        eyebrow="Under the hood"
-        title="How HomeTiles uses Qloo"
-        sub="Follow one board from a parent's form to a child's hand. Scroll, and each stage switches on."
-        reveal={false}
-      >
-        <Architecture />
-      </Section>
-
       {/* WHY */}
       <section className="bg-[#1d1b26] px-4 py-20 text-white">
         <div className="reveal mx-auto max-w-4xl text-center">
@@ -232,26 +254,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRY */}
-      <Section id="try" eyebrow="Try it now" title="Build a board in about a minute" sub="Watch the agent research a demo child live, in English, Hindi or Spanish. Or make one for your own child.">
-        <div className="mx-auto max-w-5xl">
-          <PersonaButtons />
-          <Link
-            href="/create"
-            className="group mt-4 flex items-center gap-4 rounded-[2rem] border-2 border-dashed border-[var(--brand)] bg-white/60 p-5 transition-colors hover:bg-[var(--brand-soft)]"
-          >
-            <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] text-3xl text-white shadow-[0_4px_0_var(--brand-edge)] transition-transform group-hover:rotate-90">
-              ＋
-            </span>
-            <span>
-              <span className="font-display block text-2xl font-extrabold">Make a board for your own child</span>
-              <span className="text-sm text-[var(--muted)]">Three quick steps. Names never go to the AI or to Qloo; only favourites, the city and age do.</span>
-            </span>
-            <span aria-hidden className="ml-auto hidden text-2xl transition-transform group-hover:translate-x-1 sm:block">
-              →
-            </span>
-          </Link>
-          <p className="mt-4 text-center text-xs text-[var(--muted)]">Demo children are fictional. HomeTiles supports speech-language therapists; it doesn&apos;t replace them.</p>
+      {/* THE DETAILS: folded, so the page stays short; open on a tap */}
+      <Section id="details" eyebrow="Want the details?" title="Every screen, and every Qloo call" sub="Open either one. The live demo above shows the same thing for real.">
+        <div className="mx-auto grid max-w-6xl gap-4">
+          <Fold icon="📱" title="See every screen" sub="From a few questions to a board that talks, step by step.">
+            <Journey click head={{ eyebrow: "See every screen", title: "From a few questions to a board that talks", sub: "This is exactly what you'll see. Tap a step." }} />
+          </Fold>
+          <Fold icon="🔎" title="How HomeTiles uses Qloo" sub="One board from a parent's form to a child's hand: which Qloo APIs, and why.">
+            <div className="pt-6">
+              <Architecture />
+            </div>
+          </Fold>
         </div>
       </Section>
     </div>
