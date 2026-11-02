@@ -2,7 +2,7 @@
 
 // "AI alone vs. AI + Qloo": the same child's board, first as an AI's generic guesses, then tile by tile
 // as the Qloo-grounded HomeTiles board, with what Qloo added for each swap. Pairs come from a live
-// build for Leo (Camden, London); the AI-alone words are typical generic guesses.
+// build for Freddie (Camden, London); the AI-alone words are typical generic guesses.
 // The section pins to the screen and each bit of scrolling flips one more tile.
 
 import { useEffect, useRef, useState } from "react";
@@ -15,13 +15,13 @@ const PAIRS: { from: [string, string]; to: [string, string]; cat: string; sub?: 
   { from: ["📺", "cartoon"], to: ["🐶", "Pup Academy"], cat: "favourites", why: "fans of Bluey love it too", via: "/v2/insights" },
   { from: ["🍦", "ice cream"], to: ["🍦", "Cornetto"], cat: "food", why: "popular with kids around Camden", via: "/v2/insights" },
   { from: ["☕", "café"], to: ["🥞", "Crêpes à la carte"], cat: "places", sub: "620 m from home", why: "inside a taste hot-spot near home", via: "urn:heatmap" },
-  { from: ["🎵", "music"], to: ["🎵", "Beatles songs"], cat: "together", sub: "with Grandma", why: "something Leo and Grandma can share", via: "/v2/analysis/compare" },
+  { from: ["🎵", "music"], to: ["🎵", "Beatles songs"], cat: "together", sub: "with Grandma", why: "something Freddie and Grandma can share", via: "/v2/analysis/compare" },
 ];
 
 const HEAD = {
   eyebrow: "AI alone vs. AI + Qloo",
   title: "Same child. Two very different boards.",
-  sub: "An AI alone can only guess from a child's form. Scroll, and each guess becomes the real thing Qloo finds for Leo.",
+  sub: "An AI alone can only guess from a child's form. Scroll, and each guess becomes the real thing Qloo finds for Freddie.",
 };
 
 // Scroll stretch: one segment showing the AI-alone board, one per flip, one to hold the finished board.
@@ -52,7 +52,7 @@ function Board({ shown, onPick }: { shown: number; onPick: (qloo: boolean) => vo
             );
           })}
         </div>
-        <p className="ml-auto text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Leo, 8 · Camden, London</p>
+        <p className="ml-auto text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Freddie, 8 · Camden, London</p>
       </div>
 
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">

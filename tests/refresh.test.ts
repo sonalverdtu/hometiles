@@ -13,7 +13,7 @@ const post = async (body: unknown) => {
   return { status: res.status, json: await res.json() };
 };
 
-const anon = { ...PERSONAS.leo, id: "anon", displayName: "Child", family: [] };
+const anon = { ...PERSONAS.freddie, id: "anon", displayName: "Child", family: [] };
 const tiles = [{ id: "t-x", folder: "food", qlooId: "x", type: "urn:entity:brand", label: "Snack", locked: false }];
 
 describe("weekly refresh API", () => {

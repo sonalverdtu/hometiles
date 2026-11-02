@@ -4,10 +4,10 @@
 import type { Profile } from "./board/types";
 
 export const PERSONAS: Record<string, Profile> = {
-  // English is the default language; Leo is the first demo child.
-  leo: {
-    id: "persona-leo",
-    displayName: "Leo",
+  // English is the default language; Freddie is the first demo child.
+  freddie: {
+    id: "persona-freddie",
+    displayName: "Freddie",
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",
@@ -34,9 +34,9 @@ export const PERSONAS: Record<string, Profile> = {
       },
     ],
   },
-  aarav: {
-    id: "persona-aarav",
-    displayName: "Aarav",
+  kabir: {
+    id: "persona-kabir",
+    displayName: "Kabir",
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",
@@ -66,9 +66,9 @@ export const PERSONAS: Record<string, Profile> = {
       { name: "Riya", relation: "sister", loves: [] },
     ],
   },
-  sofia: {
-    id: "persona-sofia",
-    displayName: "Sofía",
+  rosa: {
+    id: "persona-rosa",
+    displayName: "Rosa",
     ageBand: "24_and_younger",
     isChild: true,
     ageGroup: "child",

@@ -83,7 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </div>
             <div>
               <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">Good to know</p>
-              <p>Leo, Aarav and Sofía are made up. HomeTiles works alongside speech therapists, not instead of them.</p>
+              <p>Freddie, Kabir and Rosa are made up. HomeTiles works alongside speech therapists, not instead of them.</p>
             </div>
             <div>
               <p className="mb-1 font-bold uppercase tracking-wide text-[var(--ink)]">The code</p>

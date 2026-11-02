@@ -20,7 +20,7 @@ async function build(id: keyof typeof PERSONAS, patch: Partial<(typeof PERSONAS)
 
 describe("board pipeline (mock)", () => {
   it("uses the temperament as Qloo tags and keeps every safety word", async () => {
-    const { board, tools } = await build("leo");
+    const { board, tools } = await build("freddie");
     expect(tools).toContain("match_temperament");
     const reasons = Object.values(board.tiles).flatMap((t) => t.reasons.map((r) => r.kind));
     expect(reasons).toContain("temperament");
@@ -28,28 +28,28 @@ describe("board pipeline (mock)", () => {
   });
 
   it("puts every favourite the family typed on the board, locked", async () => {
-    const { board } = await build("leo");
+    const { board } = await build("freddie");
     const names = Object.values(board.tiles).filter((t) => t.locked && t.kind === "rotating").map((t) => t.entity?.name);
-    for (const love of PERSONAS.leo.loves) expect(names).toContain(love.name);
+    for (const love of PERSONAS.freddie.loves) expect(names).toContain(love.name);
   });
 
   it("keeps a favourite Qloo doesn't know, without a Qloo id", async () => {
-    const { board } = await build("leo", { loves: [...PERSONAS.leo.loves, { name: "Grandad's allotment", type: "urn:entity:place" }] });
+    const { board } = await build("freddie", { loves: [...PERSONAS.freddie.loves, { name: "Grandad's allotment", type: "urn:entity:place" }] });
     const t = Object.values(board.tiles).find((x) => x.entity?.name === "Grandad's allotment");
     expect(t?.category).toBe("places");
     expect(t?.entity?.qlooId).toBeUndefined();
   });
 
   it("keeps the family's dislikes off the board", async () => {
-    const before = await build("leo");
+    const before = await build("freddie");
     const names = (b: typeof before.board) => Object.values(b.tiles).map((t) => t.entity?.name ?? "");
     expect(names(before.board).some((n) => /peppa/i.test(n))).toBe(true);
-    const { board } = await build("leo", { dislikes: ["Peppa Pig"] });
+    const { board } = await build("freddie", { dislikes: ["Peppa Pig"] });
     expect(names(board).some((n) => /peppa/i.test(n))).toBe(false);
   });
 
   it("skips the temperament step when none is given", async () => {
-    const { tools } = await build("leo", { temperament: undefined });
+    const { tools } = await build("freddie", { temperament: undefined });
     expect(tools).not.toContain("match_temperament");
   });
 

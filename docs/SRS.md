@@ -113,7 +113,7 @@ Priority: **P0** = must ship, **P1** = needed to impress judges, **P2** = if tim
 | FR-101 | Create a profile: display name, age (mapped to a Qloo age band, `24_and_younger` … `55_and_older`, and an age group: under 8, 8–12, teen 13–17, adult), city or neighbourhood, optional home point (lat/lon), primary language (English by default; en, hi, es) and an optional second language | P0 | The form validates and the profile is saved on the device |
 | FR-102 | Enter 3–8 "loves" (shows, games, artists, foods/places, brands). Each is resolved to a Qloo entity via `/search` with autocomplete | P0 | Each love shows a match (name, type, image) or "not found, keep as free text" |
 | FR-103 | Add family members (name, relation) and, optionally, a family member's loves (for FR-503) | P1 | People tiles are created and locked |
-| FR-104 | One-click **demo personas**: Leo (8, Camden, London, English) first, then Aarav (Delhi, Hindi + English) and Sofía (Boyle Heights, Los Angeles, Spanish + English), so judges can try it instantly | P0 | One click fills the intake and generates a board |
+| FR-104 | One-click **demo personas**: Freddie (8, Camden, London, English) first, then Kabir (Delhi, Hindi + English) and Rosa (Boyle Heights, Los Angeles, Spanish + English), so judges can try it instantly | P0 | One click fills the intake and generates a board |
 | FR-105 | **Temperament** (optional): "What is <name> like?", up to 2 of energetic, calm, shy, curious, sporty, creative, funny. Each maps to Qloo descriptor tags checked against live Qloo. Used for TV shows and films only (`match_temperament`) | P1 | Temperament picks carry a "temperament" reason naming the matched Qloo tags; with no temperament the step is skipped (unit test) |
 
 ### 3.2 Agentic board generation (FR-2xx)
@@ -274,7 +274,7 @@ hometiles/
 ├─ scripts/                   qloo-check.mts (FR-705) · smoke.mts · live-check.ts (demo board against live Qloo)
 ├─ src/
 │  ├─ app/
-│  │  ├─ page.tsx             landing + demo personas (Leo first)
+│  │  ├─ page.tsx             landing + demo personas (Freddie first)
 │  │  ├─ create/page.tsx      intake wizard
 │  │  ├─ generate/page.tsx    streamed agent steps
 │  │  ├─ board/page.tsx       parent view + child mode (board loaded from local store)
@@ -402,7 +402,7 @@ PICTOGRAMS=on            # off → no ARASAAC lookups
 |---|---|---|
 | Qloo key arrives late | Can't demo live | Mock mode (C5), Discord request, one env switch |
 | Demographics or heatmap blocked on hackathon keys | Fewer advanced features | Fallbacks (FR-703); the trace shows them honestly |
-| Thin India coverage in Qloo | A weak Delhi demo | Leo (London) is the first demo child, with Los Angeles and Delhi as the others; detect coverage with `qloo:check` and `live-check.ts` |
+| Thin India coverage in Qloo | A weak Delhi demo | Freddie (London) is the first demo child, with Los Angeles and Delhi as the others; detect coverage with `qloo:check` and `live-check.ts` |
 | Qloo returns adult content for a child (energy drinks, M-rated games, adult sitcoms rated TV-PG, all seen in testing) | An unsafe board | Our own age screen on every result (FR-211) |
 | LLM latency or cost | Slow demo | Effort `low`; parallel tools; cache; scripted fallback |
 | No voice for the board's language on a device | Silent tiles | Say the English text with an English voice; label stays visible |
@@ -410,8 +410,8 @@ PICTOGRAMS=on            # off → no ARASAAC lookups
 | Judges say "an LLM could do this" | Lower idea score | The Without Qloo toggle plus trace evidence |
 
 ## 9. Acceptance and demo script (judges, 60 seconds)
-1. Landing → **"Try Leo (London)"**. Agent steps stream; the board appears.
-2. Tap "want" + a snack tile. It says "I want …". For Hindi, try Aarav (Delhi): "चाहिए" + a snack says "मुझे … चाहिए".
+1. Landing → **"Try Freddie (London)"**. Agent steps stream; the board appears.
+2. Tap "want" + a snack tile. It says "I want …". For Hindi, try Kabir (Delhi): "चाहिए" + a snack says "मुझे … चाहिए".
 3. Open **"Why this tile?"** to see the Qloo affinity, distance and source call.
 4. Toggle **Without Qloo**: the generic board vs ours, with the diff highlighted.
 5. **Talk Together** folder: tiles shared with Grandma (compare).

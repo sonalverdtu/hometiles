@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { PERSONAS } from "@/lib/personas";
 import { setPendingProfile } from "@/lib/client/store";
 
-// English (Leo) first: it's the default. Aarav and Sofía show the same board in Hindi and Spanish.
+// English (Freddie) first: it's the default. Kabir and Rosa show the same board in Hindi and Spanish.
 const CARDS = [
-  { key: "leo", face: "👦", name: "Leo", sub: "8 · Camden, London", langs: "English", loves: ["📺 Bluey", "🎮 Minecraft", "🧸 Paddington", "🍫 Cadbury"], tint: "var(--accent-soft)" },
-  { key: "aarav", face: "👦🏽", name: "Aarav", sub: "9 · Rajouri Garden, Delhi", langs: "हिंदी (Hindi) + English", loves: ["📺 Chhota Bheem", "🎮 Minecraft", "🎵 Arijit Singh", "🍪 Parle-G"], tint: "var(--brand-soft)" },
-  { key: "sofia", face: "👧🏽", name: "Sofía", sub: "12 · Boyle Heights, LA", langs: "Español (Spanish) + English", loves: ["🎬 Encanto", "🎤 Karol G", "🎮 Roblox", "🌶️ Takis"], tint: "var(--grape-soft)" },
+  { key: "freddie", face: "👦", name: "Freddie", sub: "8 · Camden, London", langs: "English", loves: ["📺 Bluey", "🎮 Minecraft", "🧸 Paddington", "🍫 Cadbury"], tint: "var(--accent-soft)" },
+  { key: "kabir", face: "👦🏽", name: "Kabir", sub: "9 · Rajouri Garden, Delhi", langs: "हिंदी (Hindi) + English", loves: ["📺 Chhota Bheem", "🎮 Minecraft", "🎵 Arijit Singh", "🍪 Parle-G"], tint: "var(--brand-soft)" },
+  { key: "rosa", face: "👧🏽", name: "Rosa", sub: "12 · Boyle Heights, LA", langs: "Español (Spanish) + English", loves: ["🎬 Encanto", "🎤 Karol G", "🎮 Roblox", "🌶️ Takis"], tint: "var(--grape-soft)" },
 ] as const;
 
 export function PersonaButtons() {

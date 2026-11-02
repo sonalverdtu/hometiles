@@ -10,8 +10,8 @@ import { LANGUAGES, type Lang } from "@/lib/i18n";
 
 // The same idea for other demo children, in their family's language.
 const ELSEWHERE: { who: string; lang: Lang; words: [string, string][] }[] = [
-  { who: "Aarav in Delhi", lang: "hi", words: [["🍪", "पारले-जी"], ["👴", "दादू"]] },
-  { who: "Sofía in Los Angeles", lang: "es", words: [["🌶️", "Takis"], ["👵", "Abuela"]] },
+  { who: "Kabir in Delhi", lang: "hi", words: [["🍪", "पारले-जी"], ["👴", "दादू"]] },
+  { who: "Rosa in Los Angeles", lang: "es", words: [["🌶️", "Takis"], ["👵", "Abuela"]] },
 ];
 
 // Words from many children's worlds, scrolling under the hero. Mostly English; a few show other languages.
@@ -230,7 +230,7 @@ export default function Home() {
             🔒
           </span>
           <p className="leading-relaxed text-[#3c3a48]">
-            <strong className="text-[var(--ink)]">Either board, safely in their hands.</strong> “Give to Leo” goes full-screen and hides every menu; the back button is blocked. Parents exit by holding the lock for 2 seconds and answering a quick sum.
+            <strong className="text-[var(--ink)]">Either board, safely in their hands.</strong> “Give to Freddie” goes full-screen and hides every menu; the back button is blocked. Parents exit by holding the lock for 2 seconds and answering a quick sum.
           </p>
         </div>
       </Section>

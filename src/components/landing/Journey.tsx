@@ -29,7 +29,7 @@ function Row({ i, children }: { i: number; children: ReactNode }) {
   );
 }
 
-// Leo's board (a fictional demo child), in English and, for the one language-support step, in Hindi.
+// Freddie's board (a fictional demo child), in English and, for the one language-support step, in Hindi.
 type BoardLang = "en" | "hi";
 const BOARD: Record<
   BoardLang,
@@ -155,7 +155,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
       <div className="space-y-3 p-4">
         <Row i={0}>
           <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">Step 2 of 3</p>
-          <p className="font-display text-lg font-extrabold">What does Leo love?</p>
+          <p className="font-display text-lg font-extrabold">What does Freddie love?</p>
         </Row>
         <Row i={1}>
           <div className="flex flex-wrap gap-1.5">
@@ -195,7 +195,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
           </div>
         </Row>
         <Row i={5}>
-          <div className="btn btn-primary w-full">✨ Build Leo&apos;s board</div>
+          <div className="btn btn-primary w-full">✨ Build Freddie&apos;s board</div>
         </Row>
       </div>
     ),
@@ -207,7 +207,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
     screen: () => (
       <div className="space-y-2 p-4">
         <Row i={0}>
-          <p className="font-display text-lg font-extrabold">Building Leo&apos;s board…</p>
+          <p className="font-display text-lg font-extrabold">Building Freddie&apos;s board…</p>
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--line)]">
             <div className="h-full rounded-full bg-[var(--brand)] [animation:grow_4s_ease-out_both]" style={{ width: "100%" }} />
           </div>
@@ -217,7 +217,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
           ["🌟", "Shows and games he'd love next"],
           ["🍫", "Snacks popular in Camden"],
           ["📍", "Taste hot-spots near home"],
-          ["🤝", "Songs Leo and Grandma both love"],
+          ["🤝", "Songs Freddie and Grandma both love"],
           ["📈", "What's rising at school"],
         ].map(([e, l], k) => (
           <Row key={l} i={k + 1}>
@@ -243,7 +243,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   {
     icon: "🌍",
     title: "In your family’s language",
-    text: "English is the default. Pick Hindi or Spanish and every label, sentence and voice switches, with English underneath. Here is Leo’s same board in Hindi.",
+    text: "English is the default. Pick Hindi or Spanish and every label, sentence and voice switches, with English underneath. Here is Freddie’s same board in Hindi.",
     screen: () => <BoardScreen lang="hi" />,
   },
   {
@@ -292,7 +292,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
       <div className="space-y-2 p-4">
         <Row i={0}>
           <p className="font-display text-lg font-extrabold">Weekly refresh</p>
-          <p className="text-xs text-[var(--muted)]">Leo tapped Cadbury Buttons 14×, Bluey 9×</p>
+          <p className="text-xs text-[var(--muted)]">Freddie tapped Cadbury Buttons 14×, Bluey 9×</p>
         </Row>
         {[
           ["➕", "Add", "Pokémon", "📈 rising at school"],
@@ -323,7 +323,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   {
     icon: "🔒",
     title: "Hand it over, safely",
-    text: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds and answering a quick sum.",
+    text: "“Give to Freddie” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds and answering a quick sum.",
     screen: () => (
       <div className="grid h-full place-items-center p-6 text-center">
         <Row i={0}>

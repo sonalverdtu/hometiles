@@ -248,7 +248,7 @@ export default function CreatePage() {
                 <div className="grid gap-5">
                   <label className="grid gap-1.5 text-sm font-bold">
                     Their first name
-                    <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Leo" autoFocus />
+                    <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Freddie" autoFocus />
                     <span className="text-xs font-normal text-[var(--muted)]">🔒 Never sent to the AI, never stored on a server.</span>
                   </label>
                   <div className="grid gap-3">

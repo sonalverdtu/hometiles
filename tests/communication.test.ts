@@ -6,7 +6,7 @@ import type { Category, Profile, TapEvent } from "../src/lib/board/types";
 
 // An entertainment-heavy board, like a real one: lots of shows, toys and jokes with high taste scores.
 const profile: Profile = {
-  id: "p", displayName: "Leo", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
+  id: "p", displayName: "Freddie", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
   loves: [{ name: "Bluey", type: "urn:entity:tv_show", qlooId: "bluey" }],
   family: [{ name: "Grandma", relation: "grandmother", loves: [] }],
 };

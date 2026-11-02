@@ -2,7 +2,7 @@
 
 How the app works end to end: where every tile comes from, what the agent does with Qloo, what the child sees, and what happens to their taps. The diagrams render on GitHub.
 
-English is the default language. Hindi and Spanish are also supported, and the first demo child is Leo (8, Camden, London, English). Aarav (Delhi, Hindi + English) and Sofía (Boyle Heights, Los Angeles, Spanish + English) show the same board in other languages.
+English is the default language. Hindi and Spanish are also supported, and the first demo child is Freddie (8, Camden, London, English). Kabir (Delhi, Hindi + English) and Rosa (Boyle Heights, Los Angeles, Spanish + English) show the same board in other languages.
 
 ---
 
@@ -106,11 +106,11 @@ sequenceDiagram
     UI->>UI: save board on the device → parent view
 ```
 
-Live run for "Aarav, Delhi": about 40 Qloo calls, about 47 s, every call visible in the **Qloo trace** panel.
+Live run for "Kabir, Delhi": about 40 Qloo calls, about 47 s, every call visible in the **Qloo trace** panel.
 
 If the stream closes before a board arrives (time limit, dropped connection), `/generate` shows an error and a retry, instead of spinning.
 
-To check a demo child against live Qloo from the terminal, run `npx tsx --env-file=.env.local scripts/live-check.ts leo`. It builds the board with the scripted planner and prints every folder with each tile's reasons and distance, plus any call that didn't return 200. Add `--llm` to keep the LLM steps (tile words and local snack proposals) live.
+To check a demo child against live Qloo from the terminal, run `npx tsx --env-file=.env.local scripts/live-check.ts freddie`. It builds the board with the scripted planner and prints every folder with each tile's reasons and distance, plus any call that didn't return 200. Add `--llm` to keep the LLM steps (tile words and local snack proposals) live.
 
 ---
 
@@ -151,7 +151,7 @@ Then `ageSafe` in `src/lib/agent/toolbox.ts` screens every Qloo result for a min
 
 Hotels and other lodging are dropped from places for everyone. This screen exists because live testing found energy drinks offered as snacks to 8- and 9-year-olds, M-rated games, and adult sitcoms that pass as TV-PG.
 
-### Temperament: "What is Leo like?"
+### Temperament: "What is Freddie like?"
 The wizard asks for up to 2 of: energetic, calm, shy, curious, sporty, creative, funny (`src/lib/board/temperament.ts`). Qloo has no personality model and no child audiences; we tested for both. What it does have is descriptor tags on content, such as `urn:tag:style:qloo:calm`. Each temperament maps to a few of these tags, all checked against live Qloo.
 
 The `match_temperament` tool sends them as `signal.interests.tags` (union), next to the child's favourites, for TV shows and films only. In testing, the tags barely changed game or music results. Sent this way the tags outweigh the favourites, so only the top 2 results per type compete at full weight; the rest are scored ×0.8. These tiles carry a "temperament" reason of the form "For an energetic and funny child: Qloo tags it …", naming the tags that matched.
@@ -162,7 +162,7 @@ If a parent (mother, father, carer…) has favourite singers, one extra artist q
 ### Words to talk about each tile (Qloo tags → communication)
 A board of nouns only lets a child *ask for* things. Qloo's own tags say much more about each one, and `src/lib/board/talk.ts` turns them into words a child can use to comment, ask and tell. They go in a "Talk about it" folder, and after a tile is tapped its words come first in "Maybe next".
 
-| Tile | Qloo tags used | Words (live, Leo's board) |
+| Tile | Qloo tags used | Words (live, Freddie's board) |
 |---|---|---|
 | The Regent's Park | amenities (swings, slides, public restroom, picnic tables), activity (boating) | swing, slide, playground, toilet, picnic, boat |
 | London Zoo | amenity, activity (playgrounds, toilets, picnic areas, animal encounters) | playground, toilet, picnic, animals, flowers, shop |
@@ -175,7 +175,7 @@ Only Qloo's curated keyword, theme, plot and amenity tags are read. Scene-level 
 The wizard also asks how the child communicates today, about access needs, and about dislikes:
 - **"Just starting with pictures"** gives a starter board: the core, safety and family words, the child's own favourites, about 30 everyday words and fewer Qloo picks. Starting with too many tiles is a common reason families give up.
 - **"Uses a wheelchair"** ranks places with Qloo's `accessibility:place:wheelchair_accessible_entrance` tag higher, and says so on the tile.
-- **"Finds loud places hard"** drops places Qloo tags `lively`, `noisy` or `loud`, and ranks `quiet`, `relaxing` or `tranquil` ones higher. On live Qloo this swapped Leo's three busiest restaurants for two quiet gardens.
+- **"Finds loud places hard"** drops places Qloo tags `lively`, `noisy` or `loud`, and ranks `quiet`, `relaxing` or `tranquil` ones higher. On live Qloo this swapped Freddie's three busiest restaurants for two quiet gardens.
 - **Dislikes and fears** (for example "dogs" or "Peppa Pig") keep matching shows, snacks and places (such as dog-friendly cafés) out of the agent's picks. The everyday words stay, so the child can still say "I don't like it".
 
 ### Local snacks: the LLM proposes, Qloo verifies
@@ -200,7 +200,7 @@ The hackathon dataset's trend history ends around September 2025, so in live mod
 
 ```mermaid
 flowchart TB
-    G["Parent taps ▶ Give to Leo"] --> LOCK["🔒 Child mode<br/>full screen · header and footer removed · every route goes to /board · no long-press menus · survives refresh"]
+    G["Parent taps ▶ Give to Freddie"] --> LOCK["🔒 Child mode<br/>full screen · header and footer removed · every route goes to /board · no long-press menus · survives refresh"]
     LOCK --> TABS{"Board"}
     TABS -->|"⭐ For me"| SMART["Core row (fixed)<br/>+ 'I need' and 'More words' drawers<br/>+ 12 predicted tiles<br/>+ 'Said before'"]
     TABS -->|"📁 All words"| CLASSIC["Core row (fixed)<br/>+ folders → tiles → ⬅ Back"]
@@ -222,7 +222,7 @@ flowchart TB
 - Taps made in the parent's preview don't train the predictions. Only taps in child mode do.
 
 ### What gets said
-- **A tap says exactly what's on the tile.** Leo's "Grandma" tile says "Grandma", nothing more. This follows Cboard's rule (`vocalizeTile`: `tile.vocalization || tile.label`).
+- **A tap says exactly what's on the tile.** Freddie's "Grandma" tile says "Grandma", nothing more. This follows Cboard's rule (`vocalizeTile`: `tile.vocalization || tile.label`).
 - **Speak says the sentence shown in the bar.** Common patterns become correct grammar, built only from the tiles shown:
   - `I + want + Cadbury` → **"I want Cadbury"**
   - `मैं + चाहिए + पारले-जी` → **"मुझे पारले-जी चाहिए"**

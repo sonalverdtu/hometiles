@@ -46,7 +46,7 @@ describe("talk words from Qloo tags", () => {
 });
 
 const profile: Profile = {
-  id: "p", displayName: "Leo", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
+  id: "p", displayName: "Freddie", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
   loves: [{ name: "Bluey", type: "urn:entity:tv_show", qlooId: "bluey" }], family: [],
 };
 const cand = (id: string, category: Candidate["category"], type: Candidate["entity"]["type"], tags: QTag[], own = false): Candidate => ({

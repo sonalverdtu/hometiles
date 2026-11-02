@@ -33,7 +33,7 @@ That gap is about taste and culture. Which made it a job for Qloo.
 - Shows and films that fit the child's temperament, picked with Qloo's descriptor tags ("calm", "energetic", "silly").
 - Real places near home. A Qloo heatmap finds where this child's kind of taste clusters, the agent searches for places inside those hot-spots, and it always adds a park, playground or zoo nearby.
 - Snacks and drinks that fit the child and are popular locally. The AI also suggests local brands, and only the ones Qloo can actually find stay on.
-- Toys. Qloo has no "toys" genre, but toy makers carry each other as competitor tags, so the agent asks for brands near Mattel, Hasbro and LEGO that fit the child's favourites. For Leo (Bluey, Minecraft) that's LEGO and Toca Boca.
+- Toys. Qloo has no "toys" genre, but toy makers carry each other as competitor tags, so the agent asks for brands near Mattel, Hasbro and LEGO that fit the child's favourites. For Freddie (Bluey, Minecraft) that's LEGO and Toca Boca.
 - Things to talk about with Grandma: Qloo compare finds songs and films they'd both enjoy, so the board has conversation starters as well as requests.
 - Who loves what: Qloo demographics marks a tile as a topic for cousins or for grandparents.
 - What's new: Qloo trending adds rising picks, so the child can join in when everyone at school is talking about something.
@@ -47,7 +47,7 @@ That gap is about taste and culture. Which made it a job for Qloo.
 - There are jokes about their favourites, too. AAC users say humour helps people "see that I am a person".
 
 **And the parent stays in charge.**
-- "Give to Leo" goes full-screen. While it's locked, every page leads back to the board, the menus disappear, and long-press menus are blocked. A parent exits by holding the lock for 2 seconds.
+- "Give to Freddie" goes full-screen. While it's locked, every page leads back to the board, the menus disappear, and long-press menus are blocked. A parent exits by holding the lock for 2 seconds.
 - The board checks every Qloo result against the child's age group (under 8, 8–12, teen): no energy drinks, coffee chains, M-rated games, explicit rap or grown-up dramas on a child's board, and no hotels in anyone's places.
 - Every tile can explain why it's there (Qloo affinity, distance from home, temperament tags, audience, trend). If a parent thinks a tile is wrong, they can remove it and say why: misleading, not relevant, not appropriate, too far, they don't like it. The reason is kept, and the weekly refresh won't bring it back.
 - The weekly refresh suggests changes from what was actually tapped, and the parent approves each one. Safety, core and family tiles are never changed automatically.
@@ -106,8 +106,8 @@ So the design is simple: the LLM proposes, and Qloo verifies and localises. The 
 - Realising, late, that personal isn't enough. A board needs "water" and "school" as much as it needs Bluey.
 
 ## Accomplishments that we're proud of
-- It's real and it's live. A parent can build a full board for their child at https://hometiles.vercel.app in about a minute against live Qloo, in English, Hindi or Spanish. Leo's board, built live: 160 tiles from 63 Qloo calls in 36 seconds.
-- Every personal tile is grounded. On Leo's board, every personal favourite, food and place tile (24 of them) is backed by Qloo evidence, and the 6 places are real, about 1 km from home on average (London Zoo, The Regent's Park). Every tile can show why it's there.
+- It's real and it's live. A parent can build a full board for their child at https://hometiles.vercel.app in about a minute against live Qloo, in English, Hindi or Spanish. Freddie's board, built live: 160 tiles from 63 Qloo calls in 36 seconds.
+- Every personal tile is grounded. On Freddie's board, every personal favourite, food and place tile (24 of them) is backed by Qloo evidence, and the 6 places are real, about 1 km from home on average (London Zoo, The Regent's Park). Every tile can show why it's there.
 - The child stays safe and the parent stays in control. Safety words are always one tap away, nothing changes without a parent's approval, and the age screen catches what Qloo's filters miss.
 - I measured instead of assuming (see "AI alone vs Qloo" above), and built what I found into the product.
 - It's open: MIT-licensed, 36 automated tests, and boards export to the Open Board Format used by open AAC apps.

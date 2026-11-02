@@ -12,17 +12,17 @@ Non-speaking people (autistic children and adults, people with cerebral palsy, s
 
 | The agent researching with Qloo | Every tile explains itself | Child mode on a phone |
 |---|---|---|
-| ![The agent researching Leo's board with Qloo](docs/screenshots/03-agent-researching-with-qloo.png) | ![Why this tile: Qloo evidence](docs/screenshots/05-why-this-tile-qloo-evidence.png) | ![Child mode on a phone](docs/screenshots/08-phone-child-mode.png) |
+| ![The agent researching Freddie's board with Qloo](docs/screenshots/03-agent-researching-with-qloo.png) | ![Why this tile: Qloo evidence](docs/screenshots/05-why-this-tile-qloo-evidence.png) | ![Child mode on a phone](docs/screenshots/08-phone-child-mode.png) |
 
 More in [`docs/screenshots`](docs/screenshots).
 
 ## Try it (about a minute)
-1. Open the live demo and pick **Leo** (8, Camden, London), **Aarav** (Delhi, Hindi) or **Sofía** (Los Angeles, Spanish). These are fictional children.
+1. Open the live demo and pick **Freddie** (8, Camden, London), **Kabir** (Delhi, Hindi) or **Rosa** (Los Angeles, Spanish). These are fictional children.
 2. Watch the agent research the child with Qloo: each step and each Qloo call is shown live.
 3. On the board, tap **?** on any tile to see the Qloo evidence behind it.
 4. Press **⚖️ With vs without Qloo** to compare it with a plain-AI board.
 5. Tap words in the preview: "Maybe next" adapts to what the child is talking about.
-6. **▶ Give to Leo** locks the board in child mode. To exit, hold the lock for 2 seconds and answer a quick sum.
+6. **▶ Give to Freddie** locks the board in child mode. To exit, hold the lock for 2 seconds and answer a quick sum.
 
 Or make a board for your own child with **＋ New board**.
 
@@ -57,7 +57,7 @@ With **no keys** everything runs in **mock mode**: a synthetic catalogue answers
 ```bash
 npm test             # unit tests: ranking, safety rules, age screen, live topic, refresh API, OBF, Qloo parsers
 npm run build        # production build
-npx tsx --env-file=.env.local scripts/live-check.ts leo --llm   # build a demo board against live Qloo, print every folder
+npx tsx --env-file=.env.local scripts/live-check.ts freddie --llm   # build a demo board against live Qloo, print every folder
 ```
 
 ## Deploy (Vercel)

@@ -5,7 +5,7 @@ import { topicOf } from "../src/lib/board/topic";
 import type { Profile, TapEvent } from "../src/lib/board/types";
 
 const profile: Profile = {
-  id: "p", displayName: "Leo", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
+  id: "p", displayName: "Freddie", ageBand: "24_and_younger", isChild: true, city: "C", primaryLang: "en",
   loves: [{ name: "X", type: "urn:entity:tv_show", qlooId: "x" }],
   family: [{ name: "Dada", relation: "grandfather", loves: [] }],
 };

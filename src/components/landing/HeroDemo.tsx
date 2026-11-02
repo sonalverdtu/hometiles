@@ -2,7 +2,7 @@
 
 // The landing page hero: a 3D phone running a real mini board. A hand taps tiles on its own, builds a
 // sentence and presses Speak, so people see (and, with sound on, hear) the experience in a few seconds.
-// Anyone can take over and tap the tiles themselves. One demo set per fictional child; English (Leo)
+// Anyone can take over and tap the tiles themselves. One demo set per fictional child; English (Freddie)
 // is the default, and the switcher shows the same board working in Hindi and Spanish.
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -55,10 +55,10 @@ const SCRIPT: Step[] = [
 
 const SETS: DemoSet[] = [
   {
-    key: "leo",
-    name: "Leo",
+    key: "freddie",
+    name: "Freddie",
     lang: "en",
-    caption: "Leo, 8, London",
+    caption: "Freddie, 8, London",
     hello: "Hello",
     hand: "👆",
     core: [tile("en", "core-i", "core", "core", "🙋", "I"), tile("en", "core-want", "core", "core", "🤲", "want"), tile("en", "core-go", "core", "core", "🚶", "go")],
@@ -73,10 +73,10 @@ const SETS: DemoSet[] = [
     script: SCRIPT,
   },
   {
-    key: "aarav",
-    name: "Aarav",
+    key: "kabir",
+    name: "Kabir",
     lang: "hi",
-    caption: "Aarav, 9, Delhi",
+    caption: "Kabir, 9, Delhi",
     hello: "नमस्ते",
     hand: "👆🏽",
     core: [tile("hi", "core-i", "core", "core", "🙋", "I", "मैं"), tile("hi", "core-want", "core", "core", "🤲", "want", "चाहिए"), tile("hi", "core-go", "core", "core", "🚶", "go", "चलो")],
@@ -91,10 +91,10 @@ const SETS: DemoSet[] = [
     script: SCRIPT,
   },
   {
-    key: "sofia",
-    name: "Sofía",
+    key: "rosa",
+    name: "Rosa",
     lang: "es",
-    caption: "Sofía, 12, Los Angeles",
+    caption: "Rosa, 12, Los Angeles",
     hello: "Hola",
     hand: "👆🏽",
     core: [tile("es", "core-i", "core", "core", "🙋", "I", "Yo"), tile("es", "core-want", "core", "core", "🤲", "want", "quiero"), tile("es", "core-go", "core", "core", "🚶", "go", "vamos")],
