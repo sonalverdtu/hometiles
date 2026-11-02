@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fff8ef" };
 
 function Logo() {
-  return <BrandMark size={38} className="shrink-0 drop-shadow-[0_2px_0_rgb(160_60_20/0.25)] transition-transform duration-300 group-hover:-rotate-6" />;
+  return <BrandMark size={38} className="shrink-0 drop-shadow-[0_2px_0_rgb(40_50_140/0.25)] transition-transform duration-300 group-hover:-rotate-6" />;
 }
 
 const REPO = "https://github.com/sosodtu/hometiles";

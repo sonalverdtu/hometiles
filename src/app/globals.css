@@ -361,6 +361,17 @@ html[data-kidlock] .site-chrome {
 .kid-tile-pop {
   animation: kidPop 0.4s ease;
 }
+/* The logo bird talking: its lower beak opens and closes. */
+@keyframes birdTalk {
+  50% {
+    transform: rotate(14deg) translateY(1.5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="birdTalk"] {
+    animation: none !important;
+  }
+}
 
 @keyframes fadeUp {
   from {

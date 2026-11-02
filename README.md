@@ -1,4 +1,4 @@
-<p align="center"><img src="src/app/icon.svg" width="96" alt="HomeTiles logo: a house that talks, with four picture tiles as its window"></p>
+<p align="center"><img src="src/app/icon.svg" width="96" alt="HomeTiles logo: a little blue bird shaped like a speech bubble, beak open mid-word"></p>
 
 # HomeTiles: communication boards that sound like home
 
