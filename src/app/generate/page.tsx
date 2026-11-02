@@ -8,6 +8,7 @@ import type { Profile, StreamEvent } from "@/lib/board/types";
 import { LANGUAGES } from "@/lib/i18n";
 import { ageGroupOf, type AgeGroup } from "@/lib/board/age";
 import { TEMPERAMENT } from "@/lib/board/temperament";
+import { BrandMark } from "@/components/BrandMark";
 
 const TOOL: Record<string, { icon: string; label: string; cat: string }> = {
   resolve: { icon: "🔍", label: "Favourites", cat: "favourites" },
@@ -245,11 +246,7 @@ export default function GeneratePage() {
       <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-10 lg:grid-cols-[1fr_360px] lg:items-start">
         <div>
           <div className="flex items-center gap-4">
-            <span aria-hidden className="relative grid h-16 w-16 shrink-0 grid-cols-2 gap-1 rounded-2xl border border-[var(--line)] bg-white p-2 shadow-[0_4px_0_var(--line)]">
-              {["var(--brand)", "var(--sun)", "var(--accent)", "var(--grape)"].map((c, k) => (
-                <span key={c} className="rounded-md" style={{ background: c, animation: `kidPop 1.2s ${k * 0.3}s ease-in-out infinite` }} />
-              ))}
-            </span>
+            <BrandMark size={64} pulse={!done} className="shrink-0 drop-shadow-[0_3px_0_rgb(160_60_20/0.25)]" />
             <div>
               <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">{done ? `${name}'s board is ready!` : `Building ${name ? `${name}'s` : "the"} board…`}</h1>
               <p className="text-[var(--muted)]">{done ? "Read through what the agent found, then open the board." : "The agent is researching with Qloo. This takes about a minute."}</p>

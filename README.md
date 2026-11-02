@@ -1,3 +1,5 @@
+<p align="center"><img src="src/app/icon.svg" width="96" alt="HomeTiles logo: a house that talks, with four picture tiles as its window"></p>
+
 # HomeTiles: communication boards that sound like home
 
 > *"There's more to life than cookies."* (a mother, quoted by AAC researchers Light & McNaughton, 2014)

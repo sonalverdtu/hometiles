@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Baloo_2, Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
+import { BrandMark } from "@/components/BrandMark";
 import { LockGuard } from "@/components/LockGuard";
 import "./globals.css";
 
@@ -17,14 +18,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fff8ef" };
 
 function Logo() {
-  return (
-    <span aria-hidden className="grid h-9 w-9 grid-cols-2 gap-[3px] rounded-xl border border-[var(--line)] bg-white p-[5px] shadow-[0_3px_0_var(--line)] transition-transform duration-300 group-hover:-rotate-6">
-      <span className="rounded-[4px] bg-[var(--brand)]" />
-      <span className="rounded-[4px] bg-[var(--sun)]" />
-      <span className="rounded-[4px] bg-[var(--accent)]" />
-      <span className="rounded-[4px] bg-[var(--grape)]" />
-    </span>
-  );
+  return <BrandMark size={38} className="shrink-0 drop-shadow-[0_2px_0_rgb(160_60_20/0.25)] transition-transform duration-300 group-hover:-rotate-6" />;
 }
 
 const REPO = "https://github.com/sosodtu/hometiles";
