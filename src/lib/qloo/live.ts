@@ -58,7 +58,8 @@ export async function qlooGet(path: string, params: Params): Promise<unknown> {
       const res = await fetch(url, { headers: { "X-Api-Key": qlooKey, Accept: "application/json" }, signal: ctrl.signal });
       if (res.status === 429 || (res.status >= 500 && attempt < 2)) {
         lastErr = new QlooError(`Qloo ${res.status}`, res.status);
-        retryAfter = Number(res.headers.get("retry-after")) * 1000 || 600 * 2 ** attempt;
+        // Capped: a long Retry-After from a busy shared key would stall the whole board for every judge.
+        retryAfter = Math.min(3000, Number(res.headers.get("retry-after")) * 1000 || 600 * 2 ** attempt);
       } else if (!res.ok) {
         const body = await res.text().catch(() => "");
         throw new QlooError(`Qloo ${res.status}: ${body.slice(0, 200)}`, res.status);
@@ -78,7 +79,7 @@ export async function qlooGet(path: string, params: Params): Promise<unknown> {
       clearTimeout(timer);
       release();
     }
-    await sleep(retryAfter);
+    if (attempt < 2) await sleep(retryAfter);
   }
   throw lastErr instanceof QlooError ? lastErr : lastErr instanceof Error ? new QlooError(lastErr.message, 0) : new QlooError("Qloo request failed", 0);
 }

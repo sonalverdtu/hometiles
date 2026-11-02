@@ -323,7 +323,7 @@ const STEPS: { icon: string; title: string; text: string; screen: () => ReactNod
   {
     icon: "🔒",
     title: "Hand it over, safely",
-    text: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds.",
+    text: "“Give to Leo” goes full-screen and hides every menu. The back button is blocked. A parent exits by holding the lock for 2 seconds and answering a quick sum.",
     screen: () => (
       <div className="grid h-full place-items-center p-6 text-center">
         <Row i={0}>

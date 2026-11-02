@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { FOLDER_META, pick } from "@/lib/board/vocab";
 import { UI } from "@/lib/i18n";
@@ -45,6 +45,11 @@ export function KidBoard({
   const [taps, setTapsState] = useState<TapEvent[]>([]);
   const [said, setSaid] = useState<SaidEntry[]>([]);
   const [drawer, setDrawer] = useState<Drawer>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  // Keep the newest word in view as the sentence scrolls sideways.
+  useEffect(() => {
+    if (barRef.current) barRef.current.scrollLeft = barRef.current.scrollWidth;
+  }, [sentence]);
   const [topic, setTopic] = useState<Topic>(NO_TOPIC);
   const [row, setRow] = useState<{ from: Prediction[] | null; shown: Prediction[] }>({ from: null, shown: [] });
 
@@ -121,19 +126,20 @@ export function KidBoard({
     <div className={`flex h-full flex-col ${locked ? "bg-[var(--kid-bg)]" : ""}`} onContextMenu={locked ? (e) => e.preventDefault() : undefined}>
       {/* Sentence bar */}
       <div className="flex items-stretch gap-2 border-b border-[var(--line)] bg-white/90 p-2 shadow-[0_6px_16px_-12px_rgb(60_35_10/0.4)]">
-        <div className="flex min-h-14 flex-1 flex-wrap items-center gap-1.5 rounded-2xl border-2 border-[var(--line)] bg-[var(--surface-2)] px-2 py-1" aria-live="polite" aria-label="What I'm saying">
-          {sentence.length === 0 && <span className="px-1 text-sm text-[var(--muted)]">{UI[lang].tapHint}</span>}
-          {sentence.map((t, i) => (
-            <span key={i} className="pop-in font-display flex items-center gap-1 rounded-xl border-2 px-2 py-0.5 text-base font-bold" style={{ background: `var(--c-${t.category})`, borderColor: `var(--b-${t.category})` }}>
-              <span aria-hidden>{t.emoji}</span>
-              {pick(t.label, lang)}
-            </span>
-          ))}
-          {sentence.length > 1 && (
-            <span className="basis-full px-1 text-sm font-semibold text-[var(--go)]" aria-label="Will say">
-              🔊 {composeSentence(sentence, lang)}
-            </span>
-          )}
+        {/* Fixed height: the bar never grows, so the core words below never move mid-sentence (motor planning). */}
+        <div className="flex h-[4.6rem] min-w-0 flex-1 flex-col justify-center rounded-2xl border-2 border-[var(--line)] bg-[var(--surface-2)] px-2 py-1" aria-live="polite" aria-label="What I'm saying">
+          <div ref={barRef} className="flex min-h-9 items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+            {sentence.length === 0 && <span className="px-1 text-sm text-[var(--muted)]">{UI[lang].tapHint}</span>}
+            {sentence.map((t, i) => (
+              <span key={i} className="pop-in font-display flex shrink-0 items-center gap-1 rounded-xl border-2 px-2 py-0.5 text-base font-bold" style={{ background: `var(--c-${t.category})`, borderColor: `var(--b-${t.category})` }}>
+                <span aria-hidden>{t.emoji}</span>
+                {pick(t.label, lang)}
+              </span>
+            ))}
+          </div>
+          <span className="h-5 truncate px-1 text-sm font-semibold text-[var(--go)]" aria-label="Will say">
+            {sentence.length > 1 ? `🔊 ${composeSentence(sentence, lang)}` : ""}
+          </span>
         </div>
         <button type="button" onClick={sayAll} disabled={!sentence.length} className="kid-action border-[#0e5e2c] bg-[var(--go)] text-white shadow-[0_4px_0_#0e5e2c] disabled:opacity-40" aria-label="Speak the sentence">
           <span className="text-2xl" aria-hidden>🔊</span>

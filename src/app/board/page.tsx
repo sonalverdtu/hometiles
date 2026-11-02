@@ -71,7 +71,7 @@ function Seg<T extends string>({ value, options, onChange, label, info }: { valu
 }
 
 /** The refresh needs taste, place and age, never who the child or their family is. */
-const anonymous = (p: Profile): Profile => ({ ...p, id: "anon", displayName: "Child", family: [] });
+const anonymous = (p: Profile): Profile => ({ ...p, id: "anon", displayName: "Child", family: [], home: undefined });
 
 // Tiles a parent removed (Qloo IDs, and labels for tiles without one), so the weekly refresh never brings them back.
 const removedKey = (boardId: string) => `ht:removed:${boardId}`;
@@ -121,7 +121,8 @@ export default function BoardPage() {
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id");
-    const b = loadBoard(id);
+    // An unknown id falls back to the latest board, so a typed URL can't be used to switch the child lock off.
+    const b = loadBoard(id) ?? (id ? loadBoard(null) : null);
     setBoard(b);
     if (b) {
       setSettingsState(getSettings(b.id));
@@ -423,7 +424,7 @@ export default function BoardPage() {
                 💡 Children learn a board by seeing it used: when you talk to {p.displayName}, tap the words too (&ldquo;I want … juice&rdquo;).
               </p>
               <p className="mt-2 rounded-xl bg-[var(--surface-2)] p-3 text-xs">
-                🔒 In child mode the menus are hidden and the back button is blocked. To exit, <strong>press and hold the lock for 2 seconds</strong>.
+                🔒 In child mode the menus are hidden and the back button is blocked. To exit, <strong>press and hold the lock for 2 seconds</strong>, then answer a quick sum.
               </p>
             </div>
           </div>

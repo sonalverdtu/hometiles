@@ -159,6 +159,8 @@ function shortlist(cands: Candidate[]): Candidate[] {
 }
 
 const LABELS_BUDGET_MS = 20_000;
+// The board route may run 300 s on Vercel; research stops at half that, so a slow day still ends in a board.
+const RESEARCH_BUDGET_MS = 150_000;
 
 async function tileText(profile: Profile, picks: Candidate[], hooks: RunHooks): Promise<Record<string, TileText> | undefined> {
   if (getConfig().llmMode !== "live" || !picks.length) return undefined;
@@ -184,8 +186,9 @@ async function tileText(profile: Profile, picks: Candidate[], hooks: RunHooks): 
       const speak = { en: primary === "en" ? t.speak_primary : secondary === "en" ? t.speak_secondary : name } as Localized;
       label[primary] = t.label_primary;
       speak[primary] = t.speak_primary;
-      if (t.label_secondary.trim()) label[secondary] = t.label_secondary;
-      if (t.speak_secondary.trim()) speak[secondary] = t.speak_secondary;
+      // One-language boards ask for "English + English": the second answer must not overwrite the first.
+      if (secondary !== primary && t.label_secondary.trim()) label[secondary] = t.label_secondary;
+      if (secondary !== primary && t.speak_secondary.trim()) speak[secondary] = t.speak_secondary;
       out[t.id] = { label, speak };
     }
     return out;
@@ -219,16 +222,30 @@ export async function generateBoard(profileIn: Profile, hooks: RunHooks): Promis
     ran: new Set(),
   };
 
-  await resolveLoves(ctx);
-  if (cfg.agentMode === "llm") {
-    try {
-      await agentic(ctx);
-    } catch (err) {
-      hooks.step(`Agent hit a problem (${(err as Error).message.slice(0, 80)}); finishing with the scripted planner.`, "agent");
+  const research = async () => {
+    await resolveLoves(ctx);
+    if (cfg.agentMode === "llm") {
+      try {
+        await agentic(ctx);
+      } catch (err) {
+        hooks.step(`Agent hit a problem (${(err as Error).message.slice(0, 80)}); finishing with the scripted planner.`, "agent");
+      }
+      await fillGaps(ctx);
+    } else {
+      await scripted(ctx);
     }
-    await fillGaps(ctx);
-  } else {
-    await scripted(ctx);
+  };
+  // A board always arrives: if Qloo or the LLM is slow, build from what the research found so far. The family's
+  // own words, core, safety and everyday words never depend on it.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = await Promise.race([
+    research().then(() => false),
+    new Promise<true>((r) => (timer = setTimeout(() => r(true), RESEARCH_BUDGET_MS))),
+  ]);
+  clearTimeout(timer);
+  if (timedOut) {
+    hooks.step("Qloo is slow right now, so the board is built from what was found so far.", "compose");
+    ctx.notes.push(`Research stopped at the ${RESEARCH_BUDGET_MS / 1000} s budget; the board uses what was found by then.`);
   }
 
   hooks.step("Ranking and laying out the board…", "compose");
@@ -267,6 +284,7 @@ export async function refreshCandidates(profile: Profile, top: { id: string; nam
     demographics: new Map(),
     notes: [],
     ran: new Set(),
+    quick: true,
   };
   await Promise.all([expandPersonalTaste(ctx, undefined, 8), findLocalBrands(ctx, 8)]);
   return { candidates: [...ctx.candidates.values()], trace: tracer.entries };

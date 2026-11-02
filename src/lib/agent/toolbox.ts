@@ -23,6 +23,8 @@ export interface AgentCtx {
   ran: Set<string>;
   /** Qloo's tags for the family's own favourites (from /search), so their tiles get talk words too. */
   loveTags?: Map<string, QTag[]>;
+  /** The weekly refresh: skip slow extras (the LLM's local-snack ideas) so it fits its 60 s route. */
+  quick?: boolean;
 }
 
 // Kid-friendly place categories (Qloo tag IDs). Adults get nightlife excluded instead.
@@ -69,15 +71,26 @@ function hasKidGenre(e: QEntity): boolean {
 }
 /** Hotels near home are never a useful place tile, for anyone. */
 const isLodging = (e: QEntity) => kindTags(e).some((s) => LODGING.has(s));
-const YOUNG_TAGS = /mumble_rap|soundcloud_rap|style:qloo:trap|horrorcore|drill/;
+const YOUNG_TAGS = /mumble_rap|soundcloud_rap|style:qloo:trap|horrorcore|drill|gangsta|hardcore_hip_hop|dirty_south|crunk|explicit/;
+// Under 13, music fails closed: no rap-family genres at all, and only artists most people know. Applied in
+// ageSafe so every way an artist reaches the board (favourites, family compare, what's rising, a parent's
+// music) gets the same screen.
+const RAP_GENRES = /:(genre|subgenre|style):.*(rap|hip_hop|trap|drill|gangsta|grime|crunk|horrorcore)/;
+const KID_ARTIST_POPULARITY = 0.8;
 /** Screens a Qloo result for a minor: names, tags, and the rating Qloo reports (its own rating filter misses games). */
 function ageSafe(ctx: AgentCtx, e: QEntity): boolean {
   const g = ageGroupOf(ctx.profile);
   if (!isMinor(g)) return true;
   if (ADULT_WORDS.test(e.name) || isAdultKind(e)) return false;
   if (g !== "teen" && e.tags.some((t) => YOUNG_TAGS.test(t.id))) return false;
+  if (g !== "teen" && e.type === "urn:entity:artist") {
+    if (e.tags.some((t) => RAP_GENRES.test(t.id))) return false;
+    if (e.popularity !== undefined && e.popularity < KID_ARTIST_POPULARITY) return false;
+  }
   const kind = e.type === "urn:entity:videogame" ? "game" : e.type === "urn:entity:tv_show" || e.type === "urn:entity:movie" ? "screen" : null;
   if (kind === "screen" && g !== "teen" && !hasKidGenre(e)) return false;
+  // Live Qloo: a show or film with no genre tags at all can't be checked, so a young child doesn't get it.
+  if (kind === "screen" && g !== "teen" && ctx.qloo.mode === "live" && !e.tags.some((t) => /:(genre|subgenre):/.test(t.id))) return false;
   return !kind || ratingOk(g, e.contentRating, kind);
 }
 const minor = (ctx: AgentCtx) => isMinor(ageGroupOf(ctx.profile));
@@ -366,7 +379,7 @@ export async function findToys(ctx: AgentCtx, take = 12) {
 
 /** The LLM proposes local snack brands; only the ones Qloo can find (and that pass the age screen) are kept. */
 async function verifiedLocalSnacks(ctx: AgentCtx, have: Set<string>): Promise<QEntity[]> {
-  if (getConfig().llmMode !== "live") return [];
+  if (getConfig().llmMode !== "live" || ctx.quick) return [];
   const names = await proposeLocalSnacks(ctx.profile).catch(() => [] as string[]);
   if (!names.length) return [];
   ctx.emit(`Checking ${names.length} local snacks the AI suggested against Qloo…`, "find_local_brands");

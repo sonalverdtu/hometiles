@@ -290,7 +290,7 @@ export function assembleBoard(input: AssembleInput): Board {
   const placed: Candidate[] = [];
   for (const c of ranked) {
     const n = counts[c.category] ?? 0;
-    if (n >= quotas[c.category]) continue;
+    if (n >= quotas[c.category] && !c.own) continue; // the family's own words always get a slot
     // Keep favourites varied: at most 4 of any one kind (shows, games, music, films).
     const typeKey = `${c.category}|${c.entity.type}`;
     if (c.category === "favourites" && !c.own && (counts[typeKey] ?? 0) >= 4) continue;

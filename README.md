@@ -22,7 +22,7 @@ More in [`docs/screenshots`](docs/screenshots).
 3. On the board, tap **?** on any tile to see the Qloo evidence behind it.
 4. Press **⚖️ With vs without Qloo** to compare it with a plain-AI board.
 5. Tap words in the preview: "Maybe next" adapts to what the child is talking about.
-6. **▶ Give to Leo** locks the board in child mode. To exit, hold the lock for 2 seconds.
+6. **▶ Give to Leo** locks the board in child mode. To exit, hold the lock for 2 seconds and answer a quick sum.
 
 Or make a board for your own child with **＋ New board**.
 
@@ -81,7 +81,7 @@ Browser (Next.js pages)                         Server (Next.js API routes)
 ```
 
 ## Privacy and safety
-- Taps, sentences and the child's name stay on the device. Qloo receives entity IDs, a city or point, and an age band. The AI never receives names.
+- Taps and sentences stay on the device. The child's and family's names are used only to write the board on our server, are never stored there, and never go to Qloo or the AI. Qloo receives favourites to look up, entity IDs, a city or point, and an age band; the weekly refresh sends no names and no home location.
 - Demo children are fictional. HomeTiles supports speech-language therapists; it doesn't replace them, and it makes no clinical claims.
 - Qloo responses are cached in server memory only and never committed (Qloo terms).
 

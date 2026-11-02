@@ -4,12 +4,21 @@ import { useEffect, useRef, useState } from "react";
 
 const HOLD_MS = 2000;
 
-/** Parent exit: press and hold for 2 seconds. A quick tap by a child does nothing. */
+/** A sum a parent answers in a second but a young child can't, so holding the lock alone never exits. */
+function makeCheck() {
+  const a = 3 + Math.floor(Math.random() * 6);
+  const b = 4 + Math.floor(Math.random() * 6);
+  const answer = a + b;
+  const options = [answer, answer + 2, answer - 3].sort(() => Math.random() - 0.5);
+  return { a, b, answer, options };
+}
+
+/** Parent exit: press and hold for 2 seconds, then answer a quick sum. A child's tap or hold does nothing. */
 export function HoldToUnlock({ onUnlock }: { onUnlock: () => void }) {
   const [progress, setProgress] = useState(0);
   const start = useRef<number | null>(null);
   const raf = useRef<number | null>(null);
-  const [hint, setHint] = useState(false);
+  const [check, setCheck] = useState<ReturnType<typeof makeCheck> | null>(null);
 
   const stop = () => {
     start.current = null;
@@ -23,25 +32,25 @@ export function HoldToUnlock({ onUnlock }: { onUnlock: () => void }) {
     setProgress(p);
     if (p >= 1) {
       stop();
-      onUnlock();
+      setCheck(makeCheck());
       return;
     }
     raf.current = requestAnimationFrame(tick);
   };
 
   const begin = () => {
-    if (start.current !== null) return;
-    setHint(true);
+    if (start.current !== null || check) return;
     start.current = performance.now();
     raf.current = requestAnimationFrame(tick);
   };
 
   useEffect(() => () => stop(), []);
+  // The check closes by itself if nobody answers, so a child left with it open is back on the board.
   useEffect(() => {
-    if (!hint) return;
-    const t = setTimeout(() => setHint(false), 2500);
+    if (!check) return;
+    const t = setTimeout(() => setCheck(null), 8000);
     return () => clearTimeout(t);
-  }, [hint]);
+  }, [check]);
 
   return (
     <div className="relative">
@@ -60,10 +69,25 @@ export function HoldToUnlock({ onUnlock }: { onUnlock: () => void }) {
       >
         <span className="grid h-10 w-10 place-items-center rounded-full bg-white">🔒</span>
       </button>
-      {hint && (
-        <span className="absolute right-0 top-14 z-10 whitespace-nowrap rounded-lg bg-[var(--ink)] px-2 py-1 text-xs text-white">
-          Parents: keep holding…
-        </span>
+      {check && (
+        <div role="dialog" aria-label="Parent check" className="pop-in absolute right-0 top-14 z-20 w-56 rounded-2xl border border-[var(--line)] bg-white p-3 shadow-[var(--shadow-md)]">
+          <p className="text-sm font-bold">Parent check: {check.a} + {check.b} = ?</p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {check.options.map((n) => (
+              <button
+                key={n}
+                type="button"
+                className="btn justify-center px-0 text-lg"
+                onClick={() => {
+                  setCheck(null);
+                  if (n === check.answer) onUnlock();
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

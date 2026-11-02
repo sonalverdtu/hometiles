@@ -12,14 +12,36 @@ const safe = <T,>(fn: () => T, fallback: T): T => {
 };
 
 const MAX_TRACE = 250;
+const KEEP_BOARDS = 6;
+
+/** Removes all but the newest `keep` boards (and their taps, sentences and settings), never `except`. */
+function pruneBoards(keep: number, except: string) {
+  const ids = Object.keys(localStorage)
+    .filter((k) => k.startsWith("ht:board:"))
+    .map((k) => k.slice("ht:board:".length))
+    .filter((id) => id !== except);
+  // Board ids are "b-" + a base-36 timestamp, so they sort by age.
+  const old = ids.sort((a, b) => parseInt(b.slice(2), 36) - parseInt(a.slice(2), 36)).slice(keep);
+  for (const id of old) for (const k of ["board", "taps", "said", "settings"]) localStorage.removeItem(`ht:${k}:${id}`);
+}
 
 /** false when the browser refused to store it (storage full or blocked). */
 export function saveBoard(board: Board): boolean {
   const slim = board.trace.length > MAX_TRACE ? { ...board, trace: board.trace.slice(-MAX_TRACE) } : board;
-  return safe(() => {
+  const write = () => {
     localStorage.setItem(`ht:board:${board.id}`, JSON.stringify(slim));
     localStorage.setItem("ht:latest", board.id);
     return true;
+  };
+  return safe(() => {
+    // Every demo build adds a board; without pruning, repeated demos fill the browser's storage.
+    pruneBoards(KEEP_BOARDS - 1, board.id);
+    try {
+      return write();
+    } catch {
+      pruneBoards(0, board.id); // full anyway: keep only this one
+      return write();
+    }
   }, false);
 }
 

@@ -197,7 +197,7 @@ export default function Home() {
             🔒
           </span>
           <p className="leading-relaxed text-[#3c3a48]">
-            <strong className="text-[var(--ink)]">Either board, safely in their hands.</strong> “Give to Leo” goes full-screen and hides every menu; the back button is blocked. Parents exit by holding the lock for 2 seconds.
+            <strong className="text-[var(--ink)]">Either board, safely in their hands.</strong> “Give to Leo” goes full-screen and hides every menu; the back button is blocked. Parents exit by holding the lock for 2 seconds and answering a quick sum.
           </p>
         </div>
       </Section>

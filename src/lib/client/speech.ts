@@ -69,6 +69,23 @@ export function speak(text: string, lang: Lang, english?: string) {
   // A little higher and slower than the default: calmer and easier to follow.
   u.pitch = 1.1;
   u.rate = 0.92;
+  // Online "Natural" voices need the network. If one fails, say it again once with a voice on the device,
+  // so a child's board never goes silent offline.
+  if (v && !v.localService) {
+    u.onerror = (e) => {
+      if (e.error === "interrupted" || e.error === "canceled") return;
+      const local = synth.getVoices().filter((x) => x.localService && x.lang.toLowerCase().startsWith(v.lang.slice(0, 2).toLowerCase()));
+      const best = local.sort((a, b) => score(b, lang) - score(a, lang))[0];
+      if (!best) return;
+      chosen.set(lang, best);
+      const again = new SpeechSynthesisUtterance(words);
+      again.voice = best;
+      again.lang = best.lang;
+      again.pitch = u.pitch;
+      again.rate = u.rate;
+      synth.speak(again);
+    };
+  }
   synth.speak(u);
 }
 
