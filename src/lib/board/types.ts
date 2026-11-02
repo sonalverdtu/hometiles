@@ -132,7 +132,17 @@ export interface Suggestion {
   reason: string;
 }
 
+/** A live build of a demo child, saved so the demo opens instantly (scripts/record-demos.mts). */
+export interface DemoRecording {
+  key: string;
+  recordedAt: string;
+  ms: number;
+  steps: { text: string; tool?: string; at: number }[];
+  board: Board;
+}
+
 export type StreamEvent =
+  | { type: "ping" }
   | { type: "step"; text: string; tool?: string }
   | { type: "trace"; entry: TraceEntry }
   | { type: "board"; board: Board }

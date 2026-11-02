@@ -145,21 +145,28 @@ export default function GeneratePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [ready, setReady] = useState<{ id: string; tiles: number } | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const started = useRef(false);
+  const kept = useRef<Profile | null>(null);
   const list = useRef<HTMLOListElement>(null);
   const readyCard = useRef<HTMLDivElement>(null);
   const done = !!ready;
   const name = profile?.displayName ?? "";
 
+  // Runs once on arrival, and again on "Try again" with the same answers (kept here, never retyped).
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const profile = takePendingProfile();
-    if (!profile) {
-      setMissing(true);
-      return;
+    if (!kept.current) {
+      if (started.current) return;
+      started.current = true;
+      const p = takePendingProfile();
+      if (!p) {
+        setMissing(true);
+        return;
+      }
+      kept.current = p;
+      setProfile(p);
     }
-    setProfile(profile);
+    const profile = kept.current;
     (async () => {
       try {
         const res = await fetch("/api/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile }) });
@@ -198,12 +205,21 @@ export default function GeneratePage() {
           }
         }
         // The server can close the stream (time limit, dropped connection) without a board: say so instead of spinning.
-        if (!finished) throw new Error("The connection closed before the board was ready. Please try again.");
+        if (!finished) throw new Error("The connection closed before the board was ready.");
       } catch (err) {
-        setError((err as Error).message);
+        // fetch and stream reads fail with a bare "network error" / "Failed to fetch": say what happened instead.
+        setError(err instanceof TypeError ? "The connection dropped before the board was ready." : (err as Error).message);
       }
     })();
-  }, []);
+  }, [attempt]);
+
+  const retry = () => {
+    setError(null);
+    setSteps([]);
+    setCalls(0);
+    setElapsed(0);
+    setAttempt((a) => a + 1);
+  };
 
   useEffect(() => {
     if (done || error) return;
@@ -316,10 +332,11 @@ export default function GeneratePage() {
           {error && (
             <div role="alert" className="fade-up mt-6 rounded-2xl border-2 border-[#f3b0a0] bg-[#fff1ec] p-4">
               <p className="font-bold">Something went wrong: {error}</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">Your answers are kept. Try again builds the board again with them.</p>
               <div className="mt-3 flex gap-2">
-                <Link href="/create" className="btn btn-primary">
+                <button type="button" className="btn btn-primary" onClick={retry}>
                   Try again
-                </Link>
+                </button>
                 <Link href="/" className="btn">
                   Home
                 </Link>
