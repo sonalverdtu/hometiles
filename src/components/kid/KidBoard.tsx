@@ -129,7 +129,8 @@ export function KidBoard({
         {/* Fixed height: the bar never grows, so the core words below never move mid-sentence (motor planning). */}
         <div className="flex h-[4.6rem] min-w-0 flex-1 flex-col justify-center rounded-2xl border-2 border-[var(--line)] bg-[var(--surface-2)] px-2 py-1" aria-live="polite" aria-label="What I'm saying">
           <div ref={barRef} className="flex min-h-9 items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
-            {sentence.length === 0 && <span className="px-1 text-sm text-[var(--muted)]">{UI[lang].tapHint}</span>}
+            {/* The hint wraps instead of overflowing, so a narrow bar never shows it scrolled to "…he pictures". */}
+            {sentence.length === 0 && <span className="min-w-0 whitespace-normal px-1 text-sm leading-tight text-[var(--muted)]">{UI[lang].tapHint}</span>}
             {sentence.map((t, i) => (
               <span key={i} className="pop-in font-display flex shrink-0 items-center gap-1 rounded-xl border-2 px-2 py-0.5 text-base font-bold" style={{ background: `var(--c-${t.category})`, borderColor: `var(--b-${t.category})` }}>
                 <span aria-hidden>{t.emoji}</span>
