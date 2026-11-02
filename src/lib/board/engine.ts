@@ -77,10 +77,41 @@ function mergeReasons(a: Reason[], b: Reason[]): Reason[] {
   return [...a, ...b].filter((r) => (seen.has(r.text) ? false : (seen.add(r.text), true)));
 }
 
+// Words that make a name long without making it clearer to a child, and words a label must not end on.
+const FILLER = /^(the|restaurant|cafe|café|brasserie|bakery|parlour|parlor|shop|store|company|group|co\.?|ltd|inc|toys|drinks|chocolatier|kitchen|grill)$/i;
+const CONNECTOR = /^(and|&|of|for|the|a|an|à|la|le|de|del|y|with|in|on|at)$/i;
+// About two lines on a tile.
+const MAX_LABEL = 20;
+
+/**
+ * A tile label short enough to show whole (a cut-off word on a talking board is a defect):
+ * "Wallace & Gromit: The Curse of the Were-Rabbit" → "Wallace & Gromit", "Camden Ice Cream Parlour" →
+ * "Camden Ice Cream", "Dora and the Lost City of Gold" → "Dora". The full name stays on the entity for "?".
+ */
+export function shortLabel(name: string): string {
+  const head = name.split(/\s*[:|(–—]\s*|\s+-\s+/)[0].trim() || name;
+  if (head.length <= MAX_LABEL) return head;
+  const words = head.split(/\s+/);
+  // First drop filler and connectors from the end ("… Bakery & Cafe").
+  while (words.length > 1 && words.join(" ").length > MAX_LABEL && (FILLER.test(words[words.length - 1]) || CONNECTOR.test(words[words.length - 1]))) words.pop();
+  if (words[0] && /^the$/i.test(words[0]) && words.length > 1 && words.join(" ").length > MAX_LABEL) words.shift();
+  if (words.join(" ").length <= MAX_LABEL) return words.join(" ");
+  // Still long: keep whole words up to the limit, and cut before a connector rather than after it.
+  const kept: string[] = [];
+  for (const w of words) {
+    if ([...kept, w].join(" ").length > MAX_LABEL && kept.length) break;
+    kept.push(w);
+  }
+  const cut = kept.findIndex((w, i) => i > 0 && CONNECTOR.test(w));
+  return (cut > 0 ? kept.slice(0, cut) : kept).join(" ");
+}
+
 export function displayName(e: { name: string; nameLocal?: LocalNames }, lang: Lang): string {
   if (lang === "en") return e.name;
   return e.nameLocal?.[lang] ?? e.name;
 }
+
+const shortLabels = (l: Localized): Localized => Object.fromEntries(Object.entries(l).map(([k, v]) => [k, v ? shortLabel(v) : v])) as Localized;
 
 function localized(fn: (lang: Lang) => string): Localized {
   const out = { en: fn("en") } as Localized;
@@ -94,7 +125,7 @@ export function candidateToTile(c: Candidate, text?: TileText): Tile {
     id: `t-${c.entity.id}`,
     kind: "rotating",
     category: c.category,
-    label: text?.label ?? localized((l) => displayName(c.entity, l)),
+    label: shortLabels(text?.label ?? localized((l) => displayName(c.entity, l))),
     speak: text?.speak ?? localized((l) => tpl[l](displayName(c.entity, l))),
     emoji: c.category === "things" ? "🧸" : (TYPE_EMOJI[c.entity.type] ?? "⭐"),
     image: c.entity.image ? { url: c.entity.image, source: "qloo" } : undefined,

@@ -84,3 +84,16 @@ describe("the smart row stays a communication board", () => {
     for (const h of [8, 13, 18, 22]) expect(predict(board, null, [], at(h), 20).some((p) => p.tile.category === "new")).toBe(false);
   });
 });
+
+describe("the Actions row never moves", () => {
+  it("is the same verbs in the same order whatever was tapped, and fitting verbs go to Maybe next", async () => {
+    const { fixedActions } = await import("../src/lib/board/smart");
+    const ids = (ts: { id: string }[]) => ts.map((t) => t.id);
+    const row = ids(fixedActions(board, 6));
+    expect(row.length).toBe(6);
+    expect(ids(fixedActions(board, 6))).toEqual(row);
+    // After a place, "come" and "wait" are suggested in Maybe next, not by reshuffling the Actions row.
+    const top = predict(board, "t-park1", [], at(13), 12).map((p) => p.tile.id);
+    expect(top.some((id) => ["basic-come", "basic-wait"].includes(id))).toBe(true);
+  });
+});

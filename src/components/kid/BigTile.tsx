@@ -74,7 +74,7 @@ export function BigTile({
         <button
           type="button"
           onClick={() => onInfo(tile)}
-          className="absolute -right-1.5 -top-1.5 z-10 grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[var(--grape)] text-sm font-extrabold text-white shadow-[0_3px_0_#4a33a8] transition-transform hover:scale-110 active:translate-y-0.5"
+          className="absolute -right-1.5 -top-1.5 z-10 grid h-9 w-9 place-items-center before:absolute before:-inset-1 before:content-[''] rounded-full border-2 border-white bg-[var(--grape)] text-sm font-extrabold text-white shadow-[0_3px_0_#4a33a8] transition-transform hover:scale-110 active:translate-y-0.5"
           aria-label={`Why this tile: ${tile.label.en}`}
           title="Why this tile?"
         >

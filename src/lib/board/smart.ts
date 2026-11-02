@@ -97,11 +97,12 @@ function actionsFor(t: Tile | undefined): string[] {
   return [];
 }
 
-/** The "Action words" row on the smart board: verbs that fit the last tap first, then the everyday ones. */
-export function nextActions(board: Board, lastTileId: string | null, take = 6, skip: readonly string[] = []): Tile[] {
-  const ids = [...actionsFor(lastTileId ? board.tiles[lastTileId] : undefined), ...DEFAULT_ACTIONS];
-  return [...new Set(ids)]
-    .filter((id) => id !== lastTileId && !skip.includes(id))
+/**
+ * The "Action words" row on the smart board: always the same everyday verbs in the same places, so the child's
+ * hand learns where they are (motor planning). Verbs that fit the last tap go to "Maybe next" instead.
+ */
+export function fixedActions(board: Board, take = 6, skip: readonly string[] = []): Tile[] {
+  return DEFAULT_ACTIONS.filter((id) => !skip.includes(id))
     .map((id) => board.tiles[id])
     .filter((t): t is Tile => !!t)
     .slice(0, take);
@@ -119,12 +120,17 @@ const sameHourBand = (a: number, b: number) => Math.abs(a - b) <= 1 || Math.abs(
 export function predict(board: Board, lastTileId: string | null, taps: TapEvent[], now = new Date(), take = 12, topic?: Topic): Prediction[] {
   // "help" already sits next to the core words, and verbs have their own row, so neither needs predicting.
   // "What's new" (trending picks) stays in its folder: a new show is never what a child most needs to say next.
-  const pool = Object.values(board.tiles).filter((t) => t.kind !== "core" && t.id !== "safety-help" && t.category !== "actions" && t.category !== "new");
+  const last = lastTileId ? board.tiles[lastTileId] : undefined;
+  // After a tile: its own words from Qloo's tags first (at the park: swing, slide, toilet; Bluey: dog, funny), then
+  // the verbs that fit it (a place → go, wait; a snack → eat, open) that aren't already in the fixed Actions row.
+  const verbs = actionsFor(last).filter((id) => !DEFAULT_ACTIONS.slice(0, 6).includes(id));
+  const follow = [...(last?.talk ?? []), ...(lastTileId ? (FOLLOW_UPS[lastTileId] ?? []) : []), ...(last?.kind === "people" ? PERSON_FOLLOW_UPS : []), ...verbs];
+  // Verbs live in their own fixed row; only the ones that fit the last tap join "Maybe next".
+  const pool = Object.values(board.tiles).filter(
+    (t) => t.kind !== "core" && t.id !== "safety-help" && t.category !== "new" && (t.category !== "actions" || verbs.includes(t.id)),
+  );
   // Within a folder, earlier words are the more common ones (happy before angry, tummy before teeth).
   const folderPos = new Map(board.folders.flatMap((f) => f.tileIds.map((id, i) => [id, i] as const)));
-  const last = lastTileId ? board.tiles[lastTileId] : undefined;
-  // After a tile: its own words from Qloo's tags first (at the park: swing, slide, toilet; Bluey: dog, funny).
-  const follow = [...(last?.talk ?? []), ...(lastTileId ? (FOLLOW_UPS[lastTileId] ?? []) : []), ...(last?.kind === "people" ? PERSON_FOLLOW_UPS : [])];
   const next = lastTileId ? transitions(taps).get(lastTileId) : undefined;
   const nextTotal = next ? [...next.values()].reduce((s, n) => s + n, 0) : 0;
   const weekAgo = now.getTime() - 7 * 86400000;

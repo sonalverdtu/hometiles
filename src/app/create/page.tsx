@@ -19,6 +19,7 @@ const TYPES: { id: QlooType; label: string; emoji: string; example: string; cat:
 ];
 
 // Qloo's youngest age band covers everyone under 25, so the group (what each age may see) is kept separately.
+// The picker shows the three child groups and "Adult"; the adult bands only appear once "Adult" is picked.
 const AGES: { id: AgeBand; label: string; group: AgeGroup }[] = [
   { id: "24_and_younger", label: "Under 8", group: "young" },
   { id: "24_and_younger", label: "8–12", group: "child" },
@@ -30,6 +31,7 @@ const AGES: { id: AgeBand; label: string; group: AgeGroup }[] = [
   { id: "45_to_54", label: "45–54", group: "adult" },
   { id: "55_and_older", label: "55+", group: "adult" },
 ];
+const FIRST_ADULT = AGES.findIndex((a) => a.group === "adult");
 
 // From the language registry: English first (the default), then every other supported language.
 const LANGS: { id: Lang; label: string }[] = LANG_CODES.map((id) => ({ id, label: langLabel(id) }));
@@ -152,6 +154,14 @@ export default function CreatePage() {
   const [family, setFamily] = useState<{ name: string; relation: string; singers: string }[]>([{ name: "", relation: "mother", singers: "" }]);
   const [err, setErr] = useState<string | null>(null);
   const key = useRef(1);
+  const shown = useRef(step);
+
+  // On a phone the Next button is far down the page: start each new step at the top.
+  useEffect(() => {
+    if (shown.current === step) return;
+    shown.current = step;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   const step1Ok = name.trim().length > 0 && city.trim().length >= 2;
   const step2Ok = favs.length > 0;
@@ -241,7 +251,22 @@ export default function CreatePage() {
                     <input className="input text-lg" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="e.g. Leo" autoFocus />
                     <span className="text-xs font-normal text-[var(--muted)]">🔒 Never sent to the AI, never stored on a server.</span>
                   </label>
-                  <ChipGroup label="Age" value={ageIdx} onChange={setAgeIdx} options={AGES.map((a, i) => ({ v: i, t: a.label }))} />
+                  <div className="grid gap-3">
+                    <ChipGroup
+                      label="Age"
+                      value={Math.min(ageIdx, FIRST_ADULT)}
+                      onChange={(v) => setAgeIdx((cur) => (v === FIRST_ADULT && cur >= FIRST_ADULT ? cur : v))}
+                      options={[...AGES.slice(0, FIRST_ADULT).map((a, i) => ({ v: i, t: a.label })), { v: FIRST_ADULT, t: "Adult (18+)" }]}
+                    />
+                    {ageIdx >= FIRST_ADULT && (
+                      <ChipGroup
+                        label="Adult age"
+                        value={ageIdx}
+                        onChange={setAgeIdx}
+                        options={AGES.map((a, i) => ({ v: i, t: a.label })).slice(FIRST_ADULT)}
+                      />
+                    )}
+                  </div>
                   <div className="grid gap-2">
                     <label className="grid gap-1.5 text-sm font-bold">
                       Neighbourhood and city
@@ -421,7 +446,7 @@ export default function CreatePage() {
 
             <div className="mt-7 flex items-center gap-2 border-t border-[var(--line)] pt-5">
               {step > 1 && (
-                <button type="button" className="btn btn-lg" onClick={() => setStep((s) => s - 1)}>
+                <button type="button" className="btn btn-lg whitespace-nowrap" onClick={() => setStep((s) => s - 1)}>
                   ← Back
                 </button>
               )}
@@ -430,7 +455,7 @@ export default function CreatePage() {
                   Next →
                 </button>
               ) : (
-                <button type="button" className="btn btn-primary btn-lg ml-auto" onClick={build}>
+                <button type="button" className="btn btn-primary btn-lg ml-auto min-w-0 text-balance" onClick={build}>
                   ✨ Build {name.trim() ? `${name.trim()}'s` : "the"} board
                 </button>
               )}

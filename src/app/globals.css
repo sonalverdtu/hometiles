@@ -240,8 +240,9 @@ h3,
   box-shadow: 0 0 0 4px rgb(226 87 43 / 0.15);
 }
 
+/* Nearly opaque: on phones, page content scrolling under a see-through header made both hard to read. */
 .glass {
-  background: rgb(255 248 239 / 0.72);
+  background: rgb(255 248 239 / 0.94);
   backdrop-filter: saturate(1.6) blur(14px);
   -webkit-backdrop-filter: saturate(1.6) blur(14px);
 }

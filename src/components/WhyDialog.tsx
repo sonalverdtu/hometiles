@@ -112,10 +112,11 @@ export function WhyDialog({
           </button>
         )}
         {tile.entity?.qlooId && (
-          <p className="font-mono text-[11px] text-[var(--muted)]">
+          <details className="font-mono text-[11px] text-[var(--muted)]">
+            <summary className="cursor-pointer font-sans">Technical details</summary>
             Qloo entity {tile.entity.qlooId.slice(0, 13)}…
             {tile.score !== undefined ? ` · score ${tile.score.toFixed(2)}` : ""}
-          </p>
+          </details>
         )}
       </div>
 

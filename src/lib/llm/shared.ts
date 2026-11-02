@@ -36,7 +36,7 @@ export interface TileTextInput {
 
 export const TILE_TEXT_SYSTEM =
   "You write the words on AAC (communication board) tiles for a non-speaking person. " +
-  "Labels are 1-3 words a person would recognise at a glance. Spoken phrases are short, natural, first-person sentences " +
+  "Labels are 1-2 words and at most 16 characters, recognisable at a glance (drop words like Restaurant, Company, The).  Spoken phrases are short, natural, first-person sentences " +
   "the person would want to say, matched to the tile's category (food: asking for it; places: wanting to go; favourites: " +
   "sharing excitement; together: inviting a family member; new: starting a conversation). Keep proper names recognisable; " +
   "transliterate them into the target script when that language uses another script. Never add facts that aren't in the input.";

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Board, Category, Lang, TapEvent, Tile } from "@/lib/board/types";
 import { FOLDER_META, pick } from "@/lib/board/vocab";
 import { UI } from "@/lib/i18n";
-import { nextActions, predict, stabilize, type Prediction } from "@/lib/board/smart";
+import { fixedActions, predict, stabilize, type Prediction } from "@/lib/board/smart";
 import { NO_TOPIC, topicOf, type Topic } from "@/lib/board/topic";
 import { composeSentence, tileSpeech } from "@/lib/board/sentence";
 import { addSaid, getSaid, getTaps, logTap, type KidSettings, type SaidEntry } from "@/lib/client/store";
@@ -76,7 +76,7 @@ export function KidBoard({
   const last = sentence[sentence.length - 1]?.id ?? null;
   // Enough "Maybe next" tiles to fill the screen under the core rows.
   const take = compact ? 12 : 18;
-  const actions = nextActions(board, last, 6, CORE_SLOTS);
+  const actions = useMemo(() => fixedActions(board, 6, CORE_SLOTS), [board]);
   const ranked = useMemo(() => predict(board, last, taps, new Date(), take + 8, topic), [board, last, taps, take, topic]);
   // Steady row: tiles keep their slots, and at most 3 slots change per tap (stabilize in smart.ts).
   let predictions = row.shown;
@@ -228,9 +228,12 @@ export function KidBoard({
                   <span aria-hidden>{FOLDER_META.actions.emoji}</span>
                   {pick(FOLDER_META.actions.title, lang)}
                 </div>
-                <div className="mb-3 grid grid-cols-3 gap-2 @2xl:grid-cols-6">
-                  {actions.map((t) => (
-                    <BigTile key={t.id} tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
+                {/* One row: 3 verbs on a phone (so the child's own tiles stay above the fold), 6 on a tablet. Never reordered. */}
+                <div className="mb-3 grid grid-cols-3 gap-2 @md:grid-cols-6">
+                  {actions.map((t, i) => (
+                    <div key={t.id} className={i >= 3 ? "hidden @md:block" : undefined}>
+                      <BigTile tile={t} primary={primary} secondary={secondary} labels={settings.labels} size={coreSize} onTap={tap} />
+                    </div>
                   ))}
                 </div>
               </>

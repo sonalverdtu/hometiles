@@ -467,25 +467,26 @@ export default function BoardPage() {
             <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
               <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--grape-soft)] text-lg">🔎</span> How Qloo built it
             </h2>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className="btn" onClick={() => setShowCompare(true)}>⚖️ With vs without Qloo</button>
-              <button type="button" className="btn" onClick={() => setShowTrace(true)}>🔎 Every Qloo call ({board.trace.length})</button>
-            </div>
-            {board.heat?.length ? (
-              <div className="mt-3">
-                <HeatMap cells={board.heat} home={p.home} />
+            <p className="mb-3 text-sm text-[var(--muted)]">See what a plain AI would have made for {p.displayName}, next to this board.</p>
+            <button type="button" className="btn" onClick={() => setShowCompare(true)}>⚖️ With vs without Qloo</button>
+            {/* The technical view, for judges and developers: parents don't need call traces or taste heatmaps. */}
+            <details className="mt-4 rounded-2xl border border-[var(--line)] p-3 text-sm">
+              <summary className="cursor-pointer font-semibold">🔬 For judges and developers: the technical details</summary>
+              <div className="mt-3 space-y-3">
+                <button type="button" className="btn" onClick={() => setShowTrace(true)}>🔎 Every Qloo call ({board.trace.length})</button>
+                {board.heat?.length ? <HeatMap cells={board.heat} home={p.home} /> : null}
+                {board.notes.length > 0 && (
+                  <div>
+                    <p className="font-semibold">Agent notes</p>
+                    <ul className="mt-1 list-disc pl-5">
+                      {board.notes.map((n, i) => (
+                        <li key={i}>{n}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            ) : null}
-            {board.notes.length > 0 && (
-              <details className="mt-3 text-sm">
-                <summary className="cursor-pointer font-semibold">Agent notes</summary>
-                <ul className="mt-1 list-disc pl-5">
-                  {board.notes.map((n, i) => (
-                    <li key={i}>{n}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
+            </details>
           </div>
 
           <div className="card p-5">
